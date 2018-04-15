@@ -4,6 +4,7 @@ import (
     "testing"
     "os"
     "path"
+    "fmt"
 
     "io/ioutil"
 
@@ -62,7 +63,32 @@ func TestParse(t *testing.T) {
 
     // Run the parse.
 
-    err = e.Parse(data[foundAt:])
+    ti := NewTagIndex()
+
+    visitor := func(tagId, tagType uint16, tagCount, valueOffset uint32) (err error) {
+        it, err := ti.GetWithTagId(tagId)
+        if err != nil {
+            if err == ErrTagNotFound {
+                return nil
+            } else {
+                log.Panic(err)
+            }
+        }
+
+        fmt.Printf("Tag: ID=(0x%04x) NAME=[%s] IFD=[%s] TYPE=(%d) COUNT=(%d) VALUE-OFFSET=(%d)\n", tagId, it.Name, it.Ifd, tagType, tagCount, valueOffset)
+
+// Notes on the tag-value's value (we'll have to use this as a pointer if the type potentially requires more than four bytes):
+//
+// This tag records the offset from the start of the TIFF header to the position where the value itself is
+// recorded. In cases where the value fits in 4 Bytes, the value itself is recorded. If the value is smaller
+// than 4 Bytes, the value is stored in the 4-Byte area starting from the left, i.e., from the lower end of
+// the byte offset area. For example, in big endian format, if the type is SHORT and the value is 1, it is
+// recorded as 00010000.H
+
+        return nil
+    }
+
+    err = e.Parse(data[foundAt:], visitor)
     log.PanicIf(err)
 }
 

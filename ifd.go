@@ -1,7 +1,6 @@
 package exif
 
 import (
-    "fmt"
     "bytes"
     "io"
 
@@ -102,9 +101,12 @@ func (ifd *Ifd) getUint32() (value uint32, err error) {
     return value, nil
 }
 
+
+type TagVisitor func(tagId, tagType uint16, tagCount, valueOffset uint32) (err error)
+
 // parseCurrentIfd decodes the IFD block that we're currently sitting on the
 // first byte of.
-func (ifd *Ifd) parseCurrentIfd() (nextIfdOffset uint32, err error) {
+func (ifd *Ifd) parseCurrentIfd(visitor TagVisitor) (nextIfdOffset uint32, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -115,62 +117,34 @@ func (ifd *Ifd) parseCurrentIfd() (nextIfdOffset uint32, err error) {
     tagCount, err := ifd.getUint16()
     log.PanicIf(err)
 
-    fmt.Printf("IFD: TOTAL TAG COUNT=(%02x)\n", tagCount)
-
-    t := NewTagIndex()
+    ifdLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
 
     for i := uint16(0); i < tagCount; i++ {
-// TODO(dustin): !! 0x8769 tag-IDs are child IFDs.
+
+// TODO(dustin): !! 0x8769 tag-IDs are child IFDs. We need to be able to recurse.
+
         tagId, err := ifd.getUint16()
         log.PanicIf(err)
-
-        it, err := t.GetWithTagId(tagId)
-        if err != nil {
-            if err == ErrTagNotFound {
-                log.Panicf("tag (%04x) not known")
-            } else {
-                log.Panic(err)
-            }
-        }
-
-        fmt.Printf("IFD: Tag (%d) ID=(%02x) NAME=[%s] IFD=[%s]\n", i, tagId, it.Name, it.Ifd)
-
 
         tagType, err := ifd.getUint16()
         log.PanicIf(err)
 
-        fmt.Printf("IFD: Tag (%d) TYPE=(%d)\n", i, tagType)
-
-
         tagCount, err := ifd.getUint32()
         log.PanicIf(err)
-
-        fmt.Printf("IFD: Tag (%d) COUNT=(%02x)\n", i, tagCount)
-
 
         valueOffset, err := ifd.getUint32()
         log.PanicIf(err)
 
-        fmt.Printf("IFD: Tag (%d) VALUE-OFFSET=(%x)\n", i, valueOffset)
-
-// Notes on the tag-value's value (we'll have to use this as a pointer if the type potentially requires more than four bytes):
-//
-// This tag records the offset from the start of the TIFF header to the position where the value itself is
-// recorded. In cases where the value fits in 4 Bytes, the value itself is recorded. If the value is smaller
-// than 4 Bytes, the value is stored in the 4-Byte area starting from the left, i.e., from the lower end of
-// the byte offset area. For example, in big endian format, if the type is SHORT and the value is 1, it is
-// recorded as 00010000.H
-
+        if visitor != nil {
+            err := visitor(tagId, tagType, tagCount, valueOffset)
+            log.PanicIf(err)
+        }
     }
-
-    fmt.Printf("\n")
 
     nextIfdOffset, err = ifd.getUint32()
     log.PanicIf(err)
 
-    fmt.Printf("IFD: NEXT-IFD-OFFSET=(%x)\n", nextIfdOffset)
-
-    fmt.Printf("\n")
+    ifdLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
 
     return nextIfdOffset, nil
 }
@@ -184,7 +158,7 @@ func (ifd *Ifd) forwardToIfd(ifdOffset uint32) (err error) {
         }
     }()
 
-    fmt.Printf("IFD: Forwarding to IFD. TOP-OFFSET=(%d) IFD-OFFSET=(%d)\n", ifd.ifdTopOffset, ifdOffset)
+    ifdLogger.Debugf(nil, "Forwarding to IFD. TOP-OFFSET=(%d) IFD-OFFSET=(%d)", ifd.ifdTopOffset, ifdOffset)
 
     nextOffset := ifd.ifdTopOffset + ifdOffset
 
@@ -198,10 +172,8 @@ func (ifd *Ifd) forwardToIfd(ifdOffset uint32) (err error) {
     return nil
 }
 
-type IfdVisitor func() error
-
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ifd *Ifd) Scan(v IfdVisitor, firstIfdOffset uint32) (err error) {
+func (ifd *Ifd) Scan(visitor TagVisitor, firstIfdOffset uint32) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -212,7 +184,7 @@ func (ifd *Ifd) Scan(v IfdVisitor, firstIfdOffset uint32) (err error) {
     log.PanicIf(err)
 
     for {
-        nextIfdOffset, err := ifd.parseCurrentIfd()
+        nextIfdOffset, err := ifd.parseCurrentIfd(visitor)
         log.PanicIf(err)
 
         if nextIfdOffset == 0 {
