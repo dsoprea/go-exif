@@ -1,0 +1,31 @@
+Image:
+  - id: 0x103
+    name: Compression
+  - id: 0x10f
+    name: Make
+  - id: 0x110
+    name: Model
+  - id: 0x112
+    name: Orientation
+  - id: 0x11a
+    name: XResolution
+  - id: 0x11b
+    name: YResolution
+  - id: 0x128
+    name: ResolutionUnit
+  - id: 0x132
+    name: DateTime
+  - id: 0x13b
+    name: Artist
+  - id: 0x201
+    name: JPEGInterchangeFormat
+  - id: 0x202
+    name: JPEGInterchangeFormatLength
+  - id: 0x213
+    name: YCbCrPositioning
+  - id: 0x8298
+    name: Copyright
+  - id: 0x8769
+    name: ExifTag
+  - id: 0x8825
+    name: GPSTag

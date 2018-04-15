@@ -117,12 +117,23 @@ func (ifd *Ifd) parseCurrentIfd() (nextIfdOffset uint32, err error) {
 
     fmt.Printf("IFD: TOTAL TAG COUNT=(%02x)\n", tagCount)
 
+    t := NewTagIndex()
+
     for i := uint16(0); i < tagCount; i++ {
 // TODO(dustin): !! 0x8769 tag-IDs are child IFDs.
         tagId, err := ifd.getUint16()
         log.PanicIf(err)
 
-        fmt.Printf("IFD: Tag (%d) ID=(%02x)\n", i, tagId)
+        it, err := t.GetWithTagId(tagId)
+        if err != nil {
+            if err == ErrTagNotFound {
+                log.Panicf("tag (%04x) not known")
+            } else {
+                log.Panic(err)
+            }
+        }
+
+        fmt.Printf("IFD: Tag (%d) ID=(%02x) NAME=[%s] IFD=[%s]\n", i, tagId, it.Name, it.Ifd)
 
 
         tagType, err := ifd.getUint16()

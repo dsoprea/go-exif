@@ -74,4 +74,3 @@ func init() {
 
     assetsPath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
 }
-
