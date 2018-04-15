@@ -140,7 +140,7 @@ func (ti *TagIndex) GetWithTagId(id uint16) (it *IndexedTag, err error) {
 
     it, found := ti.tagsById[id]
     if found == false {
-        return nil, ErrTagNotFound
+        log.Panic(ErrTagNotFound)
     }
 
     return it, nil

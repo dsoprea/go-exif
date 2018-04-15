@@ -5,6 +5,7 @@ import (
     "os"
     "path"
     "fmt"
+    "reflect"
 
     "io/ioutil"
 
@@ -64,8 +65,16 @@ func TestParse(t *testing.T) {
     // Run the parse.
 
     ti := NewTagIndex()
+    tags := make([]string, 0)
 
-    visitor := func(tagId, tagType uint16, tagCount, valueOffset uint32) (err error) {
+    visitor := func(tagId uint16, tagType TagType, valueContext ValueContext) (err error) {
+        defer func() {
+            if state := recover(); state != nil {
+                err = log.Wrap(state.(error))
+                log.PrintErrorf(err, "The visitor encountered an error.")
+            }
+        }()
+
         it, err := ti.GetWithTagId(tagId)
         if err != nil {
             if err == ErrTagNotFound {
@@ -75,21 +84,42 @@ func TestParse(t *testing.T) {
             }
         }
 
-        fmt.Printf("Tag: ID=(0x%04x) NAME=[%s] IFD=[%s] TYPE=(%d) COUNT=(%d) VALUE-OFFSET=(%d)\n", tagId, it.Name, it.Ifd, tagType, tagCount, valueOffset)
+        valueString, err := tagType.ValueString(valueContext, true)
+        log.PanicIf(err)
 
-// Notes on the tag-value's value (we'll have to use this as a pointer if the type potentially requires more than four bytes):
-//
-// This tag records the offset from the start of the TIFF header to the position where the value itself is
-// recorded. In cases where the value fits in 4 Bytes, the value itself is recorded. If the value is smaller
-// than 4 Bytes, the value is stored in the 4-Byte area starting from the left, i.e., from the lower end of
-// the byte offset area. For example, in big endian format, if the type is SHORT and the value is 1, it is
-// recorded as 00010000.H
+        description := fmt.Sprintf("ID=(0x%04x) NAME=[%s] IFD=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", tagId, it.Name, it.Ifd, valueContext.UnitCount, tagType.Name(), valueString)
+        tags = append(tags, description)
 
         return nil
     }
 
     err = e.Parse(data[foundAt:], visitor)
     log.PanicIf(err)
+
+    expected := []string {
+        "ID=(0x010f) NAME=[Make] IFD=[Image] COUNT=(6) TYPE=[ASCII] VALUE=[Canon]",
+        "ID=(0x0110) NAME=[Model] IFD=[Image] COUNT=(22) TYPE=[ASCII] VALUE=[Canon EOS 5D Mark III]",
+        "ID=(0x0112) NAME=[Orientation] IFD=[Image] COUNT=(1) TYPE=[SHORT] VALUE=[1]",
+        "ID=(0x011a) NAME=[XResolution] IFD=[Image] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+        "ID=(0x011b) NAME=[YResolution] IFD=[Image] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+        "ID=(0x0128) NAME=[ResolutionUnit] IFD=[Image] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+        "ID=(0x0132) NAME=[DateTime] IFD=[Image] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
+        "ID=(0x013b) NAME=[Artist] IFD=[Image] COUNT=(1) TYPE=[ASCII] VALUE=[]",
+        "ID=(0x0213) NAME=[YCbCrPositioning] IFD=[Image] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+        "ID=(0x8298) NAME=[Copyright] IFD=[Image] COUNT=(1) TYPE=[ASCII] VALUE=[]",
+        "ID=(0x8769) NAME=[ExifTag] IFD=[Image] COUNT=(1) TYPE=[LONG] VALUE=[360]",
+        "ID=(0x8825) NAME=[GPSTag] IFD=[Image] COUNT=(1) TYPE=[LONG] VALUE=[9554]",
+        "ID=(0x0103) NAME=[Compression] IFD=[Image] COUNT=(1) TYPE=[SHORT] VALUE=[6]",
+        "ID=(0x011a) NAME=[XResolution] IFD=[Image] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+        "ID=(0x011b) NAME=[YResolution] IFD=[Image] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+        "ID=(0x0128) NAME=[ResolutionUnit] IFD=[Image] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+        "ID=(0x0201) NAME=[JPEGInterchangeFormat] IFD=[Image] COUNT=(1) TYPE=[LONG] VALUE=[11444]",
+        "ID=(0x0202) NAME=[JPEGInterchangeFormatLength] IFD=[Image] COUNT=(1) TYPE=[LONG] VALUE=[21491]",
+    }
+
+    if reflect.DeepEqual(tags, expected) == false {
+        t.Fatalf("tags not correct:\n%v", tags)
+    }
 }
 
 func init() {

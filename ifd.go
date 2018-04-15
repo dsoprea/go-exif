@@ -9,24 +9,10 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
-const (
-    BigEndianByteOrder = iota
-    LittleEndianByteOrder = iota
-)
-
 var (
     ifdLogger = log.NewLogger("exifjpeg.ifd")
 )
 
-type IfdByteOrder int
-
-func (ibo IfdByteOrder) IsBigEndian() bool {
-    return ibo == BigEndianByteOrder
-}
-
-func (ibo IfdByteOrder) IsLittleEndian() bool {
-    return ibo == LittleEndianByteOrder
-}
 
 type Ifd struct {
     data []byte
@@ -86,23 +72,43 @@ func (ifd *Ifd) getUint16() (value uint16, err error) {
 // getUint32 reads a uint32 and advances both our current and our current
 // accumulator (which allows us to know how far to seek to the beginning of the
 // next IFD when it's time to jump).
-func (ifd *Ifd) getUint32() (value uint32, err error) {
+func (ifd *Ifd) getUint32() (value uint32, raw []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    err = ifd.read(ifd.buffer, &value)
+    raw = make([]byte, 4)
+
+    _, err = ifd.buffer.Read(raw)
     log.PanicIf(err)
 
     ifd.currentOffset += 4
 
-    return value, nil
+    if ifd.byteOrder.IsBigEndian() {
+        value = binary.BigEndian.Uint32(raw)
+    } else {
+        value = binary.LittleEndian.Uint32(raw)
+    }
+
+    return value, raw, nil
+}
+
+// ValueContext describes all of the parameters required to find and extract
+// the actual tag value.
+type ValueContext struct {
+    UnitCount uint32
+    ValueOffset uint32
+    RawValueOffset []byte
+    RawExif []byte
 }
 
 
-type TagVisitor func(tagId, tagType uint16, tagCount, valueOffset uint32) (err error)
+// TagVisitor is an optional callback that can get hit for every tag we parse
+// through. `rawExif` is the byte array startign after the EXIF header (where
+// the offsets of all IFDs and values are calculated from).
+type TagVisitor func(tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
 // parseCurrentIfd decodes the IFD block that we're currently sitting on the
 // first byte of.
@@ -129,19 +135,28 @@ func (ifd *Ifd) parseCurrentIfd(visitor TagVisitor) (nextIfdOffset uint32, err e
         tagType, err := ifd.getUint16()
         log.PanicIf(err)
 
-        tagCount, err := ifd.getUint32()
+        unitCount, _, err := ifd.getUint32()
         log.PanicIf(err)
 
-        valueOffset, err := ifd.getUint32()
+        valueOffset, rawValueOffset, err := ifd.getUint32()
         log.PanicIf(err)
 
         if visitor != nil {
-            err := visitor(tagId, tagType, tagCount, valueOffset)
+            tt := NewTagType(tagType, ifd.byteOrder)
+
+            vc := ValueContext{
+                UnitCount: unitCount,
+                ValueOffset: valueOffset,
+                RawValueOffset: rawValueOffset,
+                RawExif: ifd.data[ifd.ifdTopOffset:],
+            }
+
+            err := visitor(tagId, tt, vc)
             log.PanicIf(err)
         }
     }
 
-    nextIfdOffset, err = ifd.getUint32()
+    nextIfdOffset, _, err = ifd.getUint32()
     log.PanicIf(err)
 
     ifdLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)

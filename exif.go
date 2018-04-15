@@ -38,7 +38,7 @@ func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
     }()
 
     if e.IsExif(data) == false {
-        return ErrNotExif
+        log.Panic(ErrNotExif)
     }
 
     // Good reference:
