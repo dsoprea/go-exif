@@ -6,8 +6,6 @@ import (
     "fmt"
     "errors"
 
-    "io/ioutil"
-
     "gopkg.in/yaml.v2"
     "github.com/dsoprea/go-logging"
 )
@@ -79,12 +77,11 @@ func (ti *TagIndex) load() (err error) {
     f, err := os.Open(tagDataFilepath)
     log.PanicIf(err)
 
-    data, err := ioutil.ReadAll(f)
-    log.PanicIf(err)
+    d := yaml.NewDecoder(f)
 
     encodedIfds := make(map[string][]encodedTag)
 
-    err = yaml.Unmarshal(data, &encodedIfds)
+    err = d.Decode(encodedIfds)
     log.PanicIf(err)
 
 
