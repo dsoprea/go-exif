@@ -78,7 +78,7 @@ func TestParse(t *testing.T) {
         defer func() {
             if state := recover(); state != nil {
                 err = log.Wrap(state.(error))
-                log.PrintErrorf(err, "The visitor encountered an error.")
+                log.Panic(err)
             }
         }()
 
