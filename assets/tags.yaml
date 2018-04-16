@@ -71,10 +71,9 @@ GPSInfo:
   name: GPSDateStamp
 - id: 0x001e
   name: GPSDifferential
-Image:
-# Conflicts with GPSDOP and may not even be official.
-#- id: 0x000b
-#  name: ProcessingSoftware
+IFD:
+- id: 0x000b
+  name: ProcessingSoftware
 - id: 0x00fe
   name: NewSubfileType
 - id: 0x00ff
@@ -483,158 +482,153 @@ Image:
   name: OpcodeList3
 - id: 0xc761
   name: NoiseProfile
-# Note sure about this. ExifTool doesn't recognize it and 0x0001 conflicts with GPSLatitudeRef.
-#
-# Iop:
-# - id: 0x0001
-#   name: InteroperabilityIndex
-# - id: 0x0002
-#   name: InteroperabilityVersion
-# - id: 0x1000
-#   name: RelatedImageFileFormat
-# - id: 0x1001
-#   name: RelatedImageWidth
-# - id: 0x1002
-#   name: RelatedImageLength
-#
-# Aren't recognized by ExifTool nor the PDF documentation (included).
-#
-# Photo:
-# - id: 0x829a
-#   name: ExposureTime
-# - id: 0x829d
-#   name: FNumber
-# - id: 0x8822
-#   name: ExposureProgram
-# - id: 0x8824
-#   name: SpectralSensitivity
-# - id: 0x8827
-#   name: ISOSpeedRatings
-# - id: 0x8828
-#   name: OECF
-# - id: 0x8830
-#   name: SensitivityType
-# - id: 0x8831
-#   name: StandardOutputSensitivity
-# - id: 0x8832
-#   name: RecommendedExposureIndex
-# - id: 0x8833
-#   name: ISOSpeed
-# - id: 0x8834
-#   name: ISOSpeedLatitudeyyy
-# - id: 0x8835
-#   name: ISOSpeedLatitudezzz
-# - id: 0x9000
-#   name: ExifVersion
-# - id: 0x9003
-#   name: DateTimeOriginal
-# - id: 0x9004
-#   name: DateTimeDigitized
-# - id: 0x9101
-#   name: ComponentsConfiguration
-# - id: 0x9102
-#   name: CompressedBitsPerPixel
-# - id: 0x9201
-#   name: ShutterSpeedValue
-# - id: 0x9202
-#   name: ApertureValue
-# - id: 0x9203
-#   name: BrightnessValue
-# - id: 0x9204
-#   name: ExposureBiasValue
-# - id: 0x9205
-#   name: MaxApertureValue
-# - id: 0x9206
-#   name: SubjectDistance
-# - id: 0x9207
-#   name: MeteringMode
-# - id: 0x9208
-#   name: LightSource
-# - id: 0x9209
-#   name: Flash
-# - id: 0x920a
-#   name: FocalLength
-# - id: 0x9214
-#   name: SubjectArea
-# - id: 0x927c
-#   name: MakerNote
-# - id: 0x9286
-#   name: UserComment
-# - id: 0x9290
-#   name: SubSecTime
-# - id: 0x9291
-#   name: SubSecTimeOriginal
-# - id: 0x9292
-#   name: SubSecTimeDigitized
-# - id: 0xa000
-#   name: FlashpixVersion
-# - id: 0xa001
-#   name: ColorSpace
-# - id: 0xa002
-#   name: PixelXDimension
-# - id: 0xa003
-#   name: PixelYDimension
-# - id: 0xa004
-#   name: RelatedSoundFile
-# - id: 0xa005
-#   name: InteroperabilityTag
-# - id: 0xa20b
-#   name: FlashEnergy
-# - id: 0xa20c
-#   name: SpatialFrequencyResponse
-# - id: 0xa20e
-#   name: FocalPlaneXResolution
-# - id: 0xa20f
-#   name: FocalPlaneYResolution
-# - id: 0xa210
-#   name: FocalPlaneResolutionUnit
-# - id: 0xa214
-#   name: SubjectLocation
-# - id: 0xa215
-#   name: ExposureIndex
-# - id: 0xa217
-#   name: SensingMethod
-# - id: 0xa300
-#   name: FileSource
-# - id: 0xa301
-#   name: SceneType
-# - id: 0xa302
-#   name: CFAPattern
-# - id: 0xa401
-#   name: CustomRendered
-# - id: 0xa402
-#   name: ExposureMode
-# - id: 0xa403
-#   name: WhiteBalance
-# - id: 0xa404
-#   name: DigitalZoomRatio
-# - id: 0xa405
-#   name: FocalLengthIn35mmFilm
-# - id: 0xa406
-#   name: SceneCaptureType
-# - id: 0xa407
-#   name: GainControl
-# - id: 0xa408
-#   name: Contrast
-# - id: 0xa409
-#   name: Saturation
-# - id: 0xa40a
-#   name: Sharpness
-# - id: 0xa40b
-#   name: DeviceSettingDescription
-# - id: 0xa40c
-#   name: SubjectDistanceRange
-# - id: 0xa420
-#   name: ImageUniqueID
-# - id: 0xa430
-#   name: CameraOwnerName
-# - id: 0xa431
-#   name: BodySerialNumber
-# - id: 0xa432
-#   name: LensSpecification
-# - id: 0xa433
-#   name: LensMake
-# - id: 0xa434
-#   name: LensModel
-# - id: 0xa435
-#   name: LensSerialNumber
+Iop:
+- id: 0x0001
+  name: InteroperabilityIndex
+- id: 0x0002
+  name: InteroperabilityVersion
+- id: 0x1000
+  name: RelatedImageFileFormat
+- id: 0x1001
+  name: RelatedImageWidth
+- id: 0x1002
+  name: RelatedImageLength
+Exif:
+- id: 0x829a
+  name: ExposureTime
+- id: 0x829d
+  name: FNumber
+- id: 0x8822
+  name: ExposureProgram
+- id: 0x8824
+  name: SpectralSensitivity
+- id: 0x8827
+  name: ISOSpeedRatings
+- id: 0x8828
+  name: OECF
+- id: 0x8830
+  name: SensitivityType
+- id: 0x8831
+  name: StandardOutputSensitivity
+- id: 0x8832
+  name: RecommendedExposureIndex
+- id: 0x8833
+  name: ISOSpeed
+- id: 0x8834
+  name: ISOSpeedLatitudeyyy
+- id: 0x8835
+  name: ISOSpeedLatitudezzz
+- id: 0x9000
+  name: ExifVersion
+- id: 0x9003
+  name: DateTimeOriginal
+- id: 0x9004
+  name: DateTimeDigitized
+- id: 0x9101
+  name: ComponentsConfiguration
+- id: 0x9102
+  name: CompressedBitsPerPixel
+- id: 0x9201
+  name: ShutterSpeedValue
+- id: 0x9202
+  name: ApertureValue
+- id: 0x9203
+  name: BrightnessValue
+- id: 0x9204
+  name: ExposureBiasValue
+- id: 0x9205
+  name: MaxApertureValue
+- id: 0x9206
+  name: SubjectDistance
+- id: 0x9207
+  name: MeteringMode
+- id: 0x9208
+  name: LightSource
+- id: 0x9209
+  name: Flash
+- id: 0x920a
+  name: FocalLength
+- id: 0x9214
+  name: SubjectArea
+- id: 0x927c
+  name: MakerNote
+- id: 0x9286
+  name: UserComment
+- id: 0x9290
+  name: SubSecTime
+- id: 0x9291
+  name: SubSecTimeOriginal
+- id: 0x9292
+  name: SubSecTimeDigitized
+- id: 0xa000
+  name: FlashpixVersion
+- id: 0xa001
+  name: ColorSpace
+- id: 0xa002
+  name: PixelXDimension
+- id: 0xa003
+  name: PixelYDimension
+- id: 0xa004
+  name: RelatedSoundFile
+- id: 0xa005
+  name: InteroperabilityTag
+- id: 0xa20b
+  name: FlashEnergy
+- id: 0xa20c
+  name: SpatialFrequencyResponse
+- id: 0xa20e
+  name: FocalPlaneXResolution
+- id: 0xa20f
+  name: FocalPlaneYResolution
+- id: 0xa210
+  name: FocalPlaneResolutionUnit
+- id: 0xa214
+  name: SubjectLocation
+- id: 0xa215
+  name: ExposureIndex
+- id: 0xa217
+  name: SensingMethod
+- id: 0xa300
+  name: FileSource
+- id: 0xa301
+  name: SceneType
+- id: 0xa302
+  name: CFAPattern
+- id: 0xa401
+  name: CustomRendered
+- id: 0xa402
+  name: ExposureMode
+- id: 0xa403
+  name: WhiteBalance
+- id: 0xa404
+  name: DigitalZoomRatio
+- id: 0xa405
+  name: FocalLengthIn35mmFilm
+- id: 0xa406
+  name: SceneCaptureType
+- id: 0xa407
+  name: GainControl
+- id: 0xa408
+  name: Contrast
+- id: 0xa409
+  name: Saturation
+- id: 0xa40a
+  name: Sharpness
+- id: 0xa40b
+  name: DeviceSettingDescription
+- id: 0xa40c
+  name: SubjectDistanceRange
+- id: 0xa420
+  name: ImageUniqueID
+- id: 0xa430
+  name: CameraOwnerName
+- id: 0xa431
+  name: BodySerialNumber
+- id: 0xa432
+  name: LensSpecification
+- id: 0xa433
+  name: LensMake
+- id: 0xa434
+  name: LensModel
+- id: 0xa435
+  name: LensSerialNumber

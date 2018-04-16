@@ -10,8 +10,21 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
+const (
+    IfdStandard = "IFD"
+    IfdExif = "Exif"
+    IfdGps = "GPSInfo"
+    IfdIop = "Iop"
+)
+
 var (
     tagDataFilepath = ""
+
+    IfdTags = map[uint16]string {
+        0x8769: IfdExif,
+        0x8825: IfdGps,
+        0xA005: IfdIop,
+    }
 )
 
 var (
@@ -52,7 +65,6 @@ func (it IndexedTag) Is(id uint16) bool {
 
 type TagIndex struct {
     tagsByIfd map[string]map[uint16]*IndexedTag
-    tagsById map[uint16]*IndexedTag
 }
 
 func NewTagIndex() *TagIndex {
@@ -87,7 +99,6 @@ func (ti *TagIndex) load() (err error) {
 
     // Load structure.
 
-    tagsById := make(map[uint16]*IndexedTag)
     tagsByIfd := make(map[string]map[uint16]*IndexedTag)
 
     count := 0
@@ -102,16 +113,14 @@ func (ti *TagIndex) load() (err error) {
                 Name: tagName,
             }
 
-            if _, found := tagsById[tagId]; found == true {
-                log.Panicf("tag-ID defined more than once: (%02x)", tagId)
-            }
-
-            tagsById[tagId] = tag
-
             family, found := tagsByIfd[ifdName]
             if found == false {
                 family = make(map[uint16]*IndexedTag)
                 tagsByIfd[ifdName] = family
+            }
+
+            if _, found := family[tagId]; found == true {
+                log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", ifdName, tagId)
             }
 
             family[tagId] = tag
@@ -120,7 +129,6 @@ func (ti *TagIndex) load() (err error) {
         }
     }
 
-    ti.tagsById = tagsById
     ti.tagsByIfd = tagsByIfd
 
     tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
@@ -128,19 +136,46 @@ func (ti *TagIndex) load() (err error) {
     return nil
 }
 
-func (ti *TagIndex) GetWithTagId(id uint16) (it *IndexedTag, err error) {
+func (ti *TagIndex) Get(ifdName string, id uint16) (it *IndexedTag, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    it, found := ti.tagsById[id]
+    family, found := ti.tagsByIfd[ifdName]
+    if found == false {
+        log.Panic(ErrTagNotFound)
+    }
+
+    it, found = family[id]
     if found == false {
         log.Panic(ErrTagNotFound)
     }
 
     return it, nil
+}
+
+// GetIfdName returns the known index name for the tags that are expected/
+// allowed for the IFD. If there's an error, returns "". If returns "", the IFD
+// should be skipped.
+func IfdName(ifdName string, ifdIndex int) string {
+    // There's an IFD0 and IFD1, but the others must be unique.
+    if ifdName == IfdStandard && ifdIndex > 1 {
+        tagsLogger.Errorf(nil, "The 'IFD' IFD can not occur more than twice: [%s]. Ignoring IFD.", ifdName)
+        return ""
+    } else if ifdName != IfdStandard && ifdIndex > 0 {
+        tagsLogger.Errorf(nil, "Only the 'IFD' IFD can be repeated: [%s]. Ignoring IFD.", ifdName)
+        return ""
+    }
+
+    return ifdName
+}
+
+// IsIfdTag returns true if the given tag points to a child IFD block.
+func IsIfdTag(tagId uint16) (name string, found bool) {
+    name, found = IfdTags[tagId]
+    return name, found
 }
 
 func init() {

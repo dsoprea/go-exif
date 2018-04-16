@@ -69,7 +69,7 @@ func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
 
     ifd := NewIfd(data, byteOrder)
 
-    err = ifd.Scan(visitor, firstIfdOffset)
+    err = ifd.Scan(IfdStandard, firstIfdOffset, visitor)
     log.PanicIf(err)
 
     return nil

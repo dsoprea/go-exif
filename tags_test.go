@@ -6,13 +6,15 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
-func TestGetWithTagId(t *testing.T) {
+func TestGet(t *testing.T) {
     ti := NewTagIndex()
 
-    it, err := ti.GetWithTagId(0x10f)
+    indexedIfdName := IfdName(IfdStandard, 0)
+
+    it, err := ti.Get(indexedIfdName, 0x10f)
     log.PanicIf(err)
 
-    if it.Is(0x10f) == false || it.IsName("Image", "Make") == false {
+    if it.Is(0x10f) == false || it.IsName("IFD", "Make") == false {
         t.Fatalf("tag info not correct")
     }
 }

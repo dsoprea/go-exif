@@ -2,7 +2,6 @@ package exif
 
 import (
     "bytes"
-    "io"
 
     "encoding/binary"
 
@@ -12,6 +11,77 @@ import (
 var (
     ifdLogger = log.NewLogger("exifjpeg.ifd")
 )
+
+
+// IfdTagEnumerator knows how to decode an IFD and all of the tags it
+// describes. Note that the IFDs and the actual values floating throughout the
+// whole EXIF block, but the IFD itself has just a minor header and a set of
+// repeating, statically-sized records. So, the tags (though not their values)
+// are fairly simple to enumerate.
+type IfdTagEnumerator struct {
+    byteOrder IfdByteOrder
+    rawExif []byte
+    ifdOffset uint32
+    buffer *bytes.Buffer
+}
+
+func NewIfdTagEnumerator(rawExif []byte, byteOrder IfdByteOrder, ifdOffset uint32) (ite *IfdTagEnumerator) {
+    ite = &IfdTagEnumerator{
+        rawExif: rawExif,
+        byteOrder: byteOrder,
+        buffer: bytes.NewBuffer(rawExif[ifdOffset:]),
+    }
+
+    return ite
+}
+
+// getUint16 reads a uint16 and advances both our current and our current
+// accumulator (which allows us to know how far to seek to the beginning of the
+// next IFD when it's time to jump).
+func (ife *IfdTagEnumerator) getUint16() (value uint16, raw []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    raw = make([]byte, 2)
+
+    _, err = ife.buffer.Read(raw)
+    log.PanicIf(err)
+
+    if ife.byteOrder.IsLittleEndian() == true {
+        value = binary.LittleEndian.Uint16(raw)
+    } else {
+        value = binary.BigEndian.Uint16(raw)
+    }
+
+    return value, raw, nil
+}
+
+// getUint32 reads a uint32 and advances both our current and our current
+// accumulator (which allows us to know how far to seek to the beginning of the
+// next IFD when it's time to jump).
+func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    raw = make([]byte, 4)
+
+    _, err = ife.buffer.Read(raw)
+    log.PanicIf(err)
+
+    if ife.byteOrder.IsLittleEndian() == true {
+        value = binary.LittleEndian.Uint32(raw)
+    } else {
+        value = binary.BigEndian.Uint32(raw)
+    }
+
+    return value, raw, nil
+}
 
 
 type Ifd struct {
@@ -31,70 +101,6 @@ func NewIfd(data []byte, byteOrder IfdByteOrder) *Ifd {
     }
 }
 
-// read is a wrapper around the built-in reader that applies which endianness
-// we are.
-func (ifd *Ifd) read(r io.Reader, into interface{}) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    if ifd.byteOrder.IsLittleEndian() == true {
-        err := binary.Read(r, binary.LittleEndian, into)
-        log.PanicIf(err)
-    } else {
-        err := binary.Read(r, binary.BigEndian, into)
-        log.PanicIf(err)
-    }
-
-    return nil
-}
-
-// getUint16 reads a uint16 and advances both our current and our current
-// accumulator (which allows us to know how far to seek to the beginning of the
-// next IFD when it's time to jump).
-func (ifd *Ifd) getUint16() (value uint16, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    err = ifd.read(ifd.buffer, &value)
-    log.PanicIf(err)
-
-    ifd.currentOffset += 2
-
-    return value, nil
-}
-
-// getUint32 reads a uint32 and advances both our current and our current
-// accumulator (which allows us to know how far to seek to the beginning of the
-// next IFD when it's time to jump).
-func (ifd *Ifd) getUint32() (value uint32, raw []byte, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    raw = make([]byte, 4)
-
-    _, err = ifd.buffer.Read(raw)
-    log.PanicIf(err)
-
-    ifd.currentOffset += 4
-
-    if ifd.byteOrder.IsBigEndian() {
-        value = binary.BigEndian.Uint32(raw)
-    } else {
-        value = binary.LittleEndian.Uint32(raw)
-    }
-
-    return value, raw, nil
-}
-
 // ValueContext describes all of the parameters required to find and extract
 // the actual tag value.
 type ValueContext struct {
@@ -104,44 +110,65 @@ type ValueContext struct {
     RawExif []byte
 }
 
+func (ifd *Ifd) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerator) {
+    ite = NewIfdTagEnumerator(
+            ifd.data[ifd.ifdTopOffset:],
+            ifd.byteOrder,
+            ifdOffset)
+
+    return ite
+}
 
 // TagVisitor is an optional callback that can get hit for every tag we parse
 // through. `rawExif` is the byte array startign after the EXIF header (where
 // the offsets of all IFDs and values are calculated from).
-type TagVisitor func(tagId uint16, tagType TagType, valueContext ValueContext) (err error)
+type TagVisitor func(indexedIfdName string, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
-// parseCurrentIfd decodes the IFD block that we're currently sitting on the
-// first byte of.
-func (ifd *Ifd) parseCurrentIfd(visitor TagVisitor) (nextIfdOffset uint32, err error) {
+// parseIfd decodes the IFD block that we're currently sitting on the first
+// byte of.
+func (ifd *Ifd) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor TagVisitor) (nextIfdOffset uint32, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
+    ifdLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ifdName, ifdIndex, ifdOffset)
 
-    tagCount, err := ifd.getUint16()
+    // Return the name of the IFD as its known in our tag-index. We should skip
+    // over the current IFD if this is empty (which means we don't recognize/
+    // understand the IFD and, therefore, don't know the tags that are valid for
+    // it). Note that we could leave ignoring the tags as a responsibility for
+    // the visitor, but then it'd be easy for people to integrate that logic and
+    // not realize that they needed to specially handle an empty IFD name until
+    // they happened upon some obscure media one day and suddenly have issue if
+    // they unwittingly write something that breaks in that situation.
+    indexedIfdName := IfdName(ifdName, ifdIndex)
+    if indexedIfdName == "" {
+        ifdLogger.Debugf(nil, "IFD not known and will not be visited: [%s] (%d)", ifdName, ifdIndex)
+    }
+
+    ite := ifd.getTagEnumerator(ifdOffset)
+
+    tagCount, _, err := ite.getUint16()
     log.PanicIf(err)
 
     ifdLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
 
     for i := uint16(0); i < tagCount; i++ {
-
-// TODO(dustin): !! 0x8769 tag-IDs are child IFDs. We need to be able to recurse.
-
-        tagId, err := ifd.getUint16()
+        tagId, _, err := ite.getUint16()
         log.PanicIf(err)
 
-        tagType, err := ifd.getUint16()
+        tagType, _, err := ite.getUint16()
         log.PanicIf(err)
 
-        unitCount, _, err := ifd.getUint32()
+        unitCount, _, err := ite.getUint32()
         log.PanicIf(err)
 
-        valueOffset, rawValueOffset, err := ifd.getUint32()
+        valueOffset, rawValueOffset, err := ite.getUint32()
         log.PanicIf(err)
 
-        if visitor != nil {
+        if visitor != nil && indexedIfdName != "" {
             tt := NewTagType(tagType, ifd.byteOrder)
 
             vc := ValueContext{
@@ -151,12 +178,20 @@ func (ifd *Ifd) parseCurrentIfd(visitor TagVisitor) (nextIfdOffset uint32, err e
                 RawExif: ifd.data[ifd.ifdTopOffset:],
             }
 
-            err := visitor(tagId, tt, vc)
+            err := visitor(indexedIfdName, tagId, tt, vc)
+            log.PanicIf(err)
+        }
+
+        childIfdName, isIfd := IsIfdTag(tagId)
+        if isIfd == true {
+            ifdLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
+
+            err := ifd.Scan(childIfdName, valueOffset, visitor)
             log.PanicIf(err)
         }
     }
 
-    nextIfdOffset, _, err = ifd.getUint32()
+    nextIfdOffset, _, err = ite.getUint32()
     log.PanicIf(err)
 
     ifdLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
@@ -164,50 +199,23 @@ func (ifd *Ifd) parseCurrentIfd(visitor TagVisitor) (nextIfdOffset uint32, err e
     return nextIfdOffset, nil
 }
 
-// forwardToIfd jumps to the beginning of an IFD block that starts on or after
-// the current position.
-func (ifd *Ifd) forwardToIfd(ifdOffset uint32) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    ifdLogger.Debugf(nil, "Forwarding to IFD. TOP-OFFSET=(%d) IFD-OFFSET=(%d)", ifd.ifdTopOffset, ifdOffset)
-
-    nextOffset := ifd.ifdTopOffset + ifdOffset
-
-    // We're assuming the guarantee that the next IFD will follow the
-    // current one. So, figure out how far it is from our current position.
-    delta := nextOffset - ifd.currentOffset
-    ifd.buffer.Next(int(delta))
-
-    ifd.currentOffset = nextOffset
-
-    return nil
-}
-
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ifd *Ifd) Scan(visitor TagVisitor, firstIfdOffset uint32) (err error) {
+func (ifd *Ifd) Scan(ifdName string, ifdOffset uint32, visitor TagVisitor) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    err = ifd.forwardToIfd(firstIfdOffset)
-    log.PanicIf(err)
-
-    for {
-        nextIfdOffset, err := ifd.parseCurrentIfd(visitor)
+    for ifdIndex := 0;; ifdIndex++ {
+        nextIfdOffset, err := ifd.parseIfd(ifdName, ifdIndex, ifdOffset, visitor)
         log.PanicIf(err)
 
         if nextIfdOffset == 0 {
             break
         }
 
-        err = ifd.forwardToIfd(nextIfdOffset)
-        log.PanicIf(err)
+        ifdOffset = nextIfdOffset
     }
 
     return nil

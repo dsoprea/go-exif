@@ -16,7 +16,7 @@ const (
     TypeShort = uint16(3)
     TypeLong = uint16(4)
     TypeRational = uint16(5)
-    TypeUndefined = uint16(6)
+    TypeUndefined = uint16(7)
     TypeSignedLong = uint16(9)
     TypeSignedRational = uint16(10)
 )
@@ -586,7 +586,7 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         } else {
             return "", nil
         }
-    } else if tt.Type() == TypeRational {
+    } else if tt.Type() == TypeSignedRational {
         raw, err := tt.ReadSignedRationalValues(valueContext)
         log.PanicIf(err)
 
@@ -603,7 +603,7 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
             return "", nil
         }
     } else {
-        log.Panicf("value of type [%s] is unparseable", tt)
+        log.Panicf("value of type (%d) [%s] is unparseable", tt.Type(), tt)
 
         // Never called.
         return "", nil
