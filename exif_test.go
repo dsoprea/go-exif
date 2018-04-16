@@ -92,10 +92,16 @@ func TestParse(t *testing.T) {
             }
         }
 
-// TODO(dustin): Finish case-specific parsing of known undefined values.
         valueString := ""
         if tagType.Type() == TypeUndefined {
-            valueString = "!UNDEFINED!"
+            value, err := UndefinedValue(indexedIfdName, tagId, valueContext, tagType.ByteOrder())
+            if log.Is(err, ErrUnhandledUnknownTypedTag) {
+                valueString = "!UNDEFINED!"
+            } else if err != nil {
+                log.Panic(err)
+            } else {
+                valueString = value.(string)
+            }
         } else {
             valueString, err = tagType.ValueString(valueContext, true)
             log.PanicIf(err)
@@ -109,6 +115,10 @@ func TestParse(t *testing.T) {
 
     err = e.Parse(data[foundAt:], visitor)
     log.PanicIf(err)
+
+    // for _, line := range tags {
+    //     fmt.Printf("TAGS: %s\n", line)
+    // }
 
     expected := []string {
         "IFD=[IFD] ID=(0x010f) NAME=[Make] COUNT=(6) TYPE=[ASCII] VALUE=[Canon]",
@@ -128,7 +138,7 @@ func TestParse(t *testing.T) {
         "IFD=[Exif] ID=(0x8827) NAME=[ISOSpeedRatings] COUNT=(1) TYPE=[SHORT] VALUE=[1600]",
         "IFD=[Exif] ID=(0x8830) NAME=[SensitivityType] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
         "IFD=[Exif] ID=(0x8832) NAME=[RecommendedExposureIndex] COUNT=(1) TYPE=[LONG] VALUE=[1600]",
-        "IFD=[Exif] ID=(0x9000) NAME=[ExifVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[!UNDEFINED!]",
+        "IFD=[Exif] ID=(0x9000) NAME=[ExifVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0230]",
         "IFD=[Exif] ID=(0x9003) NAME=[DateTimeOriginal] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
         "IFD=[Exif] ID=(0x9004) NAME=[DateTimeDigitized] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
         "IFD=[Exif] ID=(0x9101) NAME=[ComponentsConfiguration] COUNT=(4) TYPE=[UNDEFINED] VALUE=[!UNDEFINED!]",
@@ -143,7 +153,7 @@ func TestParse(t *testing.T) {
         "IFD=[Exif] ID=(0x9290) NAME=[SubSecTime] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
         "IFD=[Exif] ID=(0x9291) NAME=[SubSecTimeOriginal] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
         "IFD=[Exif] ID=(0x9292) NAME=[SubSecTimeDigitized] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
-        "IFD=[Exif] ID=(0xa000) NAME=[FlashpixVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[!UNDEFINED!]",
+        "IFD=[Exif] ID=(0xa000) NAME=[FlashpixVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0100]",
         "IFD=[Exif] ID=(0xa001) NAME=[ColorSpace] COUNT=(1) TYPE=[SHORT] VALUE=[1]",
         "IFD=[Exif] ID=(0xa002) NAME=[PixelXDimension] COUNT=(1) TYPE=[SHORT] VALUE=[3840]",
         "IFD=[Exif] ID=(0xa003) NAME=[PixelYDimension] COUNT=(1) TYPE=[SHORT] VALUE=[2560]",

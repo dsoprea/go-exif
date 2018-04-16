@@ -19,6 +19,9 @@ const (
     TypeUndefined = uint16(7)
     TypeSignedLong = uint16(9)
     TypeSignedRational = uint16(10)
+
+    // Custom, for our purposes.
+    TypeAsciiNoNul = uint16(0xf0)
 )
 
 var (
@@ -31,6 +34,8 @@ var (
         TypeUndefined: "UNDEFINED",
         TypeSignedLong: "SLONG",
         TypeSignedRational: "SRATIONAL",
+
+        TypeAsciiNoNul: "_ASCII_NO_NUL",
     }
 )
 
@@ -47,8 +52,14 @@ var (
     // we're trying to parse (sizeof(type) * unit_count).
     ErrNotEnoughData = errors.New("not enough data for type")
 
-    // ErrWrongType is used when we try to parse anything other than the current type.
+    // ErrWrongType is used when we try to parse anything other than the
+    // current type.
     ErrWrongType = errors.New("wrong type, can not parse")
+
+    // ErrUnhandledUnknownTag is used when we try to parse a tag that's
+    // recorded as an "unknown" type but not a documented tag (therefore
+    // leaving us not knowning how to read it).
+    ErrUnhandledUnknownTypedTag = errors.New("not a standard unknown-typed tag")
 )
 
 
@@ -110,11 +121,15 @@ func (tt TagType) Type() uint16 {
     return tt.tagType
 }
 
+func (tt TagType) ByteOrder() IfdByteOrder {
+    return tt.byteOrder
+}
+
 
 func (tt TagType) Size() int {
     if tt.tagType == TypeByte {
         return 1
-    } else if tt.tagType == TypeAscii {
+    } else if tt.tagType == TypeAscii || tt.tagType == TypeAsciiNoNul {
         return 1
     } else if tt.tagType == TypeShort {
         return 2
@@ -172,7 +187,7 @@ func (tt TagType) ParseAscii(data []byte, rawCount uint32) (value string, err er
         }
     }()
 
-    if tt.tagType != TypeAscii {
+    if tt.tagType != TypeAscii && tt.tagType != TypeAsciiNoNul {
         log.Panic(ErrWrongType)
     }
 
@@ -375,29 +390,38 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
         }
     }()
 
+    value, err = tt.ReadAsciiNoNulValue(valueContext)
+    log.PanicIf(err)
+
+    len_ := len(value)
+    if len_ == 0 || value[len_ - 1] != 0 {
+        typeLogger.Warningf(nil, "ascii value not terminated with nul: [%s]", value)
+        return value, nil
+    } else {
+        return value[:len_ - 1], nil
+    }
+}
+
+func (tt TagType) ReadAsciiNoNulValue(valueContext ValueContext) (value string, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
     if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
-        typeLogger.Debugf(nil, "Reading ASCII value (embedded).")
+        typeLogger.Debugf(nil, "Reading ASCII value (no-nul; embedded).")
 
         value, err = tt.ParseAscii(valueContext.RawValueOffset, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
-        typeLogger.Debugf(nil, "Reading ASCII value (at offset).")
+        typeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
 
         value, err = tt.ParseAscii(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
-    len_ := len(value)
-    if value[len_ - 1] != 0 {
-        typeLogger.Warningf(nil, "ascii value not terminated with nul: [%s]", value)
-
-// TODO(dustin): !! Debugging
-        fmt.Printf("ascii value not terminated with nul: [%s]", value)
-
-        return value, nil
-    } else {
-        return value[:len_ - 1], nil
-    }
+    return value, nil
 }
 
 func (tt TagType) ReadShortValues(valueContext ValueContext) (value []uint16, err error) {
@@ -537,6 +561,11 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         log.PanicIf(err)
 
         return fmt.Sprintf("%s", raw), nil
+    } else if tt.Type() == TypeAsciiNoNul {
+        raw, err := tt.ReadAsciiNoNulValue(valueContext)
+        log.PanicIf(err)
+
+        return fmt.Sprintf("%s", raw), nil
     } else if tt.Type() == TypeShort {
         raw, err := tt.ReadShortValues(valueContext)
         log.PanicIf(err)
@@ -608,4 +637,64 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         // Never called.
         return "", nil
     }
+}
+
+// UndefinedValue returns the value for a tag of "undefined" type.
+func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueContext, byteOrder IfdByteOrder) (value interface{}, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    if indexedIfdName == IfdName(IfdExif, 0) {
+        if tagId == 0x9000 {
+            tt := NewTagType(TypeAsciiNoNul, byteOrder)
+
+            value, err = tt.ReadAsciiValue(valueContext)
+            log.PanicIf(err)
+
+            return value, nil
+        } else if tagId == 0xa000 {
+            tt := NewTagType(TypeAsciiNoNul, byteOrder)
+
+            value, err = tt.ReadAsciiValue(valueContext)
+            log.PanicIf(err)
+
+            return value, nil
+        }
+    } else if indexedIfdName == IfdName(IfdGps, 0) {
+        if tagId == 0x001c {
+            // GPSAreaInformation
+
+            tt := NewTagType(TypeAsciiNoNul, byteOrder)
+
+            value, err = tt.ReadAsciiValue(valueContext)
+            log.PanicIf(err)
+
+            return value, nil
+        } else if tagId == 0x001b {
+            // GPSProcessingMethod
+
+            tt := NewTagType(TypeAsciiNoNul, byteOrder)
+
+            value, err = tt.ReadAsciiValue(valueContext)
+            log.PanicIf(err)
+
+            return value, nil
+        }
+    }
+
+// TODO(dustin): !! Still need to do:
+//
+// complex: 0xa302, 0xa20c, 0x8828
+// long: 0xa301, 0xa300
+// bytes: 0x927c, 0x9101 (probably, but not certain)
+// other: 0x9286 (simple, but needs some processing)
+
+    // 0xa40b is device-specific and unhandled.
+
+
+    log.Panic(ErrUnhandledUnknownTypedTag)
+    return nil, nil
 }
