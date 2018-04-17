@@ -20,11 +20,14 @@ const (
 var (
     tagDataFilepath = ""
 
-    IfdTags = map[uint16]string {
-        0x8769: IfdExif,
-        0x8825: IfdGps,
-        0xA005: IfdIop,
+    IfdTagIds = map[string]uint16 {
+        IfdExif: 0x8769,
+        IfdGps: 0x8825,
+        IfdIop: 0xA005,
     }
+
+    // IfdTagNames is populated in the init(), below.
+    IfdTagNames = map[uint16]string {}
 )
 
 var (
@@ -174,7 +177,7 @@ func IfdName(ifdName string, ifdIndex int) string {
 
 // IsIfdTag returns true if the given tag points to a child IFD block.
 func IsIfdTag(tagId uint16) (name string, found bool) {
-    name, found = IfdTags[tagId]
+    name, found = IfdTagNames[tagId]
     return name, found
 }
 
@@ -186,4 +189,8 @@ func init() {
 
     assetsPath := path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
     tagDataFilepath = path.Join(assetsPath, "tags.yaml")
+
+    for name, tagId := range IfdTagIds {
+        IfdTagNames[tagId] = name
+    }
 }

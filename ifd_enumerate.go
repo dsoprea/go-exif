@@ -11,7 +11,7 @@ import (
 )
 
 var (
-    ifdLogger = log.NewLogger("exifjpeg.ifd")
+    ifdEnumerateLogger = log.NewLogger("exifjpeg.ifd")
 )
 
 
@@ -147,7 +147,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
         }
     }()
 
-    ifdLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ifdName, ifdIndex, ifdOffset)
+    ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ifdName, ifdIndex, ifdOffset)
 
     // Return the name of the IFD as its known in our tag-index. We should skip
     // over the current IFD if this is empty (which means we don't recognize/
@@ -159,7 +159,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
     // they unwittingly write something that breaks in that situation.
     indexedIfdName := IfdName(ifdName, ifdIndex)
     if indexedIfdName == "" {
-        ifdLogger.Debugf(nil, "IFD not known and will not be visited: [%s] (%d)", ifdName, ifdIndex)
+        ifdEnumerateLogger.Debugf(nil, "IFD not known and will not be visited: [%s] (%d)", ifdName, ifdIndex)
     }
 
     ite := ie.getTagEnumerator(ifdOffset)
@@ -167,7 +167,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
     tagCount, _, err := ite.getUint16()
     log.PanicIf(err)
 
-    ifdLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
+    ifdEnumerateLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
 
     entries = make([]IfdTagEntry, tagCount)
 
@@ -212,7 +212,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
             tag.IfdName = childIfdName
 
             if doDescend == true {
-                ifdLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
+                ifdEnumerateLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
 
                 err := ie.Scan(childIfdName, valueOffset, visitor)
                 log.PanicIf(err)
@@ -225,7 +225,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
     nextIfdOffset, _, err = ite.getUint32()
     log.PanicIf(err)
 
-    ifdLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
+    ifdEnumerateLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
 
     return nextIfdOffset, entries, nil
 }

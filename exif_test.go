@@ -264,16 +264,16 @@ func TestCollect(t *testing.T) {
         if ite.IfdName == IfdExif {
             foundExif++
 
-            if IfdTags[ite.TagId] != IfdExif {
-                t.Fatalf("EXIF IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTags[ite.TagId], IfdExif)
+            if IfdTagNames[ite.TagId] != IfdExif {
+                t.Fatalf("EXIF IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTagNames[ite.TagId], IfdExif)
             }
         }
 
         if ite.IfdName == IfdGps {
             foundGps++
 
-            if IfdTags[ite.TagId] != IfdGps {
-                t.Fatalf("EXIF GPS tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTags[ite.TagId] != IfdGps)
+            if IfdTagNames[ite.TagId] != IfdGps {
+                t.Fatalf("EXIF GPS tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTagNames[ite.TagId] != IfdGps)
             }
         }
     }
@@ -289,8 +289,8 @@ func TestCollect(t *testing.T) {
         if ite.IfdName == IfdIop {
             foundIop++
 
-            if IfdTags[ite.TagId] != IfdIop {
-                t.Fatalf("IOP IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTags[ite.TagId], IfdIop)
+            if IfdTagNames[ite.TagId] != IfdIop {
+                t.Fatalf("IOP IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTagNames[ite.TagId], IfdIop)
             }
         }
     }
