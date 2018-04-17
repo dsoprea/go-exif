@@ -84,7 +84,7 @@ func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
 }
 
 
-type Ifd struct {
+type IfdEnumerate struct {
     data []byte
     buffer *bytes.Buffer
     byteOrder binary.ByteOrder
@@ -92,8 +92,8 @@ type Ifd struct {
     ifdTopOffset uint32
 }
 
-func NewIfd(data []byte, byteOrder binary.ByteOrder) *Ifd {
-    return &Ifd{
+func NewIfdEnumerate(data []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
+    return &IfdEnumerate{
         data: data,
         buffer: bytes.NewBuffer(data),
         byteOrder: byteOrder,
@@ -110,10 +110,10 @@ type ValueContext struct {
     RawExif []byte
 }
 
-func (ifd *Ifd) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerator) {
+func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerator) {
     ite = NewIfdTagEnumerator(
-            ifd.data[ifd.ifdTopOffset:],
-            ifd.byteOrder,
+            ie.data[ie.ifdTopOffset:],
+            ie.byteOrder,
             ifdOffset)
 
     return ite
@@ -126,7 +126,7 @@ type TagVisitor func(indexedIfdName string, tagId uint16, tagType TagType, value
 
 // parseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ifd *Ifd) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor TagVisitor) (nextIfdOffset uint32, err error) {
+func (ie *IfdEnumerate) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor TagVisitor) (nextIfdOffset uint32, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -148,7 +148,7 @@ func (ifd *Ifd) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor
         ifdLogger.Debugf(nil, "IFD not known and will not be visited: [%s] (%d)", ifdName, ifdIndex)
     }
 
-    ite := ifd.getTagEnumerator(ifdOffset)
+    ite := ie.getTagEnumerator(ifdOffset)
 
     tagCount, _, err := ite.getUint16()
     log.PanicIf(err)
@@ -169,13 +169,13 @@ func (ifd *Ifd) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor
         log.PanicIf(err)
 
         if visitor != nil && indexedIfdName != "" {
-            tt := NewTagType(tagType, ifd.byteOrder)
+            tt := NewTagType(tagType, ie.byteOrder)
 
             vc := ValueContext{
                 UnitCount: unitCount,
                 ValueOffset: valueOffset,
                 RawValueOffset: rawValueOffset,
-                RawExif: ifd.data[ifd.ifdTopOffset:],
+                RawExif: ie.data[ie.ifdTopOffset:],
             }
 
             err := visitor(indexedIfdName, tagId, tt, vc)
@@ -186,7 +186,7 @@ func (ifd *Ifd) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor
         if isIfd == true {
             ifdLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
 
-            err := ifd.Scan(childIfdName, valueOffset, visitor)
+            err := ie.Scan(childIfdName, valueOffset, visitor)
             log.PanicIf(err)
         }
     }
@@ -200,7 +200,7 @@ func (ifd *Ifd) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor
 }
 
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ifd *Ifd) Scan(ifdName string, ifdOffset uint32, visitor TagVisitor) (err error) {
+func (ie *IfdEnumerate) Scan(ifdName string, ifdOffset uint32, visitor TagVisitor) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -208,7 +208,7 @@ func (ifd *Ifd) Scan(ifdName string, ifdOffset uint32, visitor TagVisitor) (err 
     }()
 
     for ifdIndex := 0;; ifdIndex++ {
-        nextIfdOffset, err := ifd.parseIfd(ifdName, ifdIndex, ifdOffset, visitor)
+        nextIfdOffset, err := ie.parseIfd(ifdName, ifdIndex, ifdOffset, visitor)
         log.PanicIf(err)
 
         if nextIfdOffset == 0 {

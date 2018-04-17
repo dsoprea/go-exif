@@ -68,9 +68,9 @@ func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
         firstIfdOffset = binary.LittleEndian.Uint32(data[10:14])
     }
 
-    ifd := NewIfd(data, byteOrder)
+    ie := NewIfdEnumerate(data, byteOrder)
 
-    err = ifd.Scan(IfdStandard, firstIfdOffset, visitor)
+    err = ie.Scan(IfdStandard, firstIfdOffset, visitor)
     log.PanicIf(err)
 
     return nil
