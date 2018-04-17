@@ -52,24 +52,6 @@ var (
 )
 
 
-// TODO(dustin): !! Replace our implementation of an endian descriptor to just pass around binary.BigEndian and binary.LittleEndian
-
-const (
-    BigEndianByteOrder = iota
-    LittleEndianByteOrder = iota
-)
-
-type IfdByteOrder int
-
-func (ibo IfdByteOrder) IsBigEndian() bool {
-    return ibo == BigEndianByteOrder
-}
-
-func (ibo IfdByteOrder) IsLittleEndian() bool {
-    return ibo == LittleEndianByteOrder
-}
-
-
 type Rational struct {
     Numerator uint32
     Denominator uint32

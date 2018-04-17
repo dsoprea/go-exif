@@ -19,13 +19,13 @@ var (
 // repeating, statically-sized records. So, the tags (though not their values)
 // are fairly simple to enumerate.
 type IfdTagEnumerator struct {
-    byteOrder IfdByteOrder
+    byteOrder binary.ByteOrder
     rawExif []byte
     ifdOffset uint32
     buffer *bytes.Buffer
 }
 
-func NewIfdTagEnumerator(rawExif []byte, byteOrder IfdByteOrder, ifdOffset uint32) (ite *IfdTagEnumerator) {
+func NewIfdTagEnumerator(rawExif []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (ite *IfdTagEnumerator) {
     ite = &IfdTagEnumerator{
         rawExif: rawExif,
         byteOrder: byteOrder,
@@ -50,10 +50,10 @@ func (ife *IfdTagEnumerator) getUint16() (value uint16, raw []byte, err error) {
     _, err = ife.buffer.Read(raw)
     log.PanicIf(err)
 
-    if ife.byteOrder.IsLittleEndian() == true {
-        value = binary.LittleEndian.Uint16(raw)
-    } else {
+    if ife.byteOrder == binary.BigEndian {
         value = binary.BigEndian.Uint16(raw)
+    } else {
+        value = binary.LittleEndian.Uint16(raw)
     }
 
     return value, raw, nil
@@ -74,10 +74,10 @@ func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
     _, err = ife.buffer.Read(raw)
     log.PanicIf(err)
 
-    if ife.byteOrder.IsLittleEndian() == true {
-        value = binary.LittleEndian.Uint32(raw)
-    } else {
+    if ife.byteOrder == binary.BigEndian {
         value = binary.BigEndian.Uint32(raw)
+    } else {
+        value = binary.LittleEndian.Uint32(raw)
     }
 
     return value, raw, nil
@@ -87,12 +87,12 @@ func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
 type Ifd struct {
     data []byte
     buffer *bytes.Buffer
-    byteOrder IfdByteOrder
+    byteOrder binary.ByteOrder
     currentOffset uint32
     ifdTopOffset uint32
 }
 
-func NewIfd(data []byte, byteOrder IfdByteOrder) *Ifd {
+func NewIfd(data []byte, byteOrder binary.ByteOrder) *Ifd {
     return &Ifd{
         data: data,
         buffer: bytes.NewBuffer(data),

@@ -47,9 +47,10 @@ func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
     //      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
     byteOrderSignature := data[6:8]
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    var byteOrder binary.ByteOrder
+    byteOrder = binary.BigEndian
     if string(byteOrderSignature) == "II" {
-        byteOrder = IfdByteOrder(LittleEndianByteOrder)
+        byteOrder = binary.LittleEndian
     } else if string(byteOrderSignature) != "MM" {
         log.Panicf("byte-order not recognized: [%v]", byteOrderSignature)
     }
@@ -61,10 +62,10 @@ func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
     }
 
     firstIfdOffset := uint32(0)
-    if byteOrder.IsLittleEndian() == true {
-        firstIfdOffset = binary.LittleEndian.Uint32(data[10:14])
-    } else {
+    if byteOrder == binary.BigEndian {
         firstIfdOffset = binary.BigEndian.Uint32(data[10:14])
+    } else {
+        firstIfdOffset = binary.LittleEndian.Uint32(data[10:14])
     }
 
     ifd := NewIfd(data, byteOrder)

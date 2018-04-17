@@ -4,11 +4,13 @@ import (
     "testing"
     "reflect"
 
+    "encoding/binary"
+
     "github.com/dsoprea/go-logging"
 )
 
 func TestByteCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []byte("original text")
@@ -37,7 +39,7 @@ func TestByteCycle(t *testing.T) {
 }
 
 func TestAsciiCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := "original text"
@@ -70,7 +72,7 @@ func TestAsciiCycle(t *testing.T) {
 }
 
 func TestAsciiNoNulCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := "original text"
@@ -102,7 +104,7 @@ func TestAsciiNoNulCycle(t *testing.T) {
 }
 
 func TestShortCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []uint16 { 0x11, 0x22, 0x33, 0x44, 0x55 }
@@ -137,7 +139,7 @@ func TestShortCycle(t *testing.T) {
 }
 
 func TestLongCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []uint32 { 0x11, 0x22, 0x33, 0x44, 0x55 }
@@ -172,7 +174,7 @@ func TestLongCycle(t *testing.T) {
 }
 
 func TestRationalCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []Rational {
@@ -233,7 +235,7 @@ func TestRationalCycle(t *testing.T) {
 }
 
 func TestSignedLongCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []int32 { 0x11, 0x22, 0x33, 0x44, 0x55 }
@@ -268,7 +270,7 @@ func TestSignedLongCycle(t *testing.T) {
 }
 
 func TestSignedRationalCycle(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []SignedRational {
@@ -341,7 +343,7 @@ func TestSignedRationalCycle(t *testing.T) {
 
 
 func TestEncode_Byte(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []byte("original text")
@@ -363,7 +365,7 @@ func TestEncode_Byte(t *testing.T) {
 }
 
 func TestEncode_Ascii(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := "original text"
@@ -386,7 +388,7 @@ func TestEncode_Ascii(t *testing.T) {
 }
 
 func TestEncode_Short(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []uint16 { 0x11, 0x22, 0x33, 0x44, 0x55 }
@@ -414,7 +416,7 @@ func TestEncode_Short(t *testing.T) {
 }
 
 func TestEncode_Long(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []uint32 { 0x11, 0x22, 0x33, 0x44, 0x55 }
@@ -442,7 +444,7 @@ func TestEncode_Long(t *testing.T) {
 }
 
 func TestEncode_Rational(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []Rational {
@@ -496,7 +498,7 @@ func TestEncode_Rational(t *testing.T) {
 }
 
 func TestEncode_SignedLong(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []int32 { 0x11, 0x22, 0x33, 0x44, 0x55 }
@@ -524,7 +526,7 @@ func TestEncode_SignedLong(t *testing.T) {
 }
 
 func TestEncode_SignedRational(t *testing.T) {
-    byteOrder := IfdByteOrder(BigEndianByteOrder)
+    byteOrder := binary.BigEndian
     ve := NewValueEncoder(byteOrder)
 
     original := []SignedRational {

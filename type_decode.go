@@ -17,10 +17,10 @@ var (
 type TagType struct {
     tagType uint16
     name string
-    byteOrder IfdByteOrder
+    byteOrder binary.ByteOrder
 }
 
-func NewTagType(tagType uint16, byteOrder IfdByteOrder) TagType {
+func NewTagType(tagType uint16, byteOrder binary.ByteOrder) TagType {
     name, found := TypeNames[tagType]
     if found == false {
         log.Panicf("tag-type not valid: 0x%04x", tagType)
@@ -45,7 +45,7 @@ func (tt TagType) Type() uint16 {
     return tt.tagType
 }
 
-func (tt TagType) ByteOrder() IfdByteOrder {
+func (tt TagType) ByteOrder() binary.ByteOrder {
     return tt.byteOrder
 }
 
@@ -168,7 +168,7 @@ func (tt TagType) ParseShorts(data []byte, unitCount uint32) (value []uint16, er
 
     value = make([]uint16, count)
     for i := 0; i < count; i++ {
-        if tt.byteOrder.IsBigEndian() {
+        if tt.byteOrder == binary.BigEndian {
             value[i] = binary.BigEndian.Uint16(data[i*2:])
         } else {
             value[i] = binary.LittleEndian.Uint16(data[i*2:])
@@ -197,7 +197,7 @@ func (tt TagType) ParseLongs(data []byte, unitCount uint32) (value []uint32, err
 
     value = make([]uint32, count)
     for i := 0; i < count; i++ {
-        if tt.byteOrder.IsBigEndian() {
+        if tt.byteOrder == binary.BigEndian {
             value[i] = binary.BigEndian.Uint32(data[i*4:])
         } else {
             value[i] = binary.LittleEndian.Uint32(data[i*4:])
@@ -226,7 +226,7 @@ func (tt TagType) ParseRationals(data []byte, unitCount uint32) (value []Rationa
 
     value = make([]Rational, count)
     for i := 0; i < count; i++ {
-        if tt.byteOrder.IsBigEndian() {
+        if tt.byteOrder == binary.BigEndian {
             value[i].Numerator = binary.BigEndian.Uint32(data[i*8:])
             value[i].Denominator = binary.BigEndian.Uint32(data[i*8 + 4:])
         } else {
@@ -259,7 +259,7 @@ func (tt TagType) ParseSignedLongs(data []byte, unitCount uint32) (value []int32
 
     value = make([]int32, count)
     for i := 0; i < count; i++ {
-        if tt.byteOrder.IsBigEndian() {
+        if tt.byteOrder == binary.BigEndian {
             err := binary.Read(b, binary.BigEndian, &value[i])
             log.PanicIf(err)
         } else {
@@ -292,7 +292,7 @@ func (tt TagType) ParseSignedRationals(data []byte, unitCount uint32) (value []S
 
     value = make([]SignedRational, count)
     for i := 0; i < count; i++ {
-        if tt.byteOrder.IsBigEndian() {
+        if tt.byteOrder == binary.BigEndian {
             err = binary.Read(b, binary.BigEndian, &value[i].Numerator)
             log.PanicIf(err)
 
@@ -592,7 +592,7 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
 }
 
 // UndefinedValue returns the value for a tag of "undefined" type.
-func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueContext, byteOrder IfdByteOrder) (value interface{}, err error) {
+func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueContext, byteOrder binary.ByteOrder) (value interface{}, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
