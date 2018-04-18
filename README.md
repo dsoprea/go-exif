@@ -126,7 +126,7 @@ visitor := func(indexedIfdName string, tagId uint16, tagType exif.TagType, value
     return nil
 }
 
-err = e.Parse(data[foundAt:], visitor)
+err = e.Visit(data[foundAt:], visitor)
 log.PanicIf(err)
 ```
 

@@ -93,6 +93,6 @@ func main() {
         return nil
     }
 
-    err = e.Parse(data[foundAt:], visitor)
+    err = e.Visit(data[foundAt:], visitor)
     log.PanicIf(err)
 }

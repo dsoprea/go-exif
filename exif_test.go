@@ -33,7 +33,7 @@ func TestIsExif_False(t *testing.T) {
     }
 }
 
-func TestParse(t *testing.T) {
+func TestVisit(t *testing.T) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -113,7 +113,7 @@ func TestParse(t *testing.T) {
         return nil
     }
 
-    err = e.Parse(data[foundAt:], visitor)
+    err = e.Visit(data[foundAt:], visitor)
     log.PanicIf(err)
 
     // for _, line := range tags {

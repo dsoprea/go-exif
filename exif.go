@@ -11,7 +11,11 @@ import (
 
 var (
     exifLogger = log.NewLogger("exif.exif")
+)
+
+var (
     ErrNotExif = errors.New("not exif data")
+    ErrExifHeaderError = errors.New("exif header error")
 )
 
 type Exif struct {
@@ -30,7 +34,13 @@ func (e *Exif) IsExif(data []byte) (ok bool) {
     return false
 }
 
-func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
+
+type ExifHeader struct {
+    ByteOrder binary.ByteOrder
+    FirstIfdOffset uint32
+}
+
+func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -57,8 +67,8 @@ func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
 
     fixedBytes := data[8:10]
     if fixedBytes[0] != 0x2a || fixedBytes[1] != 0x00 {
-        exifLogger.Warningf(nil, "EXIF app-data header fixed-bytes should be 0x002a but are: [%v]", fixedBytes)
-        return nil
+        exifLogger.Warningf(nil, "EXIF header fixed-bytes should be 0x002a but are: [%v]", fixedBytes)
+        log.Panic(ErrExifHeaderError)
     }
 
     firstIfdOffset := uint32(0)
@@ -68,9 +78,27 @@ func (e *Exif) Parse(data []byte, visitor TagVisitor) (err error) {
         firstIfdOffset = binary.LittleEndian.Uint32(data[10:14])
     }
 
-    ie := NewIfdEnumerate(data, byteOrder)
+    eh = ExifHeader{
+        ByteOrder: byteOrder,
+        FirstIfdOffset: firstIfdOffset,
+    }
 
-    err = ie.Scan(IfdStandard, firstIfdOffset, visitor)
+    return eh, nil
+}
+
+func (e *Exif) Visit(data []byte, visitor TagVisitor) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    eh, err := e.ParseExifHeader(data)
+    log.PanicIf(err)
+
+    ie := NewIfdEnumerate(data, eh.ByteOrder)
+
+    err = ie.Scan(IfdStandard, eh.FirstIfdOffset, visitor)
     log.PanicIf(err)
 
     return nil

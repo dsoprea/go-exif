@@ -124,9 +124,21 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerato
 // the offsets of all IFDs and values are calculated from).
 type TagVisitor func(indexedIfdName string, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
-// parseIfd decodes the IFD block that we're currently sitting on the first
+
+type IfdTagEntry struct {
+    TagId uint16
+    TagIndex int
+    TagType uint16
+    UnitCount uint32
+    ValueOffset uint32
+    RawValueOffset []byte
+    IsIfd bool
+}
+
+
+// ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor TagVisitor) (nextIfdOffset uint32, err error) {
+func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -155,6 +167,8 @@ func (ie *IfdEnumerate) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
 
     ifdLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
 
+    entries = make([]IfdTagEntry, tagCount)
+
     for i := uint16(0); i < tagCount; i++ {
         tagId, _, err := ite.getUint16()
         log.PanicIf(err)
@@ -182,13 +196,28 @@ func (ie *IfdEnumerate) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
             log.PanicIf(err)
         }
 
+        tag := IfdTagEntry{
+            TagId: tagId,
+            TagIndex: int(i),
+            TagType: tagType,
+            UnitCount: unitCount,
+            ValueOffset: valueOffset,
+            RawValueOffset: rawValueOffset,
+        }
+
         childIfdName, isIfd := IsIfdTag(tagId)
         if isIfd == true {
-            ifdLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
+            tag.IsIfd = true
 
-            err := ie.Scan(childIfdName, valueOffset, visitor)
-            log.PanicIf(err)
+            if doDescend == true {
+                ifdLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
+
+                err := ie.Scan(childIfdName, valueOffset, visitor)
+                log.PanicIf(err)
+            }
         }
+
+        entries[i] = tag
     }
 
     nextIfdOffset, _, err = ite.getUint32()
@@ -196,7 +225,7 @@ func (ie *IfdEnumerate) parseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
 
     ifdLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
 
-    return nextIfdOffset, nil
+    return nextIfdOffset, entries, nil
 }
 
 // Scan enumerates the different EXIF blocks (called IFDs).
@@ -208,7 +237,7 @@ func (ie *IfdEnumerate) Scan(ifdName string, ifdOffset uint32, visitor TagVisito
     }()
 
     for ifdIndex := 0;; ifdIndex++ {
-        nextIfdOffset, err := ie.parseIfd(ifdName, ifdIndex, ifdOffset, visitor)
+        nextIfdOffset, _, err := ie.ParseIfd(ifdName, ifdIndex, ifdOffset, visitor, true)
         log.PanicIf(err)
 
         if nextIfdOffset == 0 {
