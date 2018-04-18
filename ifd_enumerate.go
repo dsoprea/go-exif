@@ -2,6 +2,8 @@ package exif
 
 import (
     "bytes"
+    "fmt"
+    "strings"
 
     "encoding/binary"
 
@@ -132,7 +134,7 @@ type IfdTagEntry struct {
     UnitCount uint32
     ValueOffset uint32
     RawValueOffset []byte
-    IsIfd bool
+    IfdName string
 }
 
 
@@ -207,7 +209,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
 
         childIfdName, isIfd := IsIfdTag(tagId)
         if isIfd == true {
-            tag.IsIfd = true
+            tag.IfdName = childIfdName
 
             if doDescend == true {
                 ifdLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
@@ -248,4 +250,157 @@ func (ie *IfdEnumerate) Scan(ifdName string, ifdOffset uint32, visitor TagVisito
     }
 
     return nil
+}
+
+
+type Ifd struct {
+    Id int
+    ParentIfd *Ifd
+    Name string
+    Index int
+    Offset uint32
+    Entries []IfdTagEntry
+    Children []*Ifd
+    NextIfdOffset uint32
+    NextIfd *Ifd
+}
+
+func (ifd Ifd) String() string {
+    parentOffset := uint32(0)
+    if ifd.ParentIfd != nil {
+        parentOffset = ifd.ParentIfd.Offset
+    }
+
+    return fmt.Sprintf("IFD<ID=(%d) N=[%s] IDX=(%d) OFF=(0x%04x) COUNT=(%d) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)", ifd.Id, ifd.Name, ifd.Index, ifd.Offset, len(ifd.Entries), len(ifd.Children), parentOffset, ifd.NextIfdOffset)
+}
+
+func (ifd Ifd) printNode(level int, nextLink bool) {
+    indent := strings.Repeat(" ", level * 2)
+
+    prefix := " "
+    if nextLink {
+        prefix = ">"
+    }
+
+    fmt.Printf("%s%s%s\n", indent, prefix, ifd)
+
+    for _, childIfd := range ifd.Children {
+        childIfd.printNode(level + 1, false)
+    }
+
+    if ifd.NextIfd != nil {
+        ifd.NextIfd.printNode(level, true)
+    }
+}
+
+func (ifd Ifd) PrintTree() {
+    ifd.printNode(0, false)
+}
+
+
+type QueuedIfd struct {
+    Name string
+    Index int
+    Offset uint32
+    Parent *Ifd
+}
+
+// Scan enumerates the different EXIF blocks (called IFDs).
+func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (rootIfd *Ifd, tree map[int]*Ifd, ifds []*Ifd, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    tree = make(map[int]*Ifd)
+    ifds = make([]*Ifd, 0)
+
+    queue := []QueuedIfd {
+        {
+            Name: IfdStandard,
+            Index: 0,
+            Offset: rootIfdOffset,
+        },
+    }
+
+    edges := make(map[uint32]*Ifd)
+
+    for {
+        if len(queue) == 0 {
+            break
+        }
+
+        name := queue[0].Name
+        index := queue[0].Index
+        offset := queue[0].Offset
+        parentIfd := queue[0].Parent
+
+        queue = queue[1:]
+
+        nextIfdOffset, entries, err := ie.ParseIfd(name, index, offset, nil, false)
+        log.PanicIf(err)
+
+        id := len(ifds)
+
+        ifd := Ifd{
+            Id: id,
+            ParentIfd: parentIfd,
+            Name: name,
+            Index: index,
+            Offset: offset,
+            Entries: entries,
+            Children: make([]*Ifd, 0),
+            NextIfdOffset: nextIfdOffset,
+        }
+
+        // Add ourselves to a big list of IFDs.
+        ifds = append(ifds, &ifd)
+
+        // Install ourselves into a lookup table.
+        tree[id] = &ifd
+
+        // Add a link from the previous IFD in the chain to us.
+        if previousIfd, found := edges[offset]; found == true {
+            previousIfd.NextIfd = &ifd
+        }
+
+        // Attach as a child to our parent (where we appeared as a tag in
+        // that IFD).
+        if parentIfd != nil {
+            parentIfd.Children = append(parentIfd.Children, &ifd)
+        }
+
+        // Determine if any of our entries is a child IFD and queue it.
+        for _, entry := range entries {
+            if entry.IfdName == "" {
+                continue
+            }
+
+            qi := QueuedIfd {
+                Name: entry.IfdName,
+                Index: 0,
+                Offset: entry.ValueOffset,
+                Parent: &ifd,
+            }
+
+            queue = append(queue, qi)
+        }
+
+        // If there's another IFD in the chain.
+        if nextIfdOffset != 0 {
+            // Allow the next link to know what the previous link was.
+            edges[nextIfdOffset] = &ifd
+
+            qi := QueuedIfd {
+                Name: IfdStandard,
+                Index: index + 1,
+                Offset: nextIfdOffset,
+            }
+
+            queue = append(queue, qi)
+        }
+    }
+
+    return tree[0], tree, ifds, nil
 }

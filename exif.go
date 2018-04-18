@@ -1,9 +1,11 @@
 package exif
 
 import (
+    "os"
     "errors"
     "bytes"
 
+    "io/ioutil"
     "encoding/binary"
 
     "github.com/dsoprea/go-logging"
@@ -32,6 +34,42 @@ func (e *Exif) IsExif(data []byte) (ok bool) {
     }
 
     return false
+}
+
+func (e *Exif) SearchAndExtractExif(filepath string) (rawExif []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.Panic(err)
+        }
+    }()
+
+    // Open the file.
+
+    f, err := os.Open(filepath)
+    log.PanicIf(err)
+
+    defer f.Close()
+
+    data, err := ioutil.ReadAll(f)
+    log.PanicIf(err)
+
+    // Search for the beginning of the EXIF information. The EXIF is near the
+    // beginning of our/most JPEGs, so this has a very low cost.
+
+    foundAt := -1
+    for i := 0; i < len(data); i++ {
+        if e.IsExif(data[i:i + 6]) == true {
+            foundAt = i
+            break
+        }
+    }
+
+    if foundAt == -1 {
+        log.Panicf("EXIF start not found")
+    }
+
+    return data[foundAt:], nil
 }
 
 
@@ -102,4 +140,22 @@ func (e *Exif) Visit(data []byte, visitor TagVisitor) (err error) {
     log.PanicIf(err)
 
     return nil
+}
+
+func (e *Exif) Collect(data []byte) (rootIfd *Ifd, tree map[int]*Ifd, ifds []*Ifd, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    eh, err := e.ParseExifHeader(data)
+    log.PanicIf(err)
+
+    ie := NewIfdEnumerate(data, eh.ByteOrder)
+
+    rootIfd, tree, ifds, err = ie.Collect(eh.FirstIfdOffset)
+    log.PanicIf(err)
+
+    return rootIfd, tree, ifds, nil
 }

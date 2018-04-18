@@ -187,6 +187,42 @@ func TestVisit(t *testing.T) {
     }
 }
 
+func TestCollect(t *testing.T) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.PrintErrorf(err, "Exif failure.")
+        }
+    }()
+
+    e := NewExif()
+
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    rootIfd, tree, ifds, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    rootIfd = rootIfd
+    tree = tree
+    ifds = ifds
+
+
+// TODO(dustin): !! Finish test.
+
+
+    // rootIfd.PrintTree()
+
+    // expected := []string {
+    // }
+
+    // if reflect.DeepEqual(tags, expected) == false {
+    //     t.Fatalf("tags not correct:\n%v", tags)
+    // }
+}
+
 func init() {
     goPath := os.Getenv("GOPATH")
     if goPath == "" {
