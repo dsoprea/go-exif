@@ -202,25 +202,102 @@ func TestCollect(t *testing.T) {
     rawExif, err := e.SearchAndExtractExif(filepath)
     log.PanicIf(err)
 
-    rootIfd, tree, ifds, err := e.Collect(rawExif)
+    index, err := e.Collect(rawExif)
     log.PanicIf(err)
 
-    rootIfd = rootIfd
-    tree = tree
-    ifds = ifds
+    rootIfd := index.RootIfd
+    ifds := index.Ifds
+    tree := index.Tree
+    lookup := index.Lookup
 
+    if rootIfd.Offset != 0x0008 {
+        t.Fatalf("Root-IFD not correct: (0x%04d).", rootIfd)
+    } else if rootIfd.Id != 0 {
+        t.Fatalf("Root-IFD does not have the right ID: (%d)", rootIfd.Id)
+    } else if tree[0] != rootIfd {
+        t.Fatalf("Root-IFD is not indexed properly.")
+    } else if len(ifds) != 5 {
+        t.Fatalf("The IFD list is not the right size: (%d)", len(ifds))
+    } else if len(tree) != 5 {
+        t.Fatalf("The IFD tree is not the right size: (%d)", len(tree))
+    } else if len(lookup) != 4 {
+        t.Fatalf("The IFD lookup is not the right size: (%d)", len(lookup))
+    }
 
-// TODO(dustin): !! Finish test.
+    if rootIfd.NextIfdOffset != 0x2c54 {
+        t.Fatalf("Root IFD does not continue correctly: (0x%04x)", rootIfd.NextIfdOffset)
+    } else if rootIfd.NextIfd.Offset != rootIfd.NextIfdOffset {
+        t.Fatalf("Root IFD neighbor object does not have the right offset: (0x%04x != 0x%04x)", rootIfd.NextIfd.Offset, rootIfd.NextIfdOffset)
+    } else if rootIfd.NextIfd.NextIfdOffset != 0 {
+        t.Fatalf("Root IFD chain not terminated correctly (1).")
+    } else if rootIfd.NextIfd.NextIfd != nil {
+        t.Fatalf("Root IFD chain not terminated correctly (2).")
+    }
 
+    if rootIfd.Name != IfdStandard {
+        t.Fatalf("Root IFD is not labeled correctly: [%s]", rootIfd.Name)
+    } else if rootIfd.NextIfd.Name != IfdStandard {
+        t.Fatalf("Root IFD sibling is not labeled correctly: [%s]", rootIfd.Name)
+    } else if rootIfd.Children[0].Name != IfdExif {
+        t.Fatalf("Root IFD child (0) is not labeled correctly: [%s]", rootIfd.Children[0].Name)
+    } else if rootIfd.Children[1].Name != IfdGps {
+        t.Fatalf("Root IFD child (1) is not labeled correctly: [%s]", rootIfd.Children[1].Name)
+    } else if rootIfd.Children[0].Children[0].Name != IfdIop {
+        t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children[0].Children[0].Name)
+    }
 
-    // rootIfd.PrintTree()
+    if lookup[IfdStandard][0].Name != IfdStandard {
+        t.Fatalf("Lookup for standard IFD not correct.")
+    } else if lookup[IfdStandard][1].Name != IfdStandard {
+        t.Fatalf("Lookup for standard IFD not correct.")
+    } else if lookup[IfdExif][0].Name != IfdExif {
+        t.Fatalf("Lookup for EXIF IFD not correct.")
+    } else if lookup[IfdGps][0].Name != IfdGps {
+        t.Fatalf("Lookup for EXIF IFD not correct.")
+    } else if lookup[IfdIop][0].Name != IfdIop {
+        t.Fatalf("Lookup for EXIF IFD not correct.")
+    }
 
-    // expected := []string {
-    // }
+    foundExif := 0
+    foundGps := 0
+    for _, ite := range lookup[IfdStandard][0].Entries {
+        if ite.IfdName == IfdExif {
+            foundExif++
 
-    // if reflect.DeepEqual(tags, expected) == false {
-    //     t.Fatalf("tags not correct:\n%v", tags)
-    // }
+            if IfdTags[ite.TagId] != IfdExif {
+                t.Fatalf("EXIF IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTags[ite.TagId], IfdExif)
+            }
+        }
+
+        if ite.IfdName == IfdGps {
+            foundGps++
+
+            if IfdTags[ite.TagId] != IfdGps {
+                t.Fatalf("EXIF GPS tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTags[ite.TagId] != IfdGps)
+            }
+        }
+    }
+
+    if foundExif != 1 {
+        t.Fatalf("Exactly one EXIF IFD tag wasn't found: (%d)", foundExif)
+    } else if foundGps != 1 {
+        t.Fatalf("Exactly one GPS IFD tag wasn't found: (%d)", foundGps)
+    }
+
+    foundIop := 0
+    for _, ite := range lookup[IfdExif][0].Entries {
+        if ite.IfdName == IfdIop {
+            foundIop++
+
+            if IfdTags[ite.TagId] != IfdIop {
+                t.Fatalf("IOP IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTags[ite.TagId], IfdIop)
+            }
+        }
+    }
+
+    if foundIop != 1 {
+        t.Fatalf("Exactly one IOP IFD tag wasn't found: (%d)", foundIop)
+    }
 }
 
 func init() {

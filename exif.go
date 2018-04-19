@@ -142,7 +142,7 @@ func (e *Exif) Visit(data []byte, visitor TagVisitor) (err error) {
     return nil
 }
 
-func (e *Exif) Collect(data []byte) (rootIfd *Ifd, tree map[int]*Ifd, ifds []*Ifd, err error) {
+func (e *Exif) Collect(data []byte) (index IfdIndex, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -154,8 +154,8 @@ func (e *Exif) Collect(data []byte) (rootIfd *Ifd, tree map[int]*Ifd, ifds []*If
 
     ie := NewIfdEnumerate(data, eh.ByteOrder)
 
-    rootIfd, tree, ifds, err = ie.Collect(eh.FirstIfdOffset)
+    index, err = ie.Collect(eh.FirstIfdOffset)
     log.PanicIf(err)
 
-    return rootIfd, tree, ifds, nil
+    return index, nil
 }

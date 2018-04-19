@@ -305,16 +305,26 @@ type QueuedIfd struct {
     Parent *Ifd
 }
 
+
+type IfdIndex struct {
+    RootIfd *Ifd
+    Ifds []*Ifd
+    Tree map[int]*Ifd
+    Lookup map[string][]*Ifd
+}
+
+
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (rootIfd *Ifd, tree map[int]*Ifd, ifds []*Ifd, err error) {
+func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    tree = make(map[int]*Ifd)
-    ifds = make([]*Ifd, 0)
+    tree := make(map[int]*Ifd)
+    ifds := make([]*Ifd, 0)
+    lookup := make(map[string][]*Ifd)
 
     queue := []QueuedIfd {
         {
@@ -357,8 +367,19 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (rootIfd *Ifd, tree map[in
         // Add ourselves to a big list of IFDs.
         ifds = append(ifds, &ifd)
 
-        // Install ourselves into a lookup table.
+        // Install ourselves into a by-id lookup table (keys are unique).
         tree[id] = &ifd
+
+        // Install into by-name buckets.
+
+        if list_, found := lookup[name]; found == true {
+            lookup[name] = append(list_, &ifd)
+        } else {
+            list_ = make([]*Ifd, 1)
+            list_[0] = &ifd
+
+            lookup[name] = list_
+        }
 
         // Add a link from the previous IFD in the chain to us.
         if previousIfd, found := edges[offset]; found == true {
@@ -402,5 +423,10 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (rootIfd *Ifd, tree map[in
         }
     }
 
-    return tree[0], tree, ifds, nil
+    index.RootIfd = tree[0]
+    index.Ifds = ifds
+    index.Tree = tree
+    index.Lookup = lookup
+
+    return index, nil
 }
