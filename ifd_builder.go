@@ -2,6 +2,7 @@ package exif
 
 import (
     "errors"
+    "fmt"
 
     "encoding/binary"
 
@@ -30,6 +31,11 @@ type builderTag struct {
     value interface{}
 }
 
+func (bt builderTag) String() string {
+    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ifdName, bt.value)
+}
+
+
 type IfdBuilder struct {
     ifdName string
 
@@ -49,7 +55,46 @@ type IfdBuilder struct {
     nextIfd *IfdBuilder
 }
 
+func (ib *IfdBuilder) String() string {
+    nextIfdPhrase := ""
+    if ib.nextIfd != nil {
+        nextIfdPhrase = ib.nextIfd.ifdName
+    }
+
+    return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ifdName, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
+}
+
+func (ib *IfdBuilder) Tags() (tags []builderTag) {
+    return ib.tags
+}
+
+func (ib *IfdBuilder) Dump() {
+    fmt.Printf("IFD: %s\n", ib)
+
+    if len(ib.tags) > 0 {
+        fmt.Printf("\n")
+
+        for i, tag := range ib.tags {
+            fmt.Printf("  (%d): %s\n", i, tag)
+        }
+
+        fmt.Printf("\n")
+    }
+}
+
 func NewIfdBuilder(ifdName string, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
+    found := false
+    for _, validName := range validIfds {
+        if validName == ifdName {
+            found = true
+            break
+        }
+    }
+
+    if found == false {
+        log.Panicf("ifd not found: [%s]", ifdName)
+    }
+
     ib = &IfdBuilder{
         ifdName: ifdName,
         ifdTagId: IfdTagIds[ifdName],
@@ -244,6 +289,8 @@ func (ib *IfdBuilder) AddChildIfd(childIfd *IfdBuilder) (err error) {
 
     if childIfd.ifdTagId == 0 {
         log.Panicf("IFD [%s] can not be used as a child IFD (not associated with a tag-ID)")
+    } else if childIfd.byteOrder != ib.byteOrder {
+        log.Panicf("Child IFD does not have the same byte-order: [%s] != [%s]", childIfd.byteOrder, ib.byteOrder)
     }
 
     bt := builderTag{
@@ -293,10 +340,15 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
         }
 
         if excludeTagIds != nil && len(excludeTagIds) > 0 {
+            found := false
             for _, excludedTagId := range excludeTagIds {
                 if excludedTagId == tag.TagId {
-                    continue
+                    found = true
                 }
+            }
+
+            if found == true {
+                continue
             }
         }
 

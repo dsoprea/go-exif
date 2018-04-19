@@ -20,6 +20,13 @@ const (
 var (
     tagDataFilepath = ""
 
+    validIfds = []string {
+        IfdStandard,
+        IfdExif,
+        IfdGps,
+        IfdIop,
+    }
+
     IfdTagIds = map[string]uint16 {
         IfdExif: 0x8769,
         IfdGps: 0x8825,
