@@ -11,6 +11,12 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
+const (
+    // DefaultRootIfdExifOffset is the offset of the first IFD in the block of
+    // EXIF data.
+    DefaultRootIfdExifOffset = uint32(0x0008)
+)
+
 var (
     exifLogger = log.NewLogger("exif.exif")
 )

@@ -3,6 +3,7 @@ package exif
 import (
     "errors"
     "fmt"
+    "bytes"
 
     "encoding/binary"
 
@@ -55,33 +56,6 @@ type IfdBuilder struct {
     nextIfd *IfdBuilder
 }
 
-func (ib *IfdBuilder) String() string {
-    nextIfdPhrase := ""
-    if ib.nextIfd != nil {
-        nextIfdPhrase = ib.nextIfd.ifdName
-    }
-
-    return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ifdName, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
-}
-
-func (ib *IfdBuilder) Tags() (tags []builderTag) {
-    return ib.tags
-}
-
-func (ib *IfdBuilder) Dump() {
-    fmt.Printf("IFD: %s\n", ib)
-
-    if len(ib.tags) > 0 {
-        fmt.Printf("\n")
-
-        for i, tag := range ib.tags {
-            fmt.Printf("  (%d): %s\n", i, tag)
-        }
-
-        fmt.Printf("\n")
-    }
-}
-
 func NewIfdBuilder(ifdName string, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
     found := false
     for _, validName := range validIfds {
@@ -113,6 +87,191 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd, byteOrder binary.ByteOrder) (ib *Ifd
     }
 
     return ib
+}
+
+func (ib *IfdBuilder) String() string {
+    nextIfdPhrase := ""
+    if ib.nextIfd != nil {
+        nextIfdPhrase = ib.nextIfd.ifdName
+    }
+
+    return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ifdName, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
+}
+
+
+// ifdOffsetIterator keeps track of where the next IFD should be written
+// (relative to the end of the EXIF header bytes; all addresses are relative to
+// this).
+type ifdOffsetIterator struct {
+    offset uint32
+}
+
+func (ioi *ifdOffsetIterator) Step(size uint32) {
+    ioi.offset += ifdSize
+}
+
+func (ioi *ifdOffsetIterator) Offset() uint32 {
+    return ioi.offset
+}
+
+
+// calculateRawTableSize returns the number of bytes required just to store the
+// basic IFD header and tags. This needs to be called before we can even write
+// the tags so that we can know where the data starts and can calculate offsets.
+func (ib *IfdBuilder) calculateTableSize() (size uint32, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+
+// TODO(dustin): !! Finish.
+
+
+}
+
+// calculateDataSize returns the number of bytes required the offset-based data
+// of the IFD.
+func (ib *IfdBuilder) calculateDataSize(tableSize uint32) (size uint32, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+
+// TODO(dustin): !! Finish.
+
+
+}
+
+// buildIfd populates the given table and data byte-arrays. `dataOffset` is the
+// distance from the beginning of the IFD to the beginning of the IFD's data
+// (following the IFD's table). It may be used to calculate the final offset of
+// the data we store there so that we can reference it from the IFD table. The
+// `ioi` is used to know where to insert child IFDs at.
+//
+// len(ifdTableRaw) == calculateTableSize()
+// len(ifdDataRaw) == calculateDataSize()
+func (ib *IfdBuilder) buildIfd(dataOffset uint32, ifdTableRaw, ifdDataRaw []byte, ioi *ifdOffsetIterator) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+
+// TODO(dustin): !! Finish.
+
+
+}
+
+// allocateIfd will produce the two byte-arrays for every IFD and bump the IOI
+// for the next IFD. This is the foundation of how offsets are calculated.
+func (ib *IfdBuilder) allocateIfd(tableSize, dataSize uint32, ioi *ifdOffsetIterator) (tableRaw []byte, dataRaw []byte, dataOffset uint32, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    // Allocate the size required and iterate our offset marker
+    // appropriately so the IFD-build knows where it can calculate its
+    // offsets from.
+
+    tableRaw := make([]byte, tableSize)
+    dataRaw := make([]byte, dataSize)
+
+    dataOffset := ioi.Offset() + tableSize
+    ioi.Step(tableSize + dataSize)
+
+    return tableRaw, dataRaw, dataOffset, nil
+}
+
+// BuildExif returns a new byte array of EXIF data.
+func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    b := new(bytes.Buffer)
+
+    ioi = &ifdOffsetIterator{
+        offset: DefaultRootIfdExifOffset,
+    }
+
+    ptr := ib
+
+    for ; ptr != nil ; {
+        // Figure out the size requirements.
+
+        tableSize, err := ptr.calculateTableSize()
+        log.PanicIf(err)
+
+        dataSize, err := ptr.calculateDataSize(tableSize)
+        log.PanicIf(err)
+
+        // Allocate the size required and iterate our offset marker
+        // appropriately so the IFD-build knows where it can calculate its
+        // offsets from.
+
+        tableRaw, dataRaw, dataOffset, err := ib.allocateIfd(tableSize, dataSize, ioi)
+        log.PanicIf(err)
+
+        // Build.
+
+        err = ptr.buildIfd(dataOffset, tableRaw, dataRaw, ioi)
+        log.PanicIf(err)
+
+        // Attach the new data to the stream.
+
+        _, err = b.Write(tableRaw)
+        log.PanicIf(err)
+
+        _, err = b.Write(dataRaw)
+        log.PanicIf(err)
+
+        ptr = ptr.nextIfd
+
+        // Write the offset of the next IFD (or 0x0 for none).
+
+        nextIfdOffset := uint32(0)
+
+        if ptr != nil {
+            // This might've been iterated by buildIfd(). It'll also point at the
+            // next offset that we can install an IFD to.
+            nextIfdOffset = ioi.Offset()
+        }
+
+        nextIfdOffsetBytes := make([]byte, 4)
+        ib.byteOrder.PutUint32(nextIfdOffsetBytes, nextIfdOffset)
+
+        _, err = b.Write(nextIfdOffsetBytes)
+        log.PanicIf(err)
+    }
+
+    return b.Bytes(), nil
+}
+
+func (ib *IfdBuilder) Tags() (tags []builderTag) {
+    return ib.tags
+}
+
+func (ib *IfdBuilder) Dump() {
+    fmt.Printf("IFD: %s\n", ib)
+
+    if len(ib.tags) > 0 {
+        fmt.Printf("\n")
+
+        for i, tag := range ib.tags {
+            fmt.Printf("  (%d): %s\n", i, tag)
+        }
+
+        fmt.Printf("\n")
+    }
 }
 
 func (ib *IfdBuilder) SetNextIfd(nextIfd *IfdBuilder) (err error) {
