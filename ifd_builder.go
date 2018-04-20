@@ -146,15 +146,15 @@ func (ib *IfdBuilder) calculateDataSize(tableSize uint32) (size uint32, err erro
 
 }
 
-// buildIfd populates the given table and data byte-arrays. `dataOffset` is the
-// distance from the beginning of the IFD to the beginning of the IFD's data
-// (following the IFD's table). It may be used to calculate the final offset of
-// the data we store there so that we can reference it from the IFD table. The
-// `ioi` is used to know where to insert child IFDs at.
+// generateBytes populates the given table and data byte-arrays. `dataOffset`
+// is the distance from the beginning of the IFD to the beginning of the IFD's
+// data (following the IFD's table). It may be used to calculate the final
+// offset of the data we store there so that we can reference it from the IFD
+// table. The `ioi` is used to know where to insert child IFDs at.
 //
 // len(ifdTableRaw) == calculateTableSize()
 // len(ifdDataRaw) == calculateDataSize()
-func (ib *IfdBuilder) buildIfd(dataOffset uint32, ifdTableRaw, ifdDataRaw []byte, ioi *ifdOffsetIterator) (err error) {
+func (ib *IfdBuilder) generateBytes(dataOffset uint32, ifdTableRaw, ifdDataRaw []byte, ioi *ifdOffsetIterator) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -226,7 +226,7 @@ func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
 
         // Build.
 
-        err = ptr.buildIfd(dataOffset, tableRaw, dataRaw, ioi)
+        err = ptr.generateBytes(dataOffset, tableRaw, dataRaw, ioi)
         log.PanicIf(err)
 
         // Attach the new data to the stream.
@@ -244,7 +244,7 @@ func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
         nextIfdOffset := uint32(0)
 
         if ptr != nil {
-            // This might've been iterated by buildIfd(). It'll also point at the
+            // This might've been iterated by generateBytes(). It'll also point at the
             // next offset that we can install an IFD to.
             nextIfdOffset = ioi.Offset()
         }
