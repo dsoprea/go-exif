@@ -164,6 +164,9 @@ func (ib *IfdBuilder) buildIfd(dataOffset uint32, ifdTableRaw, ifdDataRaw []byte
 
 // TODO(dustin): !! Finish.
 
+// TODO(dustin): !! Some offsets of existing IFDs will have to be reallocated if there are any updates. We'll need to be able to resolve the original value against the original EXIF data for that, which we currently don't have access to, yet, from here.
+// TODO(dustin): !! Test that the offsets are identical if there are no changes (on principle).
+
 
 }
 
