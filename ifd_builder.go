@@ -171,7 +171,7 @@ func (ib *IfdBuilder) DeleteFirst(tagId uint16) (err error) {
     return nil
 }
 
-func (ib *IfdBuilder) DeleteAll(tagId uint16) (err error) {
+func (ib *IfdBuilder) DeleteAll(tagId uint16) (n int, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -185,7 +185,42 @@ func (ib *IfdBuilder) DeleteAll(tagId uint16) (err error) {
         } else if err != nil {
             log.Panic(err)
         }
+
+        n++
     }
+
+    return n, nil
+}
+
+func (ib *IfdBuilder) ReplaceAt(position int, bt builderTag) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    if position < 0 {
+        log.Panicf("replacement position must be 0 or greater")
+    } else if position >= len(ib.tags) {
+        log.Panicf("replacement position does not exist")
+    }
+
+    ib.tags[position] = bt
+
+    return nil
+}
+
+func (ib *IfdBuilder) Replace(tagId uint16, bt builderTag) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    position, err := ib.Find(tagId)
+    log.PanicIf(err)
+
+    ib.tags[position] = bt
 
     return nil
 }
@@ -226,39 +261,6 @@ func (ib *IfdBuilder) Find(tagId uint16) (position int, err error) {
     }
 
     return found[0], nil
-}
-
-func (ib *IfdBuilder) ReplaceAt(position int, bt builderTag) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    if position < 0 {
-        log.Panicf("replacement position must be 0 or greater")
-    } else if position >= len(ib.tags) {
-        log.Panicf("replacement position does not exist")
-    }
-
-    ib.tags[position] = bt
-
-    return nil
-}
-
-func (ib *IfdBuilder) Replace(tagId uint16, bt builderTag) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    position, err := ib.Find(tagId)
-    log.PanicIf(err)
-
-    ib.tags[position] = bt
-
-    return nil
 }
 
 // TODO(dustin): !! Switch to producing bytes immediately so that they're validated.
