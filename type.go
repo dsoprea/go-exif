@@ -31,7 +31,10 @@ var (
 
         TypeAsciiNoNul: "_ASCII_NO_NUL",
     }
+
+    TypeNamesR = map[string]uint16 {}
 )
+
 var (
     // ErrCantDetermineTagValueSize is used when we're trying to determine a
     //size for a non-standard/undefined type.
@@ -60,4 +63,10 @@ type Rational struct {
 type SignedRational struct {
     Numerator int32
     Denominator int32
+}
+
+func init() {
+    for typeId, typeName := range TypeNames {
+        TypeNamesR[typeName] = typeId
+    }
 }

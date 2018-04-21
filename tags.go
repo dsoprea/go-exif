@@ -50,6 +50,7 @@ type encodedTag struct {
     // support unsigned.
     Id int `yaml:"id"`
     Name string `yaml:"name"`
+    TypeName string `yaml:"type_name"`
 }
 
 
@@ -59,6 +60,7 @@ type IndexedTag struct {
     Id uint16
     Name string
     Ifd string
+    Type uint16
 }
 
 func (it IndexedTag) String() string {
@@ -116,11 +118,24 @@ func (ti *TagIndex) load() (err error) {
         for _, tagInfo := range tags {
             tagId := uint16(tagInfo.Id)
             tagName := tagInfo.Name
+            tagTypeName := tagInfo.TypeName
+
+// TODO(dustin): !! Non-standard types but present types. Ignore for right now.
+if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" {
+    continue
+}
+
+            tagTypeId, found := TypeNamesR[tagTypeName]
+            if found == false {
+                log.Panicf("type [%s] for [%s] not valid", tagTypeName, tagName)
+                continue
+            }
 
             tag := &IndexedTag{
                 Ifd: ifdName,
                 Id: tagId,
                 Name: tagName,
+                Type: tagTypeId,
             }
 
             family, found := tagsByIfd[ifdName]

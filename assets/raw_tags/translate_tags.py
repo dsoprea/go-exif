@@ -1,32 +1,3 @@
-#!/usr/bin/env python3.4
-
-import sys
-
-import ruamel.yaml
-
-
-class HexInt(int):
-    pass
-
-def representer(dumper, data):
-    return \
-        ruamel.yaml.ScalarNode(
-            'tag:yaml.org,2002:int',
-            '0x{:04x}'.format(data))
-
-ruamel.yaml.add_representer(HexInt, representer)
-
-data = {
-    'item1': {
-        'string_value': 'some_string',
-        'hex_value': HexInt(641),
-    }
-}
-
-ruamel.yaml.dump(data, sys.stdout, default_flow_style=False)
-
-sys.exit(0)
-
 #!/usr/bin/env python2.7
 
 """
@@ -55,19 +26,6 @@ def representer(dumper, data):
 
 ruamel.yaml.add_representer(HexInt, representer)
 
-data = {
-    'item1': {
-        'string_value': 'some_string',
-        'hex_value': HexInt(641),
-    }
-}
-
-ruamel.yaml.dump(data, sys.stdout, default_flow_style=False)
-
-
-
-sys.exit(0)
-
 def _write(tags):
     writeable = {}
 
@@ -77,12 +35,23 @@ def _write(tags):
         item = {
             'id': HexInt(tag['id_dec']),
             'name': tag['fq_key'][pivot + 1:],
+            'type_name': tag['type'].upper(),
         }
 
+        ifdName = tag['ifd']
+        if ifdName == 'Image':
+            ifdName = 'IFD'
+        if ifdName == 'Photo':
+            ifdName = 'Exif'
+
+        # UserComment. Has invalid type "COMMENT".
+        if item['id'] == 0x9286 and ifdName == 'Exif':
+            item['type_name'] = 'UNDEFINED'
+
         try:
-            writeable[tag['ifd']].append(item)
+            writeable[ifdName].append(item)
         except KeyError:
-            writeable[tag['ifd']] = [item]
+            writeable[ifdName] = [item]
 
     with open('tags.yaml', 'w') as f:
         # Otherwise, the next dictionaries will look like Python dictionaries,
