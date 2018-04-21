@@ -210,7 +210,7 @@ func TestCollect(t *testing.T) {
     tree := index.Tree
     lookup := index.Lookup
 
-    if rootIfd.Offset != DefaultRootIfdOffset {
+    if rootIfd.Offset != DefaultRootIfdExifOffset {
         t.Fatalf("Root-IFD not correct: (0x%04d).", rootIfd)
     } else if rootIfd.Id != 0 {
         t.Fatalf("Root-IFD does not have the right ID: (%d)", rootIfd.Id)

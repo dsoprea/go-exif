@@ -107,7 +107,7 @@ type ifdOffsetIterator struct {
 }
 
 func (ioi *ifdOffsetIterator) Step(size uint32) {
-    ioi.offset += ifdSize
+    ioi.offset += size
 }
 
 func (ioi *ifdOffsetIterator) Offset() uint32 {
@@ -129,6 +129,7 @@ func (ib *IfdBuilder) calculateTableSize() (size uint32, err error) {
 // TODO(dustin): !! Finish.
 
 
+    return 0, nil
 }
 
 // calculateDataSize returns the number of bytes required the offset-based data
@@ -144,6 +145,7 @@ func (ib *IfdBuilder) calculateDataSize(tableSize uint32) (size uint32, err erro
 // TODO(dustin): !! Finish.
 
 
+    return 0, nil
 }
 
 // generateBytes populates the given table and data byte-arrays. `dataOffset`
@@ -168,6 +170,7 @@ func (ib *IfdBuilder) generateBytes(dataOffset uint32, ifdTableRaw, ifdDataRaw [
 // TODO(dustin): !! Test that the offsets are identical if there are no changes (on principle).
 
 
+    return nil
 }
 
 // allocateIfd will produce the two byte-arrays for every IFD and bump the IOI
@@ -183,10 +186,10 @@ func (ib *IfdBuilder) allocateIfd(tableSize, dataSize uint32, ioi *ifdOffsetIter
     // appropriately so the IFD-build knows where it can calculate its
     // offsets from.
 
-    tableRaw := make([]byte, tableSize)
-    dataRaw := make([]byte, dataSize)
+    tableRaw = make([]byte, tableSize)
+    dataRaw = make([]byte, dataSize)
 
-    dataOffset := ioi.Offset() + tableSize
+    dataOffset = ioi.Offset() + tableSize
     ioi.Step(tableSize + dataSize)
 
     return tableRaw, dataRaw, dataOffset, nil
@@ -200,9 +203,9 @@ func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
         }
     }()
 
-    b := new(bytes.Buffer)
+    b := bytes.Buffer{}
 
-    ioi = &ifdOffsetIterator{
+    ioi := &ifdOffsetIterator{
         offset: DefaultRootIfdExifOffset,
     }
 
@@ -244,8 +247,8 @@ func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
         nextIfdOffset := uint32(0)
 
         if ptr != nil {
-            // This might've been iterated by generateBytes(). It'll also point at the
-            // next offset that we can install an IFD to.
+            // This might've been iterated by `generateBytes()`. It'll also
+            // point at the next offset that we can install an IFD to.
             nextIfdOffset = ioi.Offset()
         }
 
