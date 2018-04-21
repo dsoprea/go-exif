@@ -601,6 +601,8 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
     if indexedIfdName == IfdName(IfdExif, 0) {
         if tagId == 0x9000 {
+            // ExifVersion
+
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
             value, err = tt.ReadAsciiValue(valueContext)
@@ -608,12 +610,93 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             return value, nil
         } else if tagId == 0xa000 {
+            // FlashpixVersion
+
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
             value, err = tt.ReadAsciiValue(valueContext)
             log.PanicIf(err)
 
             return value, nil
+        } else if tagId == 0x9286 {
+            // UserComment
+
+            tt := NewTagType(TypeByte, byteOrder)
+
+            valueBytes, err := tt.ReadByteValues(valueContext)
+            log.PanicIf(err)
+
+            unknownUc := TagUnknownType_9298_UserComment{
+                EncodingType: TagUnknownType_9298_UserComment_Encoding_UNDEFINED,
+                EncodingBytes: []byte{},
+            }
+
+            encoding := valueBytes[:8]
+            for encodingIndex, encodingBytes := range TagUnknownType_9298_UserComment_Encodings {
+                if bytes.Compare(encoding, encodingBytes) == 0 {
+                    // If unknown, return the default rather than what we have
+                    // because there will be a big list of NULs (which aren't
+                    // functional) and this won't equal the default instance
+                    // (above).
+                    if encodingIndex == TagUnknownType_9298_UserComment_Encoding_UNDEFINED {
+                        return unknownUc, nil
+                    } else {
+                        uc := TagUnknownType_9298_UserComment{
+                            EncodingType: encodingIndex,
+                            EncodingBytes: valueBytes[8:],
+                        }
+
+                        return uc, nil
+                    }
+                }
+            }
+
+            typeDecodeLogger.Warningf(nil, "User-comment encoding not valid. Returning 'unknown' type (the default).")
+            return unknownUc, nil
+        } else if tagId == 0x927c {
+            // MakerNote
+// TODO(dustin): !! This is the Wild Wild West. This very well might be a child IFD, but any and all OEM's define their own formats. If we're going to be writing changes and this is complete EXIF (which may not have the first eight bytes), it might be fine. However, if these are just IFDs they'll be relative to the main EXIF, this will invalidate the MakerNote data for IFDs and any other implementations that use offsets unless we can interpret them all. It be best to return to this later and just exclude this from being written for now, though means a loss of a wealth of image metadata.
+//                  -> We can also just blindly try to interpret as an IFD and just validate that it's looks good (maybe it will even have a 'next ifd' pointer that we can validate is 0x0).
+
+            tt := NewTagType(TypeByte, byteOrder)
+
+            valueBytes, err := tt.ReadByteValues(valueContext)
+            log.PanicIf(err)
+
+            mn := TagUnknownType_927C_MakerNote{
+                MakerNoteType: valueBytes[:20],
+
+                // MakerNoteBytes has the whole length of bytes. There's always
+                // the chance that the first 20 bytes includes actual data.
+                MakerNoteBytes: valueBytes,
+            }
+
+            return mn, nil
+        } else if tagId == 0x9101 {
+            // ComponentsConfiguration
+
+            tt := NewTagType(TypeByte, byteOrder)
+
+            valueBytes, err := tt.ReadByteValues(valueContext)
+            log.PanicIf(err)
+
+            for configurationId, configurationBytes := range TagUnknownType_9101_ComponentsConfiguration_Configurations {
+                if bytes.Compare(valueBytes, configurationBytes) == 0 {
+                    cc := TagUnknownType_9101_ComponentsConfiguration{
+                        ConfigurationId: configurationId,
+                        ConfigurationBytes: valueBytes,
+                    }
+
+                    return cc, nil
+                }
+            }
+
+            cc := TagUnknownType_9101_ComponentsConfiguration{
+                ConfigurationId: TagUnknownType_9101_ComponentsConfiguration_OTHER,
+                ConfigurationBytes: valueBytes,
+            }
+
+            return cc, nil
         }
     } else if indexedIfdName == IfdName(IfdGps, 0) {
         if tagId == 0x001c {
@@ -635,14 +718,23 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             return value, nil
         }
+    } else if indexedIfdName == IfdName(IfdIop, 0) {
+        if tagId == 0x0002 {
+            // InteropVersion
+
+            tt := NewTagType(TypeAsciiNoNul, byteOrder)
+
+            value, err := tt.ReadAsciiNoNulValue(valueContext)
+            log.PanicIf(err)
+
+            return value, nil
+        }
     }
 
 // TODO(dustin): !! Still need to do:
 //
 // complex: 0xa302, 0xa20c, 0x8828
 // long: 0xa301, 0xa300
-// bytes: 0x927c, 0x9101 (probably, but not certain)
-// other: 0x9286 (simple, but needs some processing)
 
     // 0xa40b is device-specific and unhandled.
 
