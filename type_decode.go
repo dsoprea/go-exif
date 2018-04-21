@@ -663,6 +663,16 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
             valueBytes, err := tt.ReadByteValues(valueContext)
             log.PanicIf(err)
 
+
+//             ie := NewIfdEnumerate(valueBytes, byteOrder)
+
+// // TODO(dustin): !! Validate types (might have proprietary types, but it might be worth splitting the list between valid and not validate; maybe fail if a certain proportion are invalid, or maybe aren't less then a certain small integer)?
+//             ii, err := ie.Collect(0x0)
+
+//             for _, entry := range ii.RootIfd.Entries {
+//                 fmt.Printf("ENTRY: 0x%02x %d\n", entry.TagId, entry.TagType)
+//             }
+
             mn := TagUnknownType_927C_MakerNote{
                 MakerNoteType: valueBytes[:20],
 
