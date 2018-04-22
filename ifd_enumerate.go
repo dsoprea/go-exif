@@ -22,16 +22,16 @@ var (
 // are fairly simple to enumerate.
 type IfdTagEnumerator struct {
     byteOrder binary.ByteOrder
-    rawExif []byte
+    addressableData []byte
     ifdOffset uint32
     buffer *bytes.Buffer
 }
 
-func NewIfdTagEnumerator(rawExif []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (ite *IfdTagEnumerator) {
+func NewIfdTagEnumerator(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (ite *IfdTagEnumerator) {
     ite = &IfdTagEnumerator{
-        rawExif: rawExif,
+        addressableData: addressableData,
         byteOrder: byteOrder,
-        buffer: bytes.NewBuffer(rawExif[ifdOffset:]),
+        buffer: bytes.NewBuffer(addressableData[ifdOffset:]),
     }
 
     return ite
@@ -87,19 +87,22 @@ func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
 
 
 type IfdEnumerate struct {
-    data []byte
+    exifData []byte
     buffer *bytes.Buffer
     byteOrder binary.ByteOrder
     currentOffset uint32
-    ifdTopOffset uint32
 }
 
-func NewIfdEnumerate(data []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
+func NewIfdEnumerate(exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
+    // Make it obvious what data we expect and when we don't get it.
+    if IsExif(exifData) == false {
+        log.Panicf("not exif data")
+    }
+
     return &IfdEnumerate{
-        data: data,
-        buffer: bytes.NewBuffer(data),
+        exifData: exifData,
+        buffer: bytes.NewBuffer(exifData),
         byteOrder: byteOrder,
-        ifdTopOffset: 6,
     }
 }
 
@@ -109,12 +112,12 @@ type ValueContext struct {
     UnitCount uint32
     ValueOffset uint32
     RawValueOffset []byte
-    RawExif []byte
+    AddressableData []byte
 }
 
 func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerator) {
     ite = NewIfdTagEnumerator(
-            ie.data[ie.ifdTopOffset:],
+            ie.exifData[ExifAddressableAreaStart:],
             ie.byteOrder,
             ifdOffset)
 
@@ -122,8 +125,8 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerato
 }
 
 // TagVisitor is an optional callback that can get hit for every tag we parse
-// through. `rawExif` is the byte array startign after the EXIF header (where
-// the offsets of all IFDs and values are calculated from).
+// through. `addressableData` is the byte array startign after the EXIF header
+// (where the offsets of all IFDs and values are calculated from).
 type TagVisitor func(indexedIfdName string, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
 
@@ -135,6 +138,64 @@ type IfdTagEntry struct {
     ValueOffset uint32
     RawValueOffset []byte
     IfdName string
+}
+
+func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteOrder) (value []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    originalType := NewTagType(ite.TagType, byteOrder)
+    byteCount := uint32(originalType.Size()) * ite.UnitCount
+
+    tt := NewTagType(TypeByte, byteOrder)
+
+    if tt.ValueIsEmbedded(byteCount) == true {
+        typeDecodeLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
+
+        // In this case, the bytes normally used for the offset are actually
+        // data.
+        value, err = tt.ParseBytes(ite.RawValueOffset, byteCount)
+        log.PanicIf(err)
+    } else {
+        typeDecodeLogger.Debugf(nil, "Reading BYTE value (ITE; at offset).")
+
+        value, err = tt.ParseBytes(addressableData[ite.ValueOffset:], byteCount)
+        log.PanicIf(err)
+    }
+
+    return value, nil
+}
+
+
+type IfdTagEntryValueResolver struct {
+    addressableData []byte
+    byteOrder binary.ByteOrder
+}
+
+func NewIfdTagEntryValueResolver(exifData []byte, byteOrder binary.ByteOrder) (itevr *IfdTagEntryValueResolver) {
+    // Make it obvious what data we expect and when we don't get it.
+    if IsExif(exifData) == false {
+        log.Panicf("not exif data")
+    }
+
+    return &IfdTagEntryValueResolver{
+        addressableData: exifData[ExifAddressableAreaStart:],
+        byteOrder: byteOrder,
+    }
+}
+
+func (itevr *IfdTagEntryValueResolver) ValueBytes(ite *IfdTagEntry) (value []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    value, err = ite.ValueBytes(itevr.addressableData, itevr.byteOrder)
+    return value, err
 }
 
 
@@ -191,7 +252,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
                 UnitCount: unitCount,
                 ValueOffset: valueOffset,
                 RawValueOffset: rawValueOffset,
-                RawExif: ie.data[ie.ifdTopOffset:],
+                AddressableData: ie.exifData[ExifAddressableAreaStart:],
             }
 
             err := visitor(indexedIfdName, tagId, tt, vc)

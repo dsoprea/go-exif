@@ -42,7 +42,7 @@ func main() {
 
     foundAt := -1
     for i := 0; i < len(data); i++ {
-        if e.IsExif(data[i:i + 6]) == true {
+        if exif.IsExif(data[i:i + 6]) == true {
             foundAt = i
             break
         }

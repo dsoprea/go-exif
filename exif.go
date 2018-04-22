@@ -12,9 +12,12 @@ import (
 )
 
 const (
-    // DefaultRootIfdExifOffset is the offset of the first IFD in the block of
-    // EXIF data.
-    DefaultRootIfdExifOffset = uint32(0x0008)
+    // RootIfdExifOffset is the offset of the first IFD in the block of EXIF
+    // data.
+    RootIfdExifOffset = uint32(0x0008)
+
+    // ExifAddressableAreaStart is the start of where all offsets are relative to.
+    ExifAddressableAreaStart = uint32(0x6)
 )
 
 var (
@@ -26,20 +29,22 @@ var (
     ErrExifHeaderError = errors.New("exif header error")
 )
 
+
+func IsExif(data []byte) (ok bool) {
+    if bytes.Compare(data[:6], []byte("Exif\000\000")) == 0 {
+        return true
+    }
+
+    return false
+}
+
+
 type Exif struct {
 
 }
 
 func NewExif() *Exif {
     return new(Exif)
-}
-
-func (e *Exif) IsExif(data []byte) (ok bool) {
-    if bytes.Compare(data[:6], []byte("Exif\000\000")) == 0 {
-        return true
-    }
-
-    return false
 }
 
 func (e *Exif) SearchAndExtractExif(filepath string) (rawExif []byte, err error) {
@@ -65,7 +70,7 @@ func (e *Exif) SearchAndExtractExif(filepath string) (rawExif []byte, err error)
 
     foundAt := -1
     for i := 0; i < len(data); i++ {
-        if e.IsExif(data[i:i + 6]) == true {
+        if IsExif(data[i:i + 6]) == true {
             foundAt = i
             break
         }
@@ -91,7 +96,7 @@ func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
         }
     }()
 
-    if e.IsExif(data) == false {
+    if IsExif(data) == false {
         log.Panic(ErrNotExif)
     }
 
@@ -130,17 +135,17 @@ func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     return eh, nil
 }
 
-func (e *Exif) Visit(data []byte, visitor TagVisitor) (err error) {
+func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    eh, err := e.ParseExifHeader(data)
+    eh, err := e.ParseExifHeader(exifData)
     log.PanicIf(err)
 
-    ie := NewIfdEnumerate(data, eh.ByteOrder)
+    ie := NewIfdEnumerate(exifData, eh.ByteOrder)
 
     err = ie.Scan(IfdStandard, eh.FirstIfdOffset, visitor)
     log.PanicIf(err)
@@ -148,17 +153,17 @@ func (e *Exif) Visit(data []byte, visitor TagVisitor) (err error) {
     return nil
 }
 
-func (e *Exif) Collect(data []byte) (index IfdIndex, err error) {
+func (e *Exif) Collect(exifData []byte) (index IfdIndex, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    eh, err := e.ParseExifHeader(data)
+    eh, err := e.ParseExifHeader(exifData)
     log.PanicIf(err)
 
-    ie := NewIfdEnumerate(data, eh.ByteOrder)
+    ie := NewIfdEnumerate(exifData, eh.ByteOrder)
 
     index, err = ie.Collect(eh.FirstIfdOffset)
     log.PanicIf(err)

@@ -18,17 +18,13 @@ var (
 
 
 func TestIsExif_True(t *testing.T) {
-    e := NewExif()
-
-    if ok := e.IsExif([]byte("Exif\000\000")); ok != true {
+    if ok := IsExif([]byte("Exif\000\000")); ok != true {
         t.Fatalf("expected true")
     }
 }
 
 func TestIsExif_False(t *testing.T) {
-    e := NewExif()
-
-    if ok := e.IsExif([]byte("something unexpected")); ok != false {
+    if ok := IsExif([]byte("something unexpected")); ok != false {
         t.Fatalf("expected false")
     }
 }
@@ -59,7 +55,7 @@ func TestVisit(t *testing.T) {
 
     foundAt := -1
     for i := 0; i < len(data); i++ {
-        if e.IsExif(data[i:i + 6]) == true {
+        if IsExif(data[i:i + 6]) == true {
             foundAt = i
             break
         }
@@ -210,7 +206,7 @@ func TestCollect(t *testing.T) {
     tree := index.Tree
     lookup := index.Lookup
 
-    if rootIfd.Offset != DefaultRootIfdExifOffset {
+    if rootIfd.Offset != RootIfdExifOffset {
         t.Fatalf("Root-IFD not correct: (0x%04d).", rootIfd)
     } else if rootIfd.Id != 0 {
         t.Fatalf("Root-IFD does not have the right ID: (%d)", rootIfd.Id)

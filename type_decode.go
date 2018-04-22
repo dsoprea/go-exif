@@ -320,12 +320,14 @@ func (tt TagType) ReadByteValues(valueContext ValueContext) (value []byte, err e
     if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
         typeDecodeLogger.Debugf(nil, "Reading BYTE value (embedded).")
 
+        // In this case, the bytes normally used for the offset are actually
+        // data.
         value, err = tt.ParseBytes(valueContext.RawValueOffset, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeDecodeLogger.Debugf(nil, "Reading BYTE value (at offset).")
 
-        value, err = tt.ParseBytes(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseBytes(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -347,7 +349,7 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
     } else {
         typeDecodeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
 
-        value, err = tt.ParseAscii(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseAscii(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -369,7 +371,7 @@ func (tt TagType) ReadAsciiNoNulValue(valueContext ValueContext) (value string, 
     } else {
         typeDecodeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
 
-        value, err = tt.ParseAsciiNoNul(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseAsciiNoNul(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -391,7 +393,7 @@ func (tt TagType) ReadShortValues(valueContext ValueContext) (value []uint16, er
     } else {
         typeDecodeLogger.Debugf(nil, "Reading SHORT value (at offset).")
 
-        value, err = tt.ParseShorts(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseShorts(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -413,7 +415,7 @@ func (tt TagType) ReadLongValues(valueContext ValueContext) (value []uint32, err
     } else {
         typeDecodeLogger.Debugf(nil, "Reading LONG value (at offset).")
 
-        value, err = tt.ParseLongs(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseLongs(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -435,7 +437,7 @@ func (tt TagType) ReadRationalValues(valueContext ValueContext) (value []Rationa
     } else {
         typeDecodeLogger.Debugf(nil, "Reading RATIONAL value (at offset).")
 
-        value, err = tt.ParseRationals(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseRationals(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -457,7 +459,7 @@ func (tt TagType) ReadSignedLongValues(valueContext ValueContext) (value []int32
     } else {
         typeDecodeLogger.Debugf(nil, "Reading SLONG value (at offset).")
 
-        value, err = tt.ParseSignedLongs(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseSignedLongs(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -479,7 +481,7 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
     } else {
         typeDecodeLogger.Debugf(nil, "Reading SRATIONAL value (at offset).")
 
-        value, err = tt.ParseSignedRationals(valueContext.RawExif[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseSignedRationals(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
 
@@ -664,6 +666,7 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
             log.PanicIf(err)
 
 
+// TODO(dustin): Doesn't work, but here as an example.
 //             ie := NewIfdEnumerate(valueBytes, byteOrder)
 
 // // TODO(dustin): !! Validate types (might have proprietary types, but it might be worth splitting the list between valid and not validate; maybe fail if a certain proportion are invalid, or maybe aren't less then a certain small integer)?

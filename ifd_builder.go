@@ -206,7 +206,7 @@ func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
     b := bytes.Buffer{}
 
     ioi := &ifdOffsetIterator{
-        offset: DefaultRootIfdExifOffset,
+        offset: RootIfdExifOffset,
     }
 
     ptr := ib
@@ -497,6 +497,10 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 //   - We might want to create a static-container type that can populate from
 //     an IfdEnumerator and then be read and re-read (like an IEnumerable vs IList).
 
+
+// TODO(dustin): !! Finish.
+    // itevr := NewIfdTagEntryValueResolver(rawExif []byte, ib.byteOrder)
+    // itevr.ValueBytes(ite *IfdTagEntry) (value []byte, err error)
 
 
     for _, tag := range ifd.Entries {
