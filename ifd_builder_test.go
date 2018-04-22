@@ -18,21 +18,21 @@ func TestAdd(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
@@ -41,7 +41,7 @@ func TestAdd(t *testing.T) {
 
     bt = builderTag{
         tagId: 0x44,
-        value: originalShorts,
+        valueBytes: originalShorts,
     }
 
     ib.Add(bt)
@@ -64,25 +64,25 @@ func TestAdd(t *testing.T) {
 
     if tags[0].tagId != 0x11 {
         t.Fatalf("tag (0) tag-ID not correct")
-    } else if tags[0].value != "test string" {
+    } else if tags[0].valueBytes != "test string" {
         t.Fatalf("tag (0) value not correct")
     }
 
     if tags[1].tagId != 0x22 {
         t.Fatalf("tag (1) tag-ID not correct")
-    } else if tags[1].value != "test string2" {
+    } else if tags[1].valueBytes != "test string2" {
         t.Fatalf("tag (1) value not correct")
     }
 
     if tags[2].tagId != 0x33 {
         t.Fatalf("tag (2) tag-ID not correct")
-    } else if tags[2].value != "test string3" {
+    } else if tags[2].valueBytes != "test string3" {
         t.Fatalf("tag (2) value not correct")
     }
 
     if tags[3].tagId != 0x44 {
         t.Fatalf("tag (3) tag-ID not correct")
-    } else if reflect.DeepEqual(tags[3].value.([]uint16), originalShorts) != true {
+    } else if reflect.DeepEqual(tags[3].valueBytes.([]uint16), originalShorts) != true {
         t.Fatalf("tag (3) value not correct")
     }
 }
@@ -111,7 +111,7 @@ func TestAddChildIfd(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
@@ -122,7 +122,7 @@ func TestAddChildIfd(t *testing.T) {
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
@@ -131,7 +131,7 @@ func TestAddChildIfd(t *testing.T) {
         t.Fatalf("first tag not correct")
     } else if ib.tags[1].tagId != ibChild.ifdTagId {
         t.Fatalf("second tag ID does not match child-IFD tag-ID")
-    } else if ib.tags[1].value != ibChild {
+    } else if ib.tags[1].valueBytes != ibChild {
         t.Fatalf("second tagvalue does not match child-IFD")
     } else if ib.tags[2].tagId != 0x22 {
         t.Fatalf("third tag not correct")
@@ -149,7 +149,7 @@ func TestAddTagsFromExisting(t *testing.T) {
 
     entries[1] = IfdTagEntry{
         TagId: 0x22,
-        IfdName: "some ifd",
+        ChildIfdName: "some ifd",
     }
 
     entries[2] = IfdTagEntry{
@@ -160,7 +160,7 @@ func TestAddTagsFromExisting(t *testing.T) {
         Entries: entries,
     }
 
-    err := ib.AddTagsFromExisting(ifd, nil, nil)
+    err := ib.AddTagsFromExisting(ifd, nil, nil, nil)
     log.PanicIf(err)
 
     if ib.tags[0].tagId != 0x11 {
@@ -183,7 +183,7 @@ func TestAddTagsFromExisting__Includes(t *testing.T) {
 
     entries[1] = IfdTagEntry{
         TagId: 0x22,
-        IfdName: "some ifd",
+        ChildIfdName: "some ifd",
     }
 
     entries[2] = IfdTagEntry{
@@ -194,7 +194,7 @@ func TestAddTagsFromExisting__Includes(t *testing.T) {
         Entries: entries,
     }
 
-    err := ib.AddTagsFromExisting(ifd, []uint16 { 0x33 }, nil)
+    err := ib.AddTagsFromExisting(ifd, nil, []uint16 { 0x33 }, nil)
     log.PanicIf(err)
 
     if ib.tags[0].tagId != 0x33 {
@@ -215,7 +215,7 @@ func TestAddTagsFromExisting__Excludes(t *testing.T) {
 
     entries[1] = IfdTagEntry{
         TagId: 0x22,
-        IfdName: "some ifd",
+        ChildIfdName: "some ifd",
     }
 
     entries[2] = IfdTagEntry{
@@ -226,7 +226,7 @@ func TestAddTagsFromExisting__Excludes(t *testing.T) {
         Entries: entries,
     }
 
-    err := ib.AddTagsFromExisting(ifd, nil, []uint16 { 0x11 })
+    err := ib.AddTagsFromExisting(ifd, nil, nil, []uint16 { 0x11 })
     log.PanicIf(err)
 
     if ib.tags[0].tagId != 0x33 {
@@ -241,21 +241,21 @@ func TestFindN_First_1(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
@@ -282,21 +282,21 @@ func TestFindN_First_2_1Returned(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
@@ -323,35 +323,35 @@ func TestFindN_First_2_2Returned(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x11,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x11,
-        value: "test string5",
+        valueBytes: "test string5",
     }
 
     ib.Add(bt)
@@ -370,13 +370,13 @@ func TestFindN_First_2_2Returned(t *testing.T) {
     tags := ib.Tags()
 
     bt = tags[found[0]]
-    if bt.tagId != 0x11 || bt.value != "test string" {
-        log.Panicf("Found entry 0 is not correct: (0x%02x) [%s]", bt.tagId, bt.value)
+    if bt.tagId != 0x11 || bt.valueBytes != "test string" {
+        log.Panicf("Found entry 0 is not correct: (0x%02x) [%s]", bt.tagId, bt.valueBytes)
     }
 
     bt = tags[found[1]]
-    if bt.tagId != 0x11 || bt.value != "test string4" {
-        log.Panicf("Found entry 1 is not correct: (0x%02x) [%s]", bt.tagId, bt.value)
+    if bt.tagId != 0x11 || bt.valueBytes != "test string4" {
+        log.Panicf("Found entry 1 is not correct: (0x%02x) [%s]", bt.tagId, bt.valueBytes)
     }
 }
 
@@ -385,42 +385,42 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x11,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x11,
-        value: "test string5",
+        valueBytes: "test string5",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string6",
+        valueBytes: "test string6",
     }
 
     ib.Add(bt)
@@ -447,28 +447,28 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x11,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
@@ -506,28 +506,28 @@ func TestFind_Hit(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x11,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
@@ -552,28 +552,28 @@ func TestFind_Miss(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x11,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
@@ -591,21 +591,21 @@ func TestReplace(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
@@ -621,7 +621,7 @@ func TestReplace(t *testing.T) {
 
     bt = builderTag{
         tagId: 0x99,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     err := ib.Replace(0x22, bt)
@@ -642,21 +642,21 @@ func TestReplaceN(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
@@ -672,7 +672,7 @@ func TestReplaceN(t *testing.T) {
 
     bt = builderTag{
         tagId: 0xA9,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     err := ib.ReplaceAt(1, bt)
@@ -693,28 +693,28 @@ func TestDeleteFirst(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
@@ -781,28 +781,28 @@ func TestDeleteN(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
@@ -869,28 +869,28 @@ func TestDeleteN_Two(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)
@@ -940,28 +940,28 @@ func TestDeleteAll(t *testing.T) {
 
     bt := builderTag{
         tagId: 0x11,
-        value: "test string",
+        valueBytes: "test string",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string2",
+        valueBytes: "test string2",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x22,
-        value: "test string3",
+        valueBytes: "test string3",
     }
 
     ib.Add(bt)
 
     bt = builderTag{
         tagId: 0x33,
-        value: "test string4",
+        valueBytes: "test string4",
     }
 
     ib.Add(bt)

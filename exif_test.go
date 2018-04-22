@@ -109,7 +109,7 @@ func TestVisit(t *testing.T) {
         return nil
     }
 
-    err = e.Visit(data[foundAt:], visitor)
+    _, err = e.Visit(data[foundAt:], visitor)
     log.PanicIf(err)
 
     // for _, line := range tags {
@@ -198,7 +198,7 @@ func TestCollect(t *testing.T) {
     rawExif, err := e.SearchAndExtractExif(filepath)
     log.PanicIf(err)
 
-    index, err := e.Collect(rawExif)
+    _, index, err := e.Collect(rawExif)
     log.PanicIf(err)
 
     rootIfd := index.RootIfd
@@ -257,7 +257,7 @@ func TestCollect(t *testing.T) {
     foundExif := 0
     foundGps := 0
     for _, ite := range lookup[IfdStandard][0].Entries {
-        if ite.IfdName == IfdExif {
+        if ite.ChildIfdName == IfdExif {
             foundExif++
 
             if IfdTagNames[ite.TagId] != IfdExif {
@@ -265,7 +265,7 @@ func TestCollect(t *testing.T) {
             }
         }
 
-        if ite.IfdName == IfdGps {
+        if ite.ChildIfdName == IfdGps {
             foundGps++
 
             if IfdTagNames[ite.TagId] != IfdGps {
@@ -282,7 +282,7 @@ func TestCollect(t *testing.T) {
 
     foundIop := 0
     for _, ite := range lookup[IfdExif][0].Entries {
-        if ite.IfdName == IfdIop {
+        if ite.ChildIfdName == IfdIop {
             foundIop++
 
             if IfdTagNames[ite.TagId] != IfdIop {

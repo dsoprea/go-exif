@@ -601,6 +601,8 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
         }
     }()
 
+    typeDecodeLogger.Debugf(nil, "UndefinedValue: IFD=[%s] TAG-ID=(0x%02x)", indexedIfdName, tagId)
+
     if indexedIfdName == IfdName(IfdExif, 0) {
         if tagId == 0x9000 {
             // ExifVersion

@@ -29,11 +29,11 @@ type builderTag struct {
     // value is either a value that can be encoded, an IfdBuilder instance (for
     // child IFDs), or an IfdTagEntry instance representing an existing,
     // previously-stored tag.
-    value interface{}
+    valueBytes interface{}
 }
 
 func (bt builderTag) String() string {
-    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ifdName, bt.value)
+    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ifdName, bt.valueBytes)
 }
 
 
@@ -463,7 +463,7 @@ func (ib *IfdBuilder) AddChildIfd(childIfd *IfdBuilder) (err error) {
     bt := builderTag{
         ifdName: childIfd.ifdName,
         tagId: childIfd.ifdTagId,
-        value: childIfd,
+        valueBytes: childIfd,
     }
 
     ib.Add(bt)
@@ -474,7 +474,7 @@ func (ib *IfdBuilder) AddChildIfd(childIfd *IfdBuilder) (err error) {
 // AddTagsFromExisting does a verbatim copy of the entries in `ifd` to this
 // builder. It excludes child IFDs. This must be added explicitly via
 // `AddChildIfd()`.
-func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excludeTagIds []uint16) (err error) {
+func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResolver, includeTagIds []uint16, excludeTagIds []uint16) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -498,22 +498,17 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 //     an IfdEnumerator and then be read and re-read (like an IEnumerable vs IList).
 
 
-// TODO(dustin): !! Finish.
-    // itevr := NewIfdTagEntryValueResolver(rawExif []byte, ib.byteOrder)
-    // itevr.ValueBytes(ite *IfdTagEntry) (value []byte, err error)
-
-
-    for _, tag := range ifd.Entries {
+    for _, ite := range ifd.Entries {
         // If we want to add an IFD tag, we'll have to build it first and *then*
         // add it via a different method.
-        if tag.IfdName != "" {
+        if ite.ChildIfdName != "" {
             continue
         }
 
         if excludeTagIds != nil && len(excludeTagIds) > 0 {
             found := false
             for _, excludedTagId := range excludeTagIds {
-                if excludedTagId == tag.TagId {
+                if excludedTagId == ite.TagId {
                     found = true
                 }
             }
@@ -529,7 +524,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 
             found := false
             for _, includedTagId := range includeTagIds {
-                if includedTagId == tag.TagId {
+                if includedTagId == ite.TagId {
                     found = true
                     break
                 }
@@ -541,10 +536,14 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
         }
 
         bt := builderTag{
-            tagId: tag.TagId,
+            tagId: ite.TagId,
+        }
 
-// TODO(dustin): !! For right now, a IfdTagEntry instance will mean that the value will have to be inherited/copied from an existing offset.
-            value: tag,
+        if itevr != nil {
+            var err error
+
+            bt.valueBytes, err = itevr.ValueBytes(&ite)
+            log.PanicIf(err)
         }
 
         err := ib.Add(bt)

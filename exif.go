@@ -135,14 +135,14 @@ func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     return eh, nil
 }
 
-func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (err error) {
+func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    eh, err := e.ParseExifHeader(exifData)
+    eh, err = e.ParseExifHeader(exifData)
     log.PanicIf(err)
 
     ie := NewIfdEnumerate(exifData, eh.ByteOrder)
@@ -150,17 +150,17 @@ func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (err error) {
     err = ie.Scan(IfdStandard, eh.FirstIfdOffset, visitor)
     log.PanicIf(err)
 
-    return nil
+    return eh, nil
 }
 
-func (e *Exif) Collect(exifData []byte) (index IfdIndex, err error) {
+func (e *Exif) Collect(exifData []byte) (eh ExifHeader, index IfdIndex, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    eh, err := e.ParseExifHeader(exifData)
+    eh, err = e.ParseExifHeader(exifData)
     log.PanicIf(err)
 
     ie := NewIfdEnumerate(exifData, eh.ByteOrder)
@@ -168,5 +168,5 @@ func (e *Exif) Collect(exifData []byte) (index IfdIndex, err error) {
     index, err = ie.Collect(eh.FirstIfdOffset)
     log.PanicIf(err)
 
-    return index, nil
+    return eh, index, nil
 }

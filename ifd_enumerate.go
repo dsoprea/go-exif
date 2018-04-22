@@ -137,7 +137,16 @@ type IfdTagEntry struct {
     UnitCount uint32
     ValueOffset uint32
     RawValueOffset []byte
+
+    // ChildIfdName is a name if this tag represents a child IFD.
+    ChildIfdName string
+
+    // IfdName is the IFD that this tag belongs to.
     IfdName string
+}
+
+func (ite IfdTagEntry) String() string {
+    return fmt.Sprintf("IfdTagEntry<TAG-IFD=[%s] TAG-ID=(0x%02x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.ChildIfdName, ite.TagId, TypeNames[ite.TagType], ite.UnitCount)
 }
 
 func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteOrder) (value []byte, err error) {
@@ -146,6 +155,28 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
             err = log.Wrap(state.(error))
         }
     }()
+
+    if ite.TagType == TypeUndefined {
+        valueContext := ValueContext{
+            UnitCount: ite.UnitCount,
+            ValueOffset: ite.ValueOffset,
+            RawValueOffset: ite.RawValueOffset,
+            AddressableData: addressableData,
+        }
+
+        value, err := UndefinedValue(ite.IfdName, ite.TagId, valueContext, byteOrder)
+        log.PanicIf(err)
+
+        switch value.(type) {
+        case []byte:
+            return value.([]byte), nil
+        case string:
+            return []byte(value.(string)), nil
+        default:
+// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
+            log.Panicf("can not produce bytes for unknown-type tag (0x%02x)", ite.TagId)
+        }
+    }
 
     originalType := NewTagType(ite.TagType, byteOrder)
     byteCount := uint32(originalType.Size()) * ite.UnitCount
@@ -260,6 +291,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
         }
 
         tag := IfdTagEntry{
+            IfdName: ifdName,
             TagId: tagId,
             TagIndex: int(i),
             TagType: tagType,
@@ -270,7 +302,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
 
         childIfdName, isIfd := IsIfdTag(tagId)
         if isIfd == true {
-            tag.IfdName = childIfdName
+            tag.ChildIfdName = childIfdName
 
             if doDescend == true {
                 ifdEnumerateLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
@@ -320,7 +352,10 @@ type Ifd struct {
     Name string
     Index int
     Offset uint32
+
+// TODO(dustin): !! Add a find method.
     Entries []IfdTagEntry
+
     Children []*Ifd
     NextIfdOffset uint32
     NextIfd *Ifd
@@ -455,12 +490,12 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
         // Determine if any of our entries is a child IFD and queue it.
         for _, entry := range entries {
-            if entry.IfdName == "" {
+            if entry.ChildIfdName == "" {
                 continue
             }
 
             qi := QueuedIfd {
-                Name: entry.IfdName,
+                Name: entry.ChildIfdName,
                 Index: 0,
                 Offset: entry.ValueOffset,
                 Parent: &ifd,
