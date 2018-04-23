@@ -66,7 +66,7 @@ func (tt TagType) Size() int {
     } else if tt.tagType == TypeSignedRational {
         return 8
     } else {
-        log.Panic(ErrCantDetermineTagValueSize)
+        log.Panicf("can not determine tag-value size for type (%d): [%s]", tt.tagType, TypeNames[tt.tagType])
 
         // Never called.
         return 0
@@ -609,19 +609,19 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            value, err = tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiValue(valueContext)
             log.PanicIf(err)
 
-            return value, nil
+            return TagUnknownType_GeneralString(valueString), nil
         } else if tagId == 0xa000 {
             // FlashpixVersion
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            value, err = tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiValue(valueContext)
             log.PanicIf(err)
 
-            return value, nil
+            return TagUnknownType_GeneralString(valueString), nil
         } else if tagId == 0x9286 {
             // UserComment
 
@@ -719,19 +719,19 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            value, err = tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiValue(valueContext)
             log.PanicIf(err)
 
-            return value, nil
+            return TagUnknownType_GeneralString(valueString), nil
         } else if tagId == 0x001b {
             // GPSProcessingMethod
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            value, err = tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiValue(valueContext)
             log.PanicIf(err)
 
-            return value, nil
+            return TagUnknownType_GeneralString(valueString), nil
         }
     } else if indexedIfdName == IfdName(IfdIop, 0) {
         if tagId == 0x0002 {
@@ -739,10 +739,10 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            value, err := tt.ReadAsciiNoNulValue(valueContext)
+            valueString, err := tt.ReadAsciiValue(valueContext)
             log.PanicIf(err)
 
-            return value, nil
+            return TagUnknownType_GeneralString(valueString), nil
         }
     }
 

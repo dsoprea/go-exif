@@ -36,10 +36,6 @@ var (
 )
 
 var (
-    // ErrCantDetermineTagValueSize is used when we're trying to determine a
-    //size for a non-standard/undefined type.
-    ErrCantDetermineTagValueSize = errors.New("can not determine tag-value size")
-
     // ErrNotEnoughData is used when there isn't enough data to accomodate what
     // we're trying to parse (sizeof(type) * unit_count).
     ErrNotEnoughData = errors.New("not enough data for type")

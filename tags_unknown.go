@@ -3,6 +3,8 @@ package exif
 import (
     "fmt"
     "strings"
+
+    "github.com/dsoprea/go-logging"
 )
 
 const (
@@ -69,6 +71,19 @@ var (
     }
 )
 
+
+type UnknownTagValue interface {
+    ValueBytes() ([]byte, error)
+}
+
+
+type TagUnknownType_GeneralString string
+
+func (gs TagUnknownType_GeneralString) ValueBytes() (value []byte, err error) {
+    return []byte(gs), nil
+}
+
+
 type TagUnknownType_9298_UserComment struct {
     EncodingType int
     EncodingBytes []byte
@@ -76,6 +91,21 @@ type TagUnknownType_9298_UserComment struct {
 
 func (uc TagUnknownType_9298_UserComment) String() string {
     return fmt.Sprintf("UserComment<ENCODING=[%s] V=%v>", TagUnknownType_9298_UserComment_Encoding_Names[uc.EncodingType], uc.EncodingBytes)
+}
+
+func (uc TagUnknownType_9298_UserComment) ValueBytes() (value []byte, err error) {
+    encodingTypeBytes, found := TagUnknownType_9298_UserComment_Encodings[uc.EncodingType]
+    if found == false {
+        log.Panicf("encoding-type not valid for unknown-type tag 9298 (UserComment): (%d)", uc.EncodingType)
+    }
+
+    value = make([]byte, len(uc.EncodingBytes) + 8)
+    copy(value[:8], encodingTypeBytes)
+
+// TODO(dustin): !! With undefined-encoded comments, we always make this empty. However, it comes in with a set of zero bytes. Is there a problem if we send it out with just the encoding bytes?
+    copy(value[8:], uc.EncodingBytes)
+
+    return value, nil
 }
 
 
@@ -93,6 +123,10 @@ func (mn TagUnknownType_927C_MakerNote) String() string {
     return fmt.Sprintf("MakerNote<TYPE-ID=[%s]>", strings.Join(parts, " "))
 }
 
+func (uc TagUnknownType_927C_MakerNote) ValueBytes() (value []byte, err error) {
+    return uc.MakerNoteBytes, nil
+}
+
 
 type TagUnknownType_9101_ComponentsConfiguration struct {
     ConfigurationId int
@@ -101,4 +135,8 @@ type TagUnknownType_9101_ComponentsConfiguration struct {
 
 func (cc TagUnknownType_9101_ComponentsConfiguration) String() string {
     return fmt.Sprintf("ComponentsConfiguration<ID=[%s] BYTES=%v>", TagUnknownType_9101_ComponentsConfiguration_Names[cc.ConfigurationId], cc.ConfigurationBytes)
+}
+
+func (uc TagUnknownType_9101_ComponentsConfiguration) ValueBytes() (value []byte, err error) {
+    return uc.ConfigurationBytes, nil
 }

@@ -181,9 +181,9 @@ func (ti *TagIndex) Get(ifdName string, id uint16) (it *IndexedTag, err error) {
     return it, nil
 }
 
-// GetIfdName returns the known index name for the tags that are expected/
-// allowed for the IFD. If there's an error, returns "". If returns "", the IFD
-// should be skipped.
+// IfdName returns the known index name for the tags that are expected/allowed
+// for the IFD. If there's an error, returns "". If returns "", the IFD should
+// be skipped.
 func IfdName(ifdName string, ifdIndex int) string {
     // There's an IFD0 and IFD1, but the others must be unique.
     if ifdName == IfdStandard && ifdIndex > 1 {
