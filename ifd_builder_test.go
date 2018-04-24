@@ -1149,4 +1149,28 @@ func TestNewIfdBuilderFromExistingChain(t *testing.T) {
     }
 }
 
-// TODO(dustin): !! Test with a GPS-attached image.
+// TODO(dustin): !! Test with an actual GPS-attached image.
+
+
+func TestNewIfdBuilderWithExistingIfd(t *testing.T) {
+    testIfdName := IfdGps
+    tagId := IfdTagIds[testIfdName]
+
+    ifd := &Ifd{
+        Name: testIfdName,
+        ByteOrder: binary.BigEndian,
+        Offset: 0x123,
+    }
+
+    ib := NewIfdBuilderWithExistingIfd(ifd)
+
+    if ib.ifdName != ifd.Name {
+        t.Fatalf("IFD-name not correct.")
+    } else if ib.ifdTagId != tagId {
+        t.Fatalf("IFD tag-ID not correct.")
+    } else if ib.byteOrder != ifd.ByteOrder {
+        t.Fatalf("IFD byte-order not correct.")
+    } else if ib.existingOffset != ifd.Offset {
+        t.Fatalf("IFD offset not correct.")
+    }
+}
