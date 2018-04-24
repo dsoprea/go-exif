@@ -20,7 +20,46 @@ var (
 )
 
 
-// TODO(dustin): !! Make sure we either replace existing IFDs or validate that the IFD doesn't already exist.
+type IfdBuilderTagValue struct {
+    valueBytes []byte
+    ib *IfdBuilder
+}
+
+func NewIfdBuilderTagValueFromBytes(valueBytes []byte) *IfdBuilderTagValue {
+    return &IfdBuilderTagValue{
+        valueBytes: valueBytes,
+    }
+}
+
+func NewIfdBuilderTagValueFromIfdBuilder(ib *IfdBuilder) *IfdBuilderTagValue {
+    return &IfdBuilderTagValue{
+        ib: ib,
+    }
+}
+
+func (ibtv IfdBuilderTagValue) IsBytes() bool {
+    return ibtv.valueBytes != nil
+}
+
+func (ibtv IfdBuilderTagValue) Bytes() []byte {
+    if ibtv.IsBytes() == false {
+        log.Panicf("this tag is not a byte-slice value")
+    }
+
+    return ibtv.valueBytes
+}
+
+func (ibtv IfdBuilderTagValue) IsIb() bool {
+    return ibtv.ib != nil
+}
+
+func (ibtv IfdBuilderTagValue) Ib() *IfdBuilder {
+    if ibtv.IsIb() == false {
+        log.Panicf("this tag is not an IFD-builder value")
+    }
+
+    return ibtv.ib
+}
 
 
 type builderTag struct {
@@ -32,22 +71,22 @@ type builderTag struct {
     // value is either a value that can be encoded, an IfdBuilder instance (for
     // child IFDs), or an IfdTagEntry instance representing an existing,
     // previously-stored tag.
-    value interface{}
+    value *IfdBuilderTagValue
 }
 
 func (bt builderTag) String() string {
     valuePhrase := ""
-    switch bt.value.(type) {
-    case []byte:
-        valueBytes := bt.value.([]byte)
+
+    if bt.value.IsBytes() == true {
+        valueBytes := bt.value.Bytes()
 
         if len(valueBytes) <= 8 {
             valuePhrase = fmt.Sprintf("%v", valueBytes)
         } else {
             valuePhrase = fmt.Sprintf("%v...", valueBytes[:8])
         }
-    default:
-        valuePhrase = fmt.Sprintf("%v", bt.value)
+    } else {
+        valuePhrase = fmt.Sprintf("%v", bt.value.Ib())
     }
 
     return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ifdName, valuePhrase)
@@ -55,6 +94,7 @@ func (bt builderTag) String() string {
 
 
 type IfdBuilder struct {
+    // ifdName is the name of the IFD that owns the current tag.
     ifdName string
 
     // ifdTagId will be non-zero if we're a child IFD.
@@ -211,9 +251,13 @@ func (ib *IfdBuilder) dump(levels int) {
             fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, tag)
 
             if isChildIb == true {
+                if tag.value.IsIb() == false {
+                    log.Panicf("tag-ID (0x%02x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
+                }
+
                 fmt.Printf("\n")
 
-                childIb := tag.value.(*IfdBuilder)
+                childIb := tag.value.Ib()
                 childIb.dump(levels + 1)
             }
         }
@@ -238,6 +282,10 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []s
         linesOutput = append(linesOutput, line)
 
         if tag.ifdName != "" {
+            if tag.value.IsIb() == false {
+                log.Panicf("tag has IFD tag-ID (0x%02x) but not a child IB instance: %v", tag.tagId, tag)
+            }
+
             childPrefix := ""
             if prefix == "" {
                 childPrefix = fmt.Sprintf("%s", thisIb.ifdName)
@@ -245,7 +293,7 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []s
                 childPrefix = fmt.Sprintf("%s->%s", prefix, thisIb.ifdName)
             }
 
-            linesOutput = thisIb.dumpToStrings(tag.value.(*IfdBuilder), childPrefix, linesOutput)
+            linesOutput = thisIb.dumpToStrings(tag.value.Ib(), childPrefix, linesOutput)
         }
     }
 
@@ -256,152 +304,152 @@ func (ib *IfdBuilder) DumpToStrings() (lines []string) {
     return ib.dumpToStrings(ib, "", lines)
 }
 
-// calculateRawTableSize returns the number of bytes required just to store the
-// basic IFD header and tags. This needs to be called before we can even write
-// the tags so that we can know where the data starts and can calculate offsets.
-func (ib *IfdBuilder) calculateTableSize() (size uint32, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
+// // calculateRawTableSize returns the number of bytes required just to store the
+// // basic IFD header and tags. This needs to be called before we can even write
+// // the tags so that we can know where the data starts and can calculate offsets.
+// func (ib *IfdBuilder) calculateTableSize() (size uint32, err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
 
 
-// TODO(dustin): !! Finish.
+// // TODO(dustin): !! Finish.
 
 
-    return 0, nil
-}
+//     return 0, nil
+// }
 
-// calculateDataSize returns the number of bytes required the offset-based data
-// of the IFD.
-func (ib *IfdBuilder) calculateDataSize(tableSize uint32) (size uint32, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-
-// TODO(dustin): !! Finish.
+// // calculateDataSize returns the number of bytes required the offset-based data
+// // of the IFD.
+// func (ib *IfdBuilder) calculateDataSize(tableSize uint32) (size uint32, err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
 
 
-    return 0, nil
-}
-
-// generateBytes populates the given table and data byte-arrays. `dataOffset`
-// is the distance from the beginning of the IFD to the beginning of the IFD's
-// data (following the IFD's table). It may be used to calculate the final
-// offset of the data we store there so that we can reference it from the IFD
-// table. The `ioi` is used to know where to insert child IFDs at.
-//
-// len(ifdTableRaw) == calculateTableSize()
-// len(ifdDataRaw) == calculateDataSize()
-func (ib *IfdBuilder) generateBytes(dataOffset uint32, ifdTableRaw, ifdDataRaw []byte, ioi *ifdOffsetIterator) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
+// // TODO(dustin): !! Finish.
 
 
-// TODO(dustin): !! Finish.
+//     return 0, nil
+// }
 
-// TODO(dustin): !! Some offsets of existing IFDs will have to be reallocated if there are any updates. We'll need to be able to resolve the original value against the original EXIF data for that, which we currently don't have access to, yet, from here.
-// TODO(dustin): !! Test that the offsets are identical if there are no changes (on principle).
+// // generateBytes populates the given table and data byte-arrays. `dataOffset`
+// // is the distance from the beginning of the IFD to the beginning of the IFD's
+// // data (following the IFD's table). It may be used to calculate the final
+// // offset of the data we store there so that we can reference it from the IFD
+// // table. The `ioi` is used to know where to insert child IFDs at.
+// //
+// // len(ifdTableRaw) == calculateTableSize()
+// // len(ifdDataRaw) == calculateDataSize()
+// func (ib *IfdBuilder) generateBytes(dataOffset uint32, ifdTableRaw, ifdDataRaw []byte, ioi *ifdOffsetIterator) (err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
 
 
-    return nil
-}
+// // TODO(dustin): !! Finish.
 
-// allocateIfd will produce the two byte-arrays for every IFD and bump the IOI
-// for the next IFD. This is the foundation of how offsets are calculated.
-func (ib *IfdBuilder) allocateIfd(tableSize, dataSize uint32, ioi *ifdOffsetIterator) (tableRaw []byte, dataRaw []byte, dataOffset uint32, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
+// // TODO(dustin): !! Some offsets of existing IFDs will have to be reallocated if there are any updates. We'll need to be able to resolve the original value against the original EXIF data for that, which we currently don't have access to, yet, from here.
+// // TODO(dustin): !! Test that the offsets are identical if there are no changes (on principle).
 
-    // Allocate the size required and iterate our offset marker
-    // appropriately so the IFD-build knows where it can calculate its
-    // offsets from.
 
-    tableRaw = make([]byte, tableSize)
-    dataRaw = make([]byte, dataSize)
+//     return nil
+// }
 
-    dataOffset = ioi.Offset() + tableSize
-    ioi.Step(tableSize + dataSize)
+// // allocateIfd will produce the two byte-arrays for every IFD and bump the IOI
+// // for the next IFD. This is the foundation of how offsets are calculated.
+// func (ib *IfdBuilder) allocateIfd(tableSize, dataSize uint32, ioi *ifdOffsetIterator) (tableRaw []byte, dataRaw []byte, dataOffset uint32, err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
 
-    return tableRaw, dataRaw, dataOffset, nil
-}
+//     // Allocate the size required and iterate our offset marker
+//     // appropriately so the IFD-build knows where it can calculate its
+//     // offsets from.
 
-// BuildExif returns a new byte array of EXIF data.
-func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
+//     tableRaw = make([]byte, tableSize)
+//     dataRaw = make([]byte, dataSize)
 
-    b := bytes.Buffer{}
+//     dataOffset = ioi.Offset() + tableSize
+//     ioi.Step(tableSize + dataSize)
 
-    ioi := &ifdOffsetIterator{
-        offset: RootIfdExifOffset,
-    }
+//     return tableRaw, dataRaw, dataOffset, nil
+// }
 
-    ptr := ib
+// // BuildExif returns a new byte array of EXIF data.
+// func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
 
-    for ; ptr != nil ; {
-        // Figure out the size requirements.
+//     b := bytes.Buffer{}
 
-        tableSize, err := ptr.calculateTableSize()
-        log.PanicIf(err)
+//     ioi := &ifdOffsetIterator{
+//         offset: RootIfdExifOffset,
+//     }
 
-        dataSize, err := ptr.calculateDataSize(tableSize)
-        log.PanicIf(err)
+//     ptr := ib
 
-        // Allocate the size required and iterate our offset marker
-        // appropriately so the IFD-build knows where it can calculate its
-        // offsets from.
+//     for ; ptr != nil ; {
+//         // Figure out the size requirements.
 
-        tableRaw, dataRaw, dataOffset, err := ib.allocateIfd(tableSize, dataSize, ioi)
-        log.PanicIf(err)
+//         tableSize, err := ptr.calculateTableSize()
+//         log.PanicIf(err)
 
-        // Build.
+//         dataSize, err := ptr.calculateDataSize(tableSize)
+//         log.PanicIf(err)
 
-        err = ptr.generateBytes(dataOffset, tableRaw, dataRaw, ioi)
-        log.PanicIf(err)
+//         // Allocate the size required and iterate our offset marker
+//         // appropriately so the IFD-build knows where it can calculate its
+//         // offsets from.
 
-        // Attach the new data to the stream.
+//         tableRaw, dataRaw, dataOffset, err := ib.allocateIfd(tableSize, dataSize, ioi)
+//         log.PanicIf(err)
 
-        _, err = b.Write(tableRaw)
-        log.PanicIf(err)
+//         // Build.
 
-        _, err = b.Write(dataRaw)
-        log.PanicIf(err)
+//         err = ptr.generateBytes(dataOffset, tableRaw, dataRaw, ioi)
+//         log.PanicIf(err)
 
-        ptr = ptr.nextIfd
+//         // Attach the new data to the stream.
 
-        // Write the offset of the next IFD (or 0x0 for none).
+//         _, err = b.Write(tableRaw)
+//         log.PanicIf(err)
 
-        nextIfdOffset := uint32(0)
+//         _, err = b.Write(dataRaw)
+//         log.PanicIf(err)
 
-        if ptr != nil {
-            // This might've been iterated by `generateBytes()`. It'll also
-            // point at the next offset that we can install an IFD to.
-            nextIfdOffset = ioi.Offset()
-        }
+//         ptr = ptr.nextIfd
 
-        nextIfdOffsetBytes := make([]byte, 4)
-        ib.byteOrder.PutUint32(nextIfdOffsetBytes, nextIfdOffset)
+//         // Write the offset of the next IFD (or 0x0 for none).
 
-        _, err = b.Write(nextIfdOffsetBytes)
-        log.PanicIf(err)
-    }
+//         nextIfdOffset := uint32(0)
 
-    return b.Bytes(), nil
-}
+//         if ptr != nil {
+//             // This might've been iterated by `generateBytes()`. It'll also
+//             // point at the next offset that we can install an IFD to.
+//             nextIfdOffset = ioi.Offset()
+//         }
+
+//         nextIfdOffsetBytes := make([]byte, 4)
+//         ib.byteOrder.PutUint32(nextIfdOffsetBytes, nextIfdOffset)
+
+//         _, err = b.Write(nextIfdOffsetBytes)
+//         log.PanicIf(err)
+//     }
+
+//     return b.Bytes(), nil
+// }
 
 func (ib *IfdBuilder) SetNextIfd(nextIfd *IfdBuilder) (err error) {
     defer func() {
@@ -560,12 +608,8 @@ func (ib *IfdBuilder) Add(bt builderTag) (err error) {
         }
     }()
 
-    if bt.value != nil {
-        switch bt.value.(type) {
-        case []byte:
-        default:
-            log.Panicf("tag value must be a byte-slice or a child IFD-builder: %v", bt)
-        }
+    if bt.value.IsIb() == true {
+        log.Panicf("child IfdBuilders must be added via AddChildIb() not Add()")
     }
 
     ib.tags = append(ib.tags, bt)
@@ -591,14 +635,16 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
     // the current IFD and *not every* IFD.
     for _, bt := range childIb.tags {
         if bt.tagId == childIb.ifdTagId {
-            log.Panicf("child-IFD previously added: [%s]", childIb.ifdName)
+            log.Panicf("child-IFD already added: [%s]", childIb.ifdName)
         }
     }
+
+    value := NewIfdBuilderTagValueFromIfdBuilder(childIb)
 
     bt := builderTag{
         ifdName: childIb.ifdName,
         tagId: childIb.ifdTagId,
-        value: childIb,
+        value: value,
     }
 
     ib.tags = append(ib.tags, bt)
@@ -607,7 +653,7 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
 }
 
 // AddTagsFromExisting does a verbatim copy of the entries in `ifd` to this
-// builder. It excludes child IFDs. This must be added explicitly via
+// builder. It excludes child IFDs. These must be added explicitly via
 // `AddChildIb()`.
 func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResolver, includeTagIds []uint16, excludeTagIds []uint16) (err error) {
     defer func() {
@@ -615,23 +661,6 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
             err = log.Wrap(state.(error))
         }
     }()
-
-
-// Notes: This is used to update existing IFDs (by constructing a new IFD with existing information).
-// - How to handle the existing allocation? Obviously this will be an update
-//   operation, we should try and re-use the current space.
-// - Inevitably, there will be fragmentation as IFDs are changed. We might not
-//   be able to avoid reallocation.
-//   - !! We'll potentially have to update every recorded tag and IFD offset.
-//     - We might just have to refuse to allow updates if we encountered any
-//       unmanageable tags (we'll definitely have to finish adding support for
-//       the well-known ones).
-//
-// - An IfdEnumerator might not be the right type of argument, here. It actively
-//   reads from a file and is not just a static container.
-//   - We might want to create a static-container type that can populate from
-//     an IfdEnumerator and then be read and re-read (like an IEnumerable vs IList).
-
 
     for _, ite := range ifd.Entries {
         // If we want to add an IFD tag, we'll have to build it first and *then*
@@ -674,10 +703,17 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
             tagId: ite.TagId,
         }
 
-        if itevr != nil {
+        if itevr == nil {
+            // rawValueOffsetCopy is our own private copy of the original data.
+            // It should always be four-bytes, but just copy whatever there is.
+            rawValueOffsetCopy := make([]byte, len(ite.RawValueOffset))
+            copy(rawValueOffsetCopy, ite.RawValueOffset)
+
+            bt.value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
+        } else {
             var err error
 
-            bt.value, err = itevr.ValueBytes(&ite)
+            valueBytes, err := itevr.ValueBytes(&ite)
             if err != nil {
                 if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
                     ifdBuilderLogger.Warningf(nil, "Unknown-type tag can't be parsed so it can't be copied to the new IFD.")
@@ -686,6 +722,8 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
                 log.Panic(err)
             }
+
+            bt.value = NewIfdBuilderTagValueFromBytes(valueBytes)
         }
 
         err := ib.Add(bt)
@@ -694,3 +732,107 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
     return nil
 }
+
+
+type ByteWriter struct {
+    b *bytes.Buffer
+    byteOrder binary.ByteOrder
+}
+
+func NewByteWriter(b *bytes.Buffer, byteOrder binary.ByteOrder) (bw *ByteWriter) {
+    return &ByteWriter{
+        b: b,
+        byteOrder: byteOrder,
+    }
+}
+
+func (bw ByteWriter) WriteAsBytes(value interface{}) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    err = binary.Write(bw.b, bw.byteOrder, value)
+    log.PanicIf(err)
+
+    return nil
+}
+
+
+type IfdByteEncoder struct {
+}
+
+func NewIfdByteEncoder() (ibe *IfdByteEncoder) {
+    return new(IfdByteEncoder)
+}
+
+// // encodeToBytes encodes the given IB to a byte-slice. We are given the offset
+// // at which this IFD will be written.
+// func (ibe *IfdByteEncoder) encodeToBytes(ib *IfdBuilder, ifdAddressableOffset uint32) (data []byte, err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
+
+//     b := new(bytes.Buffer)
+//     bw := NewByteWriter(b, ib.byteOrder)
+
+//     // Write tag count.
+//     err = bw.WriteAsBytes(uint16(len(ib.tags)))
+//     log.PancIf(err)
+
+//     ti := NewTagIndex()
+
+//     childIbs := make([]*IfdBuilder, 0)
+//     byteCount := ifdAddressableOffset
+//     for _, bt := range ib.tags {
+//         err := bw.WriteAsBytes(uint16(bt.tagId))
+//         log.PancIf(err)
+
+//         it, err := ti.Get(ib.ifdName, bt.tagId)
+//         log.PanicIf(err)
+
+//         err = bw.WriteAsBytes(uint16(it.Type))
+//         log.PancIf(err)
+
+//     }
+
+//     // for i := uint16(0); i < tagCount; i++ {
+//     //     tagId, _, err := ite.getUint16()
+//     //     log.PanicIf(err)
+
+//     //     tagType, _, err := ite.getUint16()
+//     //     log.PanicIf(err)
+
+//     //     unitCount, _, err := ite.getUint32()
+//     //     log.PanicIf(err)
+
+//     //     valueOffset, rawValueOffset, err := ite.getUint32()
+//     //     log.PanicIf(err)
+//     // }
+
+//     // nextIfdOffset, _, err = ite.getUint32()
+//     // log.PanicIf(err)
+
+//     // Write address of next IFD in chain.
+// // TODO(dustin): !! Finish.
+//     err = bw.WriteAsBytes(uint32(0))
+//     log.PancIf(err)
+
+
+// }
+
+// func (ib *IfdBuilder) EncodeToBytes(ib *IfdBuilder) (data []byte, err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
+
+//     data, err = ib.encodeToBytes(ib, ExifAddressableAreaStart)
+//     log.PanicIf(err)
+
+//     return data, nil
+// }
