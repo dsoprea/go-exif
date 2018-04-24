@@ -21,7 +21,6 @@ var (
 
 
 // TODO(dustin): !! Make sure we either replace existing IFDs or validate that the IFD doesn't already exist.
-// TODO(dustin): !! Add test for NewIfdBuilderWithExistingIfd.
 
 
 type builderTag struct {
@@ -573,6 +572,7 @@ func (ib *IfdBuilder) Add(bt builderTag) (err error) {
     return nil
 }
 
+// AddChildIb adds a tag that branches to a new IFD.
 func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -584,6 +584,15 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
         log.Panicf("IFD can not be used as a child IFD (not associated with a tag-ID): %v", childIb)
     } else if childIb.byteOrder != ib.byteOrder {
         log.Panicf("Child IFD does not have the same byte-order: [%s] != [%s]", childIb.byteOrder, ib.byteOrder)
+    }
+
+    // Since no standard IFDs supports occuring more than once, check that a
+    // tag of this type has not been previously added. Note that we just search
+    // the current IFD and *not every* IFD.
+    for _, bt := range childIb.tags {
+        if bt.tagId == childIb.ifdTagId {
+            log.Panicf("child-IFD previously added: [%s]", childIb.ifdName)
+        }
     }
 
     bt := builderTag{
