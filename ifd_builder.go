@@ -109,8 +109,8 @@ type IfdBuilder struct {
     // it represents an IFD that has previously been stored (or 0 if not).
     existingOffset uint32
 
-    // nextIfd represents the next link if we're chaining to another.
-    nextIfd *IfdBuilder
+    // nextIb represents the next link if we're chaining to another.
+    nextIb *IfdBuilder
 }
 
 func NewIfdBuilder(ifdName string, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
@@ -188,28 +188,29 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdB
 
 func (ib *IfdBuilder) String() string {
     nextIfdPhrase := ""
-    if ib.nextIfd != nil {
-        nextIfdPhrase = ib.nextIfd.ifdName
+    if ib.nextIb != nil {
+        nextIfdPhrase = ib.nextIb.ifdName
     }
 
     return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ifdName, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
 }
 
 
-// ifdOffsetIterator keeps track of where the next IFD should be written
-// (relative to the end of the EXIF header bytes; all addresses are relative to
-// this).
-type ifdOffsetIterator struct {
-    offset uint32
-}
+// // ifdOffsetIterator keeps track of where the next IFD should be written
+// // (relative to the end of the EXIF header bytes; all addresses are relative to
+// // this).
+// type ifdOffsetIterator struct {
+//     offset uint32
+// }
 
-func (ioi *ifdOffsetIterator) Step(size uint32) {
-    ioi.offset += size
-}
+// func (ioi *ifdOffsetIterator) Step(size uint32) {
+//     ioi.offset += size
+// }
 
-func (ioi *ifdOffsetIterator) Offset() uint32 {
-    return ioi.offset
-}
+// func (ioi *ifdOffsetIterator) Offset() uint32 {
+//     return ioi.offset
+// }
+
 
 func (ib *IfdBuilder) Tags() (tags []builderTag) {
     return ib.tags
@@ -429,7 +430,7 @@ func (ib *IfdBuilder) DumpToStrings() (lines []string) {
 //         _, err = b.Write(dataRaw)
 //         log.PanicIf(err)
 
-//         ptr = ptr.nextIfd
+//         ptr = ptr.nextIb
 
 //         // Write the offset of the next IFD (or 0x0 for none).
 
@@ -451,14 +452,14 @@ func (ib *IfdBuilder) DumpToStrings() (lines []string) {
 //     return b.Bytes(), nil
 // }
 
-func (ib *IfdBuilder) SetNextIfd(nextIfd *IfdBuilder) (err error) {
+func (ib *IfdBuilder) SetNextIfd(nextIb *IfdBuilder) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    ib.nextIfd = nextIfd
+    ib.nextIb = nextIb
 
     return nil
 }
@@ -732,107 +733,3 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
     return nil
 }
-
-
-type ByteWriter struct {
-    b *bytes.Buffer
-    byteOrder binary.ByteOrder
-}
-
-func NewByteWriter(b *bytes.Buffer, byteOrder binary.ByteOrder) (bw *ByteWriter) {
-    return &ByteWriter{
-        b: b,
-        byteOrder: byteOrder,
-    }
-}
-
-func (bw ByteWriter) WriteAsBytes(value interface{}) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    err = binary.Write(bw.b, bw.byteOrder, value)
-    log.PanicIf(err)
-
-    return nil
-}
-
-
-type IfdByteEncoder struct {
-}
-
-func NewIfdByteEncoder() (ibe *IfdByteEncoder) {
-    return new(IfdByteEncoder)
-}
-
-// // encodeToBytes encodes the given IB to a byte-slice. We are given the offset
-// // at which this IFD will be written.
-// func (ibe *IfdByteEncoder) encodeToBytes(ib *IfdBuilder, ifdAddressableOffset uint32) (data []byte, err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
-
-//     b := new(bytes.Buffer)
-//     bw := NewByteWriter(b, ib.byteOrder)
-
-//     // Write tag count.
-//     err = bw.WriteAsBytes(uint16(len(ib.tags)))
-//     log.PancIf(err)
-
-//     ti := NewTagIndex()
-
-//     childIbs := make([]*IfdBuilder, 0)
-//     byteCount := ifdAddressableOffset
-//     for _, bt := range ib.tags {
-//         err := bw.WriteAsBytes(uint16(bt.tagId))
-//         log.PancIf(err)
-
-//         it, err := ti.Get(ib.ifdName, bt.tagId)
-//         log.PanicIf(err)
-
-//         err = bw.WriteAsBytes(uint16(it.Type))
-//         log.PancIf(err)
-
-//     }
-
-//     // for i := uint16(0); i < tagCount; i++ {
-//     //     tagId, _, err := ite.getUint16()
-//     //     log.PanicIf(err)
-
-//     //     tagType, _, err := ite.getUint16()
-//     //     log.PanicIf(err)
-
-//     //     unitCount, _, err := ite.getUint32()
-//     //     log.PanicIf(err)
-
-//     //     valueOffset, rawValueOffset, err := ite.getUint32()
-//     //     log.PanicIf(err)
-//     // }
-
-//     // nextIfdOffset, _, err = ite.getUint32()
-//     // log.PanicIf(err)
-
-//     // Write address of next IFD in chain.
-// // TODO(dustin): !! Finish.
-//     err = bw.WriteAsBytes(uint32(0))
-//     log.PancIf(err)
-
-
-// }
-
-// func (ib *IfdBuilder) EncodeToBytes(ib *IfdBuilder) (data []byte, err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
-
-//     data, err = ib.encodeToBytes(ib, ExifAddressableAreaStart)
-//     log.PanicIf(err)
-
-//     return data, nil
-// }

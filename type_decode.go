@@ -49,24 +49,27 @@ func (tt TagType) ByteOrder() binary.ByteOrder {
     return tt.byteOrder
 }
 
-
 func (tt TagType) Size() int {
-    if tt.tagType == TypeByte {
+    return TagTypeSize(tt.Type())
+}
+
+func TagTypeSize(tagType int) int {
+    if tagType == TypeByte {
         return 1
-    } else if tt.tagType == TypeAscii || tt.tagType == TypeAsciiNoNul {
+    } else if tagType == TypeAscii || tt.tagType == TypeAsciiNoNul {
         return 1
-    } else if tt.tagType == TypeShort {
+    } else if tagType == TypeShort {
         return 2
-    } else if tt.tagType == TypeLong {
+    } else if tagType == TypeLong {
         return 4
-    } else if tt.tagType == TypeRational {
+    } else if tagType == TypeRational {
         return 8
-    } else if tt.tagType == TypeSignedLong {
+    } else if tagType == TypeSignedLong {
         return 4
-    } else if tt.tagType == TypeSignedRational {
+    } else if tagType == TypeSignedRational {
         return 8
     } else {
-        log.Panicf("can not determine tag-value size for type (%d): [%s]", tt.tagType, TypeNames[tt.tagType])
+        log.Panicf("can not determine tag-value size for type (%d): [%s]", tagType, TypeNames[tagType])
 
         // Never called.
         return 0
