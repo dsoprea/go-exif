@@ -198,7 +198,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
     ida := newIfdDataAllocator(addressableOffset)
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Generating a BT properly and testing here for every type. Make sure everythign is properly encoded as slices.
+// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
     childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
@@ -207,7 +207,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
     } else if bytes.Compare(b.Bytes(), []byte { 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x12, 0x00, 0x00, 0x00 }) != 0 {
         t.Fatalf("encoded tag-entry bytes not correct")
     } else if ida.NextOffset() != addressableOffset {
-        t.Fatalf("allocation were done but not expected")
+        t.Fatalf("allocation was done but not expected")
     }
 }
 
@@ -230,7 +230,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
     ida := newIfdDataAllocator(addressableOffset)
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Generating a BT properly and testing here for every type. Make sure everythign is properly encoded as slices.
+// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
     childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
@@ -239,7 +239,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
     } else if bytes.Compare(b.Bytes(), []byte { 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x12, 0x34, 0x56, 0x78 }) != 0 {
         t.Fatalf("encoded tag-entry bytes not correct")
     } else if ida.NextOffset() != addressableOffset {
-        t.Fatalf("allocation were done but not expected")
+        t.Fatalf("allocation was done but not expected")
     }
 }
 
@@ -262,7 +262,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     }
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Generating a BT properly and testing here for every type. Make sure everythign is properly encoded as slices.
+// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
     childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
@@ -284,7 +284,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     }
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Generating a BT properly and testing here for every type. Make sure everythign is properly encoded as slices.
+// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
     childIfdBlock, err = ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
