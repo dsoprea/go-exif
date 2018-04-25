@@ -3,7 +3,6 @@ package exif
 import (
     "errors"
     "fmt"
-    "bytes"
     "strings"
 
     "encoding/binary"

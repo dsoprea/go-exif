@@ -53,10 +53,10 @@ func (tt TagType) Size() int {
     return TagTypeSize(tt.Type())
 }
 
-func TagTypeSize(tagType int) int {
+func TagTypeSize(tagType uint16) int {
     if tagType == TypeByte {
         return 1
-    } else if tagType == TypeAscii || tt.tagType == TypeAsciiNoNul {
+    } else if tagType == TypeAscii || tagType == TypeAsciiNoNul {
         return 1
     } else if tagType == TypeShort {
         return 2

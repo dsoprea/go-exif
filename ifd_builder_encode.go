@@ -79,9 +79,9 @@ func (bw ByteWriter) WriteFourBytes(value []byte) (err error) {
 }
 
 
-// ifdOffsetIterator keeps track of where the next IFD should be written
-// (relative to the end of the EXIF header bytes; all addresses are relative to
-// this).
+// ifdOffsetIterator keeps track of where the next IFD should be written by
+// keeping track of where the offsets start, the data that has been added, and
+// bumping the offset *when* the data is added.
 type ifdDataAllocator struct {
     offset uint32
     b bytes.Buffer
@@ -101,6 +101,10 @@ func (ida *ifdDataAllocator) Allocate(value []byte) (offset uint32, err error) {
     ida.offset += uint32(len(value))
 
     return offset, nil
+}
+
+func (ida *ifdDataAllocator) NextOffset() uint32 {
+    return ida.offset
 }
 
 func (ida *ifdDataAllocator) Bytes() []byte {
@@ -125,7 +129,7 @@ func (ibe *IfdByteEncoder) EntrySize() uint32 {
 
 func (ibe *IfdByteEncoder) TableSize(entryCount int) uint32 {
     // Tag-Count + (Entry-Size * Entry-Count) + Next-IFD-Offset.
-    return uint32(2) + (ibe.entryCount() * uint32(entryCount)) + uint32(4)
+    return uint32(2) + (ibe.EntrySize() * uint32(entryCount)) + uint32(4)
 }
 
 func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *ByteWriter, ida *ifdDataAllocator, nextIfdOffsetToWrite uint32) (childIfdBlock []byte, err error) {
@@ -135,12 +139,10 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         }
     }()
 
-    newDataOffset = currentDataOffset
-
     ti := NewTagIndex()
 
     // Write tag-ID.
-    err := bw.WriteUint16(bt.tagId)
+    err = bw.WriteUint16(bt.tagId)
     log.PanicIf(err)
 
     // Write type.
@@ -160,8 +162,6 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
 
     if bt.value.IsBytes() == true {
         effectiveType := it.Type
-        unitCount := uint32(len(bt.value.Bytes()))
-
         if it.Type == TypeUndefined {
             effectiveType = TypeByte
         }
@@ -169,13 +169,13 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         // It's a non-unknown value.Calculate the count of values of
         // the type that we're writing and the raw bytes for the whole list.
 
-        typeSize := TagTypeSize(it.Type)
+        typeSize := uint32(TagTypeSize(effectiveType))
 
         valueBytes := bt.value.Bytes()
 
         len_ := len(valueBytes)
-        unitCount := len_ / typeSize
-        remainder := len_ % typeSize
+        unitCount := uint32(len_) / typeSize
+        remainder := uint32(len_) % typeSize
 
         if remainder > 0 {
             log.Panicf("tag value of (%d) bytes not evenly divisible by type-size (%d)", len_, typeSize)
@@ -187,9 +187,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         // Write four-byte value/offset.
 
         if len_ > 4 {
-            var err error
-
-            offset, err = ida.Allocate(valueBytes)
+            offset, err := ida.Allocate(valueBytes)
             log.PanicIf(err)
 
             err = bw.WriteUint32(offset)
@@ -246,14 +244,14 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
 // because it is not enough to know the size of the table: If there are child
 // IFDs, we will not be able to allocate them without first knowing how much
 // data we need to allocate for the current IFD.
-func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset uint32, nextIfdOffsetToWrite uint32, setNextIb bool) (data []byte, tableSize int, dataSize int, childIfdSizes []uint32, err error) {
+func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset uint32, nextIfdOffsetToWrite uint32, setNextIb bool) (data []byte, tableSize uint32, dataSize uint32, childIfdSizes []uint32, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    tableSize := ibe.TableSize(len(ib.tags))
+    tableSize = ibe.TableSize(len(ib.tags))
 
     // ifdDataAddressableOffset is the smallest offset where we can allocate
     // data.
@@ -263,7 +261,7 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     bw := NewByteWriter(b, ib.byteOrder)
 
     // Write tag count.
-    err = bw.WriteUint16(len(ib.tags))
+    err = bw.WriteUint16(uint16(len(ib.tags)))
     log.PanicIf(err)
 
     ida := newIfdDataAllocator(ifdDataAddressableOffset)
@@ -289,26 +287,27 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     }
 
     dataBytes := ida.Bytes()
+    dataSize = uint32(len(dataBytes))
 
-    childIfdSizes := make([]uint32, len(childIfdBlocks))
+    childIfdSizes = make([]uint32, len(childIfdBlocks))
     childIfdsTotalSize := uint32(0)
     for i, childIfdBlock := range childIfdBlocks {
-        len_ := len(childIfdBlock)
+        len_ := uint32(len(childIfdBlock))
         childIfdSizes[i] = len_
-        childIfdsTotalSize += uint32(len_)
+        childIfdsTotalSize += len_
     }
 
     // Set the link from this IFD to the next IFD that will be written in the
     // next cycle.
     if setNextIb == true {
-        nextIfdOffsetToWrite += tableSize + uint32(len(dataBytes)) + childIfdsTotalSize
+        nextIfdOffsetToWrite += tableSize + dataSize + childIfdsTotalSize
     } else {
         nextIfdOffsetToWrite = 0
     }
 
     // Write address of next IFD in chain.
     err = bw.WriteUint32(nextIfdOffsetToWrite)
-    log.PancIf(err)
+    log.PanicIf(err)
 
     _, err = b.Write(dataBytes)
     log.PanicIf(err)
@@ -322,15 +321,12 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     // will be interrupted by these child-IFDs (which is expected, per the
     // standard).
 
-    childIfdSizes := make([]uint32, len(childIfdBlocks)
-    for i, childIfdBlock := range childIfdBlocks {
+    for _, childIfdBlock := range childIfdBlocks {
         _, err = b.Write(childIfdBlock)
         log.PanicIf(err)
-
-        childIfdSizes[i] = len(childIfdBlock)
     }
 
-    return b.Bytes(), int(tableSize), len(dataBytes), childIfdSizes, nil
+    return b.Bytes(), tableSize, dataSize, childIfdSizes, nil
 }
 
 // encodeAndAttachIfd is a reentrant function that processes the IFD chain.
@@ -345,26 +341,27 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
     b := new(bytes.Buffer)
 
     nextIfdOffsetToWrite := uint32(0)
-    for thisIb := ib; thisIb != nil; thisIb = thisIb.NextIfd {
+    for thisIb := ib; thisIb != nil; thisIb = thisIb.nextIb {
         // Do a dry-run in order to pre-determine its size requirement.
 
-        rawBytes, tableSize, dataSize, childIfdSizes, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, 0, false)
+        rawBytes, _, _, _, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, 0, false)
         log.PanicIf(err)
 
-        nextIfdOffsetToWrite := ifdAddressableOffset + len(rawBytes)
+        nextIfdOffsetToWrite = ifdAddressableOffset + uint32(len(rawBytes))
 
         // Write our IFD as well as any child-IFDs (now that we know the offset
         // where new IFDs and their data will be allocated).
 
-        setNextIb := thisIb.NextIb != nil
-        rawBytes, tableSize, dataSize, childIfdSizes, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
+        setNextIb := thisIb.nextIb != nil
+// TODO(dustin): !! Test the output sizes.
+        rawBytes, _, _, _, err = ibe.encodeIfdToBytes(ib, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
         log.PanicIf(err)
 
         _, err = b.Write(rawBytes)
         log.PanicIf(err)
 
         // This will include the child-IFDs, as well. This will actually advance the offset for our next loop.
-        ifdAddressableOffset = ifdAddressableOffset + len(rawBytes)
+        ifdAddressableOffset = ifdAddressableOffset + uint32(len(rawBytes))
     }
 
     return b.Bytes(), nil

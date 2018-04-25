@@ -62,7 +62,7 @@ func TestAdd(t *testing.T) {
         t.Fatalf("IFD tag-count not correct.")
     } else if ib.existingOffset != 0 {
         t.Fatalf("IFD offset not correct.")
-    } else if ib.nextIfd != nil {
+    } else if ib.nextIb != nil {
         t.Fatalf("Next-IFD not correct.")
     }
 
@@ -97,16 +97,16 @@ func TestSetNextIfd(t *testing.T) {
     ib1 := NewIfdBuilder(IfdStandard, binary.BigEndian)
     ib2 := NewIfdBuilder(IfdStandard, binary.BigEndian)
 
-    if ib1.nextIfd != nil {
+    if ib1.nextIb != nil {
         t.Fatalf("Next-IFD for IB1 not initially terminal.")
     }
 
     err := ib1.SetNextIfd(ib2)
     log.PanicIf(err)
 
-    if ib1.nextIfd != ib2 {
+    if ib1.nextIb != ib2 {
         t.Fatalf("Next-IFD for IB1 not correct.")
-    } else if ib2.nextIfd != nil {
+    } else if ib2.nextIb != nil {
         t.Fatalf("Next-IFD for IB2 terminal.")
     }
 }
