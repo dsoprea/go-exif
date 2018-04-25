@@ -309,5 +309,3 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 // TODO(dustin): !! Test specific unknown-type tags.
 // TODO(dustin): !! Test what happens with unhandled unknown-type tags (though it should never get to this point in the normal workflow).
 // TODO(dustin): !! Test child IFDs (may not be possible until after writing tests for higher-level IB encode).
-
-

@@ -612,7 +612,7 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            valueString, err := tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
             log.PanicIf(err)
 
             return TagUnknownType_GeneralString(valueString), nil
@@ -621,7 +621,7 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            valueString, err := tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
             log.PanicIf(err)
 
             return TagUnknownType_GeneralString(valueString), nil
@@ -722,7 +722,7 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            valueString, err := tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
             log.PanicIf(err)
 
             return TagUnknownType_GeneralString(valueString), nil
@@ -731,7 +731,7 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            valueString, err := tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
             log.PanicIf(err)
 
             return TagUnknownType_GeneralString(valueString), nil
@@ -742,7 +742,7 @@ func UndefinedValue(indexedIfdName string, tagId uint16, valueContext ValueConte
 
             tt := NewTagType(TypeAsciiNoNul, byteOrder)
 
-            valueString, err := tt.ReadAsciiValue(valueContext)
+            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
             log.PanicIf(err)
 
             return TagUnknownType_GeneralString(valueString), nil
