@@ -62,8 +62,8 @@ func (ibtv IfdBuilderTagValue) Ib() *IfdBuilder {
 
 
 type builderTag struct {
-    // ifdName is non-empty if represents a child-IFD.
-    ifdName string
+    // ii is non-empty if represents a child-IFD.
+    ii IfdIdentity
 
     tagId uint16
 
@@ -88,13 +88,35 @@ func (bt builderTag) String() string {
         valuePhrase = fmt.Sprintf("%v", bt.value.Ib())
     }
 
-    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ifdName, valuePhrase)
+    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ii, valuePhrase)
+}
+
+// NewBuilderTagFromConfig allows us to easily generate solid, consistent tags
+// for testing with.
+func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
+    ti := NewTagIndex()
+
+    it, err := ti.Get(ii, tagId)
+    log.PanicIf(err)
+
+    tt := NewTagType(it.Type, byteOrder)
+
+    ve := NewValueEncoder(byteOrder)
+
+    ed, err := ve.EncodeWithType(tt, value)
+    log.PanicIf(err)
+
+    return builderTag{
+        ii: ii,
+        tagId: tagId,
+        value: NewIfdBuilderTagValueFromBytes(ed.Encoded),
+    }
 }
 
 
 type IfdBuilder struct {
-    // ifdName is the name of the IFD that owns the current tag.
-    ifdName string
+    // ifd is the IfdIdentity instance of the IFD that owns the current tag.
+    ii IfdIdentity
 
     // ifdTagId will be non-zero if we're a child IFD.
     ifdTagId uint16
@@ -112,12 +134,15 @@ type IfdBuilder struct {
     nextIb *IfdBuilder
 }
 
-func NewIfdBuilder(ifdName string, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
-    ib = &IfdBuilder{
-        ifdName: ifdName,
+func NewIfdBuilder(ii IfdIdentity, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
+    ifdTagId, _ := IfdTagIdWithIdentity(ii)
 
-        // ifdName is empty unless it's a child-IFD.
-        ifdTagId: IfdTagIds[ifdName],
+    ib = &IfdBuilder{
+        // ii describes the current IFD and its parent.
+        ii: ii,
+
+        // ifdTagId is empty unless it's a child-IFD.
+        ifdTagId: ifdTagId,
 
         byteOrder: byteOrder,
         tags: make([]builderTag, 0),
@@ -129,13 +154,11 @@ func NewIfdBuilder(ifdName string, byteOrder binary.ByteOrder) (ib *IfdBuilder) 
 // NewIfdBuilderWithExistingIfd creates a new IB using the same header type
 // information as the given IFD.
 func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
-    ifdTagId, found := IfdTagIds[ifd.Name]
-    if found == false {
-        log.Panicf("tag-ID for IFD not found: [%s]", ifd.Name)
-    }
+    ii := ifd.Identity()
+    ifdTagId := IfdTagIdWithIdentityOrFail(ii)
 
     ib = &IfdBuilder{
-        ifdName: ifd.Name,
+        ii: ii,
         ifdTagId: ifdTagId,
         byteOrder: ifd.ByteOrder,
         existingOffset: ifd.Offset,
@@ -155,12 +178,9 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdB
     for thisExistingIfd := rootIfd; thisExistingIfd != nil; thisExistingIfd = thisExistingIfd.NextIfd {
         lastIb := newIb
 
-        ifdName := thisExistingIfd.Name
-        if ifdName == "" {
-            ifdName = IfdStandard
-        }
+        ii := thisExistingIfd.Identity()
 
-        newIb = NewIfdBuilder(ifdName, binary.BigEndian)
+        newIb = NewIfdBuilder(ii, binary.BigEndian)
         if lastIb != nil {
             lastIb.SetNextIfd(newIb)
         }
@@ -188,10 +208,10 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdB
 func (ib *IfdBuilder) String() string {
     nextIfdPhrase := ""
     if ib.nextIb != nil {
-        nextIfdPhrase = ib.nextIb.ifdName
+        nextIfdPhrase = ib.nextIb.ii.String()
     }
 
-    return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ifdName, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
+    return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
 }
 
 
@@ -230,7 +250,8 @@ func (ib *IfdBuilder) dump(levels int) {
         fmt.Printf("\n")
 
         for i, tag := range ib.tags {
-            _, isChildIb := IfdTagNames[tag.tagId]
+// TODO(dustin): Pre-supposes that IFDs are uniquely named, which is fince since we're in charge of their actual naming (only the tag-IDs are important in the spec). However, we're referring to them by name which is inconsistent with our implementation where we take the name as non-unique and our self-imposed unique IDs as the better choice. Reimplement using these.
+            _, isChildIb := IfdTagNames[ib.ii.IfdName][tag.tagId]
 
             tagName := ""
 
@@ -238,7 +259,7 @@ func (ib *IfdBuilder) dump(levels int) {
             if isChildIb == true {
                 tagName = "<Child IFD>"
             } else {
-                it, err := ti.Get(tag.ifdName, tag.tagId)
+                it, err := ti.Get(tag.ii, tag.tagId)
                 if log.Is(err, ErrTagNotFound) == true {
                     tagName = "<UNKNOWN>"
                 } else if err != nil {
@@ -278,19 +299,19 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []s
     }
 
     for i, tag := range thisIb.tags {
-        line := fmt.Sprintf("<PARENTS=[%s] IFD-NAME=[%s]> IFD-TAG-ID=(0x%02x) CHILD-IFD=[%s] INDEX=(%d) TAG=[0x%02x]", prefix, thisIb.ifdName, thisIb.ifdTagId, tag.ifdName, i, tag.tagId)
+        line := fmt.Sprintf("<PARENTS=[%s] IFD-NAME=[%s]> IFD-TAG-ID=(0x%02x) CHILD-IFD=[%s] INDEX=(%d) TAG=[0x%02x]", prefix, thisIb.ii.IfdName, thisIb.ifdTagId, tag.ii.IfdName, i, tag.tagId)
         linesOutput = append(linesOutput, line)
 
-        if tag.ifdName != "" {
+        if tag.ii.IfdName != "" {
             if tag.value.IsIb() == false {
-                log.Panicf("tag has IFD tag-ID (0x%02x) but not a child IB instance: %v", tag.tagId, tag)
+                log.Panicf("tag has IFD tag-ID (0x%02x) and is acting like a child IB but does not *look* like a child IB: %v", tag.tagId, tag)
             }
 
             childPrefix := ""
             if prefix == "" {
-                childPrefix = fmt.Sprintf("%s", thisIb.ifdName)
+                childPrefix = fmt.Sprintf("%s", thisIb.ii.IfdName)
             } else {
-                childPrefix = fmt.Sprintf("%s->%s", prefix, thisIb.ifdName)
+                childPrefix = fmt.Sprintf("%s->%s", prefix, thisIb.ii.IfdName)
             }
 
             linesOutput = thisIb.dumpToStrings(tag.value.Ib(), childPrefix, linesOutput)
@@ -599,8 +620,6 @@ func (ib *IfdBuilder) Find(tagId uint16) (position int, err error) {
     return found[0], nil
 }
 
-// TODO(dustin): !! Switch to producing bytes immediately so that they're validated.
-
 func (ib *IfdBuilder) Add(bt builderTag) (err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -635,14 +654,14 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
     // the current IFD and *not every* IFD.
     for _, bt := range childIb.tags {
         if bt.tagId == childIb.ifdTagId {
-            log.Panicf("child-IFD already added: [%s]", childIb.ifdName)
+            log.Panicf("child-IFD already added: %v", childIb.ii)
         }
     }
 
     value := NewIfdBuilderTagValueFromIfdBuilder(childIb)
 
     bt := builderTag{
-        ifdName: childIb.ifdName,
+        ii: childIb.ii,
         tagId: childIb.ifdTagId,
         value: value,
     }

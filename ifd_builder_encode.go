@@ -147,7 +147,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
 
     // Write type.
 
-    it, err := ti.Get(ib.ifdName, bt.tagId)
+    it, err := ti.Get(ib.ii, bt.tagId)
     log.PanicIf(err)
 
     // Works for both values and child IFDs (which have an official size of

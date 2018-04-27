@@ -147,7 +147,7 @@ func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err er
 
     ie := NewIfdEnumerate(exifData, eh.ByteOrder)
 
-    err = ie.Scan(IfdStandard, eh.FirstIfdOffset, visitor)
+    err = ie.Scan(eh.FirstIfdOffset, visitor)
     log.PanicIf(err)
 
     return eh, nil

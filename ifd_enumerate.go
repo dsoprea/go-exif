@@ -128,31 +128,18 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerato
 // TagVisitor is an optional callback that can get hit for every tag we parse
 // through. `addressableData` is the byte array startign after the EXIF header
 // (where the offsets of all IFDs and values are calculated from).
-type TagVisitor func(indexedIfdName string, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
+type TagVisitor func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []IfdTagEntry, err error) {
+func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ifdOffset uint32, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ifdName, ifdIndex, ifdOffset)
-
-    // Return the name of the IFD as its known in our tag-index. We should skip
-    // over the current IFD if this is empty (which means we don't recognize/
-    // understand the IFD and, therefore, don't know the tags that are valid for
-    // it). Note that we could leave ignoring the tags as a responsibility for
-    // the visitor, but then it'd be easy for people to integrate that logic and
-    // not realize that they needed to specially handle an empty IFD name until
-    // they happened upon some obscure media one day and suddenly have issue if
-    // they unwittingly write something that breaks in that situation.
-    indexedIfdName := IfdName(ifdName, ifdIndex)
-    if indexedIfdName == "" {
-        ifdEnumerateLogger.Debugf(nil, "IFD not known and will not be visited: [%s] (%d)", ifdName, ifdIndex)
-    }
+    ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ii.IfdName, ifdIndex, ifdOffset)
 
     ite := ie.getTagEnumerator(ifdOffset)
 
@@ -176,7 +163,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
         valueOffset, rawValueOffset, err := ite.getUint32()
         log.PanicIf(err)
 
-        if visitor != nil && indexedIfdName != "" {
+        if visitor != nil {
             tt := NewTagType(tagType, ie.byteOrder)
 
             vc := ValueContext{
@@ -186,12 +173,12 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
                 AddressableData: ie.exifData[ExifAddressableAreaStart:],
             }
 
-            err := visitor(indexedIfdName, tagId, tt, vc)
+            err := visitor(ii, ifdIndex, tagId, tt, vc)
             log.PanicIf(err)
         }
 
         tag := IfdTagEntry{
-            IfdName: ifdName,
+            Ii: ii,
             TagId: tagId,
             TagIndex: int(i),
             TagType: tagType,
@@ -200,14 +187,20 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
             RawValueOffset: rawValueOffset,
         }
 
-        childIfdName, isIfd := IsIfdTag(tagId)
+        childIfdName, isIfd := IfdTagNameWithId(ii.IfdName, tagId)
+
+        // If it's an IFD but not a standard one, it'll just be seen as a LONG
+        // (the standard IFD tag type), later, unless we skip it because it's
+        // [likely] not even in the standard list of known tags.
         if isIfd == true {
             tag.ChildIfdName = childIfdName
 
             if doDescend == true {
                 ifdEnumerateLogger.Debugf(nil, "Descending to IFD [%s].", childIfdName)
 
-                err := ie.Scan(childIfdName, valueOffset, visitor)
+                childIi, _ := IfdIdOrFail(ii.IfdName, childIfdName)
+
+                err := ie.scan(childIi, valueOffset, visitor)
                 log.PanicIf(err)
             }
         }
@@ -224,7 +217,7 @@ func (ie *IfdEnumerate) ParseIfd(ifdName string, ifdIndex int, ifdOffset uint32,
 }
 
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ie *IfdEnumerate) Scan(ifdName string, ifdOffset uint32, visitor TagVisitor) (err error) {
+func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisitor) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -232,7 +225,7 @@ func (ie *IfdEnumerate) Scan(ifdName string, ifdOffset uint32, visitor TagVisito
     }()
 
     for ifdIndex := 0;; ifdIndex++ {
-        nextIfdOffset, _, err := ie.ParseIfd(ifdName, ifdIndex, ifdOffset, visitor, true)
+        nextIfdOffset, _, err := ie.ParseIfd(ii, ifdIndex, ifdOffset, visitor, true)
         log.PanicIf(err)
 
         if nextIfdOffset == 0 {
@@ -245,6 +238,21 @@ func (ie *IfdEnumerate) Scan(ifdName string, ifdOffset uint32, visitor TagVisito
     return nil
 }
 
+// Scan enumerates the different EXIF blocks (called IFDs).
+func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    ii, _ := IfdIdOrFail("", IfdStandard)
+
+    err = ie.scan(ii, ifdOffset, visitor)
+    log.PanicIf(err)
+
+    return nil
+}
 
 type Ifd struct {
     ByteOrder binary.ByteOrder
@@ -272,6 +280,18 @@ func (ifd Ifd) String() string {
     return fmt.Sprintf("IFD<ID=(%d) N=[%s] IDX=(%d) OFF=(0x%04x) COUNT=(%d) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)", ifd.Id, ifd.Name, ifd.Index, ifd.Offset, len(ifd.Entries), len(ifd.Children), parentOffset, ifd.NextIfdOffset)
 }
 
+func (ifd Ifd) Identity() IfdIdentity {
+    parentIfdName := ""
+    if ifd.ParentIfd != nil {
+        parentIfdName = ifd.ParentIfd.Name
+    }
+
+// TODO(dustin): !! We should be checking using the parent ID, not the parent name.
+    ii, _ := IfdIdOrFail(parentIfdName, ifd.Name)
+
+    return ii
+}
+
 func (ifd Ifd) printNode(level int, nextLink bool) {
     indent := strings.Repeat(" ", level * 2)
 
@@ -297,7 +317,7 @@ func (ifd Ifd) PrintTree() {
 
 
 type QueuedIfd struct {
-    Name string
+    Ii IfdIdentity
     Index int
     Offset uint32
     Parent *Ifd
@@ -308,7 +328,7 @@ type IfdIndex struct {
     RootIfd *Ifd
     Ifds []*Ifd
     Tree map[int]*Ifd
-    Lookup map[string][]*Ifd
+    Lookup map[IfdIdentity][]*Ifd
 }
 
 
@@ -322,11 +342,11 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
     tree := make(map[int]*Ifd)
     ifds := make([]*Ifd, 0)
-    lookup := make(map[string][]*Ifd)
+    lookup := make(map[IfdIdentity][]*Ifd)
 
     queue := []QueuedIfd {
         {
-            Name: IfdStandard,
+            Ii: RootIi,
             Index: 0,
             Offset: rootIfdOffset,
         },
@@ -339,14 +359,15 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             break
         }
 
-        name := queue[0].Name
+        ii := queue[0].Ii
+        name := ii.IfdName
         index := queue[0].Index
         offset := queue[0].Offset
         parentIfd := queue[0].Parent
 
         queue = queue[1:]
 
-        nextIfdOffset, entries, err := ie.ParseIfd(name, index, offset, nil, false)
+        nextIfdOffset, entries, err := ie.ParseIfd(ii, index, offset, nil, false)
         log.PanicIf(err)
 
         id := len(ifds)
@@ -371,13 +392,13 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
         // Install into by-name buckets.
 
-        if list_, found := lookup[name]; found == true {
-            lookup[name] = append(list_, &ifd)
+        if list_, found := lookup[ii]; found == true {
+            lookup[ii] = append(list_, &ifd)
         } else {
             list_ = make([]*Ifd, 1)
             list_[0] = &ifd
 
-            lookup[name] = list_
+            lookup[ii] = list_
         }
 
         // Add a link from the previous IFD in the chain to us.
@@ -397,8 +418,13 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
                 continue
             }
 
+            childId := IfdIdentity{
+                ParentIfdName: name,
+                IfdName: entry.ChildIfdName,
+            }
+
             qi := QueuedIfd {
-                Name: entry.ChildIfdName,
+                Ii: childId,
                 Index: 0,
                 Offset: entry.ValueOffset,
                 Parent: &ifd,
@@ -413,7 +439,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             edges[nextIfdOffset] = &ifd
 
             qi := QueuedIfd {
-                Name: IfdStandard,
+                Ii: ii,
                 Index: index + 1,
                 Offset: nextIfdOffset,
             }

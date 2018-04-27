@@ -239,3 +239,39 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
 
     return ed, nil
 }
+
+func (ve *ValueEncoder) EncodeWithType(tt TagType, value interface{}) (ed EncodedData, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    switch tt.Type() {
+    case TypeByte:
+        ed, err = ve.encodeBytes(value.([]byte))
+        log.PanicIf(err)
+    case TypeAscii:
+        ed, err = ve.encodeAscii(value.(string))
+        log.PanicIf(err)
+    case TypeShort:
+        ed, err = ve.encodeShorts(value.([]uint16))
+        log.PanicIf(err)
+    case TypeLong:
+        ed, err = ve.encodeLongs(value.([]uint32))
+        log.PanicIf(err)
+    case TypeRational:
+        ed, err = ve.encodeRationals(value.([]Rational))
+        log.PanicIf(err)
+    case TypeSignedLong:
+        ed, err = ve.encodeSignedLongs(value.([]int32))
+        log.PanicIf(err)
+    case TypeSignedRational:
+        ed, err = ve.encodeSignedRationals(value.([]SignedRational))
+        log.PanicIf(err)
+    default:
+        log.Panicf("value not encodable (with type): %v [%v]", tt, value)
+    }
+
+    return ed, nil
+}

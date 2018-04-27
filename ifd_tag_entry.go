@@ -25,7 +25,7 @@ type IfdTagEntry struct {
     ChildIfdName string
 
     // IfdName is the IFD that this tag belongs to.
-    IfdName string
+    Ii IfdIdentity
 }
 
 func (ite IfdTagEntry) String() string {
@@ -47,7 +47,7 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
             AddressableData: addressableData,
         }
 
-        value, err := UndefinedValue(ite.IfdName, ite.TagId, valueContext, byteOrder)
+        value, err := UndefinedValue(ite.Ii, ite.TagId, valueContext, byteOrder)
         log.PanicIf(err)
 
         switch value.(type) {

@@ -12,14 +12,20 @@ import (
 
 const (
     IfdStandard = "IFD"
+
     IfdExif = "Exif"
     IfdGps = "GPSInfo"
     IfdIop = "Iop"
+
+    IfdExifId = 0x8769
+    IfdGpsId = 0x8825
+    IfdIopId = 0xA005
 )
 
 var (
     tagDataFilepath = ""
 
+// TODO(dustin): !! Get rid of this in favor of one of the two lookups, just below.
     validIfds = []string {
         IfdStandard,
         IfdExif,
@@ -27,20 +33,69 @@ var (
         IfdIop,
     }
 
-    IfdTagIds = map[string]uint16 {
-        IfdExif: 0x8769,
-        IfdGps: 0x8825,
-        IfdIop: 0xA005,
+    // A lookup for IFDs by their parents.
+// TODO(dustin): !! We should switch to indexing by their unique integer IDs (defined below) rather than exposing ourselves to non-unique IFD names (even if we *do* manage the naming ourselves).
+    IfdTagIds = map[string]map[string]uint16 {
+        "": map[string]uint16 {
+            // A root IFD type. Not allowed to be a child (tag-based) IFD.
+            IfdStandard: 0x0,
+        },
+
+        IfdStandard: map[string]uint16 {
+            IfdExif: IfdExifId,
+            IfdGps: IfdGpsId,
+        },
+
+        IfdExif: map[string]uint16 {
+            IfdIop: IfdIopId,
+        },
     }
 
     // IfdTagNames is populated in the init(), below.
-    IfdTagNames = map[uint16]string {}
+    IfdTagNames = map[string]map[uint16]string {}
+
+    // IFD Identities. These are often how we refer to IFDs, from call to call.
+
+    // The NULL-type instance for search misses and empty responses.
+    ZeroIi = IfdIdentity{}
+
+    RootIi = IfdIdentity{ IfdName: IfdStandard }
+    ExifIi = IfdIdentity{ ParentIfdName: IfdStandard, IfdName: IfdExif }
+    GpsIi = IfdIdentity{ ParentIfdName: IfdStandard, IfdName: IfdGps }
+    ExifIopIi = IfdIdentity{ ParentIfdName: IfdExif, IfdName: IfdIop }
+
+    // Produce a list of unique IDs for each IFD that we can pass around (so we
+    // don't always have to be comparing parent and child names).
+    //
+    // For lack of need, this is just static.
+    //
+    // (0) is reserved for not-found/miss responses.
+    IfdIds = map[IfdIdentity]int {
+        RootIi: 1,
+        ExifIi: 2,
+        GpsIi: 3,
+        ExifIopIi: 4,
+    }
 )
 
 var (
     tagsLogger = log.NewLogger("exif.tags")
     ErrTagNotFound = errors.New("tag not found")
 )
+
+
+type IfdIdentity struct {
+    ParentIfdName string
+    IfdName string
+}
+
+func (ii IfdIdentity) String() string {
+    return fmt.Sprintf("IfdIdentity<PARENT-NAME=[%s] NAME=[%s]>", ii.ParentIfdName, ii.IfdName)
+}
+
+func (ii IfdIdentity) Id() int {
+    return IfdIdWithIdentityOrFail(ii)
+}
 
 
 // File structures.
@@ -161,14 +216,14 @@ if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" 
     return nil
 }
 
-func (ti *TagIndex) Get(ifdName string, id uint16) (it *IndexedTag, err error) {
+func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    family, found := ti.tagsByIfd[ifdName]
+    family, found := ti.tagsByIfd[ii.IfdName]
     if found == false {
         log.Panic(ErrTagNotFound)
     }
@@ -181,26 +236,90 @@ func (ti *TagIndex) Get(ifdName string, id uint16) (it *IndexedTag, err error) {
     return it, nil
 }
 
-// IfdName returns the known index name for the tags that are expected/allowed
-// for the IFD. If there's an error, returns "". If returns "", the IFD should
-// be skipped.
-func IfdName(ifdName string, ifdIndex int) string {
-    // There's an IFD0 and IFD1, but the others must be unique.
-    if ifdName == IfdStandard && ifdIndex > 1 {
-        tagsLogger.Errorf(nil, "The 'IFD' IFD can not occur more than twice: [%s]. Ignoring IFD.", ifdName)
-        return ""
-    } else if ifdName != IfdStandard && ifdIndex > 0 {
-        tagsLogger.Errorf(nil, "Only the 'IFD' IFD can be repeated: [%s]. Ignoring IFD.", ifdName)
-        return ""
+// IfdTagWithId returns true if the given tag points to a child IFD block.
+func IfdTagNameWithIdOrFail(parentIfdName string, tagId uint16) string {
+    name, found := IfdTagNameWithId(parentIfdName, tagId)
+    if found == false {
+        log.Panicf("tag-ID (0x%02x) under parent IFD [%s] not associated with a child IFD", tagId, parentIfdName)
     }
 
-    return ifdName
+    return name
 }
 
-// IsIfdTag returns true if the given tag points to a child IFD block.
-func IsIfdTag(tagId uint16) (name string, found bool) {
-    name, found = IfdTagNames[tagId]
-    return name, found
+// IfdTagWithId returns true if the given tag points to a child IFD block.
+func IfdTagNameWithId(parentIfdName string, tagId uint16) (name string, found bool) {
+    if tags, found := IfdTagNames[parentIfdName]; found == true {
+        if name, found = tags[tagId]; found == true {
+            return name, true
+        }
+    }
+
+    return "", false
+}
+
+// IfdTagIdWithIdentity returns true if the given tag points to a child IFD
+// block.
+func IfdTagIdWithIdentity(ii IfdIdentity) (tagId uint16, found bool) {
+    if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
+        if tagId, found = tags[ii.IfdName]; found == true {
+            return tagId, true
+        }
+    }
+
+    return 0, false
+}
+
+func IfdTagIdWithIdentityOrFail(ii IfdIdentity) (tagId uint16) {
+    if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
+        if tagId, found = tags[ii.IfdName]; found == true {
+            if tagId == 0 {
+                // This IFD is not the type that can be linked to from a tag.
+                log.Panicf("not a child IFD")
+            }
+
+            return tagId
+        }
+    }
+
+    log.Panicf("no tag for invalid IFD identity")
+    return 0
+}
+
+func IfdIdWithIdentity(ii IfdIdentity) int {
+    id, _ := IfdIds[ii]
+    return id
+}
+
+func IfdIdWithIdentityOrFail(ii IfdIdentity) int {
+    id, _ := IfdIds[ii]
+    if id == 0 {
+        log.Panicf("IFD not valid: %v", ii)
+    }
+
+    return id
+}
+
+func IfdIdOrFail(parentIfdName, ifdName string) (ii IfdIdentity, id int) {
+    ii, id = IfdId(parentIfdName, ifdName)
+    if id == 0 {
+        log.Panicf("IFD is not valid: [%s] [%s]", parentIfdName, ifdName)
+    }
+
+    return ii, id
+}
+
+func IfdId(parentIfdName, ifdName string) (ii IfdIdentity, id int) {
+    ii = IfdIdentity{
+        ParentIfdName: parentIfdName,
+        IfdName: ifdName,
+    }
+
+    id, found := IfdIds[ii]
+    if found != true {
+        return IfdIdentity{}, 0
+    }
+
+    return ii, id
 }
 
 func init() {
@@ -212,7 +331,13 @@ func init() {
     assetsPath := path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
     tagDataFilepath = path.Join(assetsPath, "tags.yaml")
 
-    for name, tagId := range IfdTagIds {
-        IfdTagNames[tagId] = name
+    for ifdName, tags := range IfdTagIds {
+        tagsR := make(map[uint16]string)
+
+        for tagName, tagId := range tags {
+            tagsR[tagId] = tagName
+        }
+
+        IfdTagNames[ifdName] = tagsR
     }
 }

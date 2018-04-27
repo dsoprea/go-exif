@@ -4,14 +4,12 @@ import (
     "testing"
     "bytes"
 
-    "encoding/binary"
-
     "github.com/dsoprea/go-logging"
 )
 
 func Test_ByteWriter_writeAsBytes_uint8(t *testing.T) {
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     err := bw.writeAsBytes(uint8(0x12))
     log.PanicIf(err)
@@ -23,7 +21,7 @@ func Test_ByteWriter_writeAsBytes_uint8(t *testing.T) {
 
 func Test_ByteWriter_writeAsBytes_uint16(t *testing.T) {
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     err := bw.writeAsBytes(uint16(0x1234))
     log.PanicIf(err)
@@ -35,7 +33,7 @@ func Test_ByteWriter_writeAsBytes_uint16(t *testing.T) {
 
 func Test_ByteWriter_writeAsBytes_uint32(t *testing.T) {
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     err := bw.writeAsBytes(uint32(0x12345678))
     log.PanicIf(err)
@@ -47,7 +45,7 @@ func Test_ByteWriter_writeAsBytes_uint32(t *testing.T) {
 
 func Test_ByteWriter_WriteUint16(t *testing.T) {
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     err := bw.WriteUint16(uint16(0x1234))
     log.PanicIf(err)
@@ -59,7 +57,7 @@ func Test_ByteWriter_WriteUint16(t *testing.T) {
 
 func Test_ByteWriter_WriteUint32(t *testing.T) {
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     err := bw.WriteUint32(uint32(0x12345678))
     log.PanicIf(err)
@@ -71,7 +69,7 @@ func Test_ByteWriter_WriteUint32(t *testing.T) {
 
 func Test_ByteWriter_WriteFourBytes(t *testing.T) {
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     err := bw.WriteFourBytes([]byte { 0x11, 0x22, 0x33, 0x44 })
     log.PanicIf(err)
@@ -83,7 +81,7 @@ func Test_ByteWriter_WriteFourBytes(t *testing.T) {
 
 func Test_ByteWriter_WriteFourBytes_TooMany(t *testing.T) {
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     err := bw.WriteFourBytes([]byte { 0x11, 0x22, 0x33, 0x44, 0x55 })
     if err == nil {
@@ -182,24 +180,22 @@ func Test_IfdByteEncoder__Arithmetic(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
+    gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
+
     ib := &IfdBuilder{
-        ifdName: IfdGps,
+        ii: gpsIi,
     }
 
-    bt := &builderTag{
-        tagId: 0x0000,
-        value: NewIfdBuilderTagValueFromBytes([]byte { 0x12 }),
-    }
+    bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12) })
 
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -214,24 +210,22 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
+    gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
+
     ib := &IfdBuilder{
-        ifdName: IfdGps,
+        ii: gpsIi,
     }
 
-    bt := &builderTag{
-        tagId: 0x0000,
-        value: NewIfdBuilderTagValueFromBytes([]byte { 0x12, 0x34, 0x56, 0x78 }),
-    }
+    bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78) })
 
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -246,24 +240,22 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
+    gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
+
     ib := &IfdBuilder{
-        ifdName: IfdGps,
+        ii: gpsIi,
     }
 
     b := new(bytes.Buffer)
-    bw := NewByteWriter(b, binary.BigEndian)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
 
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-    bt := &builderTag{
-        tagId: 0x0000,
-        value: NewIfdBuilderTagValueFromBytes([]byte { 0x12, 0x34, 0x56, 0x78, 0x9A }),
-    }
+    bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a) })
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -278,14 +270,10 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
     // Test that another allocation encodes to the new offset.
 
-    bt = &builderTag{
-        tagId: 0x0000,
-        value: NewIfdBuilderTagValueFromBytes([]byte { 0xbc, 0xde, 0xf0, 0x12, 0x34 }),
-    }
+    bt = NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34) })
 
 // TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
-// TODO(dustin): !! Formally generate a BT properly and test here for every type. Make sure everything that we accomodate slices and properly encode (since things originally decode as slices)..
-    childIfdBlock, err = ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
+    childIfdBlock, err = ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {

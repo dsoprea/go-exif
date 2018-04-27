@@ -6,8 +6,6 @@ import (
     "bytes"
     "path"
 
-    "encoding/binary"
-
     "github.com/dsoprea/go-logging"
 )
 
@@ -16,7 +14,7 @@ import (
 
 
 func TestAdd(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -52,11 +50,11 @@ func TestAdd(t *testing.T) {
     err = ib.Add(bt)
     log.PanicIf(err)
 
-    if ib.ifdName != IfdStandard {
+    if ib.ii != RootIi {
         t.Fatalf("IFD name not correct.")
     } else if ib.ifdTagId != 0 {
         t.Fatalf("IFD tag-ID not correct.")
-    } else if ib.byteOrder != binary.BigEndian {
+    } else if ib.byteOrder != TestDefaultByteOrder {
         t.Fatalf("IFD byte-order not correct.")
     } else if len(ib.tags) != 4 {
         t.Fatalf("IFD tag-count not correct.")
@@ -94,8 +92,8 @@ func TestAdd(t *testing.T) {
 }
 
 func TestSetNextIfd(t *testing.T) {
-    ib1 := NewIfdBuilder(IfdStandard, binary.BigEndian)
-    ib2 := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib1 := NewIfdBuilder(RootIi, TestDefaultByteOrder)
+    ib2 := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     if ib1.nextIb != nil {
         t.Fatalf("Next-IFD for IB1 not initially terminal.")
@@ -113,7 +111,7 @@ func TestSetNextIfd(t *testing.T) {
 
 func TestAddChildIb(t *testing.T) {
 
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -123,7 +121,9 @@ func TestAddChildIb(t *testing.T) {
     err := ib.Add(bt)
     log.PanicIf(err)
 
-    ibChild := NewIfdBuilder(IfdExif, binary.BigEndian)
+    exifIi, _ := IfdIdOrFail(IfdStandard, IfdExif)
+
+    ibChild := NewIfdBuilder(exifIi, TestDefaultByteOrder)
     err = ib.AddChildIb(ibChild)
     log.PanicIf(err)
 
@@ -154,7 +154,7 @@ func TestAddTagsFromExisting(t *testing.T) {
         }
     }()
 
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     entries := make([]IfdTagEntry, 3)
 
@@ -194,7 +194,7 @@ func TestAddTagsFromExisting(t *testing.T) {
 }
 
 func TestAddTagsFromExisting__Includes(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     entries := make([]IfdTagEntry, 3)
 
@@ -226,7 +226,7 @@ func TestAddTagsFromExisting__Includes(t *testing.T) {
 }
 
 func TestAddTagsFromExisting__Excludes(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     entries := make([]IfdTagEntry, 3)
 
@@ -258,7 +258,7 @@ func TestAddTagsFromExisting__Excludes(t *testing.T) {
 }
 
 func TestFindN_First_1(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -302,7 +302,7 @@ func TestFindN_First_1(t *testing.T) {
 }
 
 func TestFindN_First_2_1Returned(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -346,7 +346,7 @@ func TestFindN_First_2_1Returned(t *testing.T) {
 }
 
 func TestFindN_First_2_2Returned(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -413,7 +413,7 @@ func TestFindN_First_2_2Returned(t *testing.T) {
 }
 
 func TestFindN_Middle_WithDuplicates(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -481,7 +481,7 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
 }
 
 func TestFindN_Middle_NoDuplicates(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -533,7 +533,7 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
 }
 
 func TestFindN_Miss(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     found, err := ib.FindN(0x11, 1)
     log.PanicIf(err)
@@ -544,7 +544,7 @@ func TestFindN_Miss(t *testing.T) {
 }
 
 func TestFind_Hit(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -594,7 +594,7 @@ func TestFind_Hit(t *testing.T) {
 }
 
 func TestFind_Miss(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -637,7 +637,7 @@ func TestFind_Miss(t *testing.T) {
 }
 
 func TestReplace(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -691,7 +691,7 @@ func TestReplace(t *testing.T) {
 }
 
 func TestReplaceN(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -745,7 +745,7 @@ func TestReplaceN(t *testing.T) {
 }
 
 func TestDeleteFirst(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -837,7 +837,7 @@ func TestDeleteFirst(t *testing.T) {
 }
 
 func TestDeleteN(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -929,7 +929,7 @@ func TestDeleteN(t *testing.T) {
 }
 
 func TestDeleteN_Two(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -1004,7 +1004,7 @@ func TestDeleteN_Two(t *testing.T) {
 }
 
 func TestDeleteAll(t *testing.T) {
-    ib := NewIfdBuilder(IfdStandard, binary.BigEndian)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
         tagId: 0x11,
@@ -1166,18 +1166,23 @@ func TestNewIfdBuilderFromExistingChain(t *testing.T) {
 
 
 func TestNewIfdBuilderWithExistingIfd(t *testing.T) {
-    testIfdName := IfdGps
-    tagId := IfdTagIds[testIfdName]
+    ii, _ := IfdIdOrFail(IfdStandard, IfdGps)
+    tagId := IfdTagIdWithIdentityOrFail(ii)
+
+    parentIfd := &Ifd{
+        Name: IfdStandard,
+    }
 
     ifd := &Ifd{
-        Name: testIfdName,
-        ByteOrder: binary.BigEndian,
+        Name: IfdGps,
+        ByteOrder: TestDefaultByteOrder,
         Offset: 0x123,
+        ParentIfd: parentIfd,
     }
 
     ib := NewIfdBuilderWithExistingIfd(ifd)
 
-    if ib.ifdName != ifd.Name {
+    if ib.ii.IfdName != ifd.Name {
         t.Fatalf("IFD-name not correct.")
     } else if ib.ifdTagId != tagId {
         t.Fatalf("IFD tag-ID not correct.")
@@ -1185,5 +1190,31 @@ func TestNewIfdBuilderWithExistingIfd(t *testing.T) {
         t.Fatalf("IFD byte-order not correct.")
     } else if ib.existingOffset != ifd.Offset {
         t.Fatalf("IFD offset not correct.")
+    }
+}
+
+func TestNewBuilderTagFromConfig_OneUnit(t *testing.T) {
+    bt := NewBuilderTagFromConfig(ExifIi, 0x8833, TestDefaultByteOrder, []uint32 { uint32(0x1234) })
+
+    if bt.ii != ExifIi {
+        t.Fatalf("II in builderTag not correct")
+    } else if bt.tagId != 0x8833 {
+        t.Fatalf("tag-ID not correct")
+    } else if bytes.Compare(bt.value.Bytes(), []byte { 0x0, 0x0, 0x12, 0x34, }) != 0 {
+        t.Fatalf("value not correct")
+    }
+}
+
+func TestNewBuilderTagFromConfig_TwoUnits(t *testing.T) {
+    bt := NewBuilderTagFromConfig(ExifIi, 0x8833, TestDefaultByteOrder, []uint32 { uint32(0x1234), uint32(0x5678) })
+
+    if bt.ii != ExifIi {
+        t.Fatalf("II in builderTag not correct")
+    } else if bt.tagId != 0x8833 {
+        t.Fatalf("tag-ID not correct")
+    } else if bytes.Compare(bt.value.Bytes(), []byte {
+            0x0, 0x0, 0x12, 0x34,
+            0x0, 0x0, 0x56, 0x78, }) != 0 {
+        t.Fatalf("value not correct")
     }
 }

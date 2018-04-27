@@ -70,7 +70,7 @@ func TestVisit(t *testing.T) {
     ti := NewTagIndex()
     tags := make([]string, 0)
 
-    visitor := func(indexedIfdName string, tagId uint16, tagType TagType, valueContext ValueContext) (err error) {
+    visitor := func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error) {
         defer func() {
             if state := recover(); state != nil {
                 err = log.Wrap(state.(error))
@@ -78,10 +78,10 @@ func TestVisit(t *testing.T) {
             }
         }()
 
-        it, err := ti.Get(indexedIfdName, tagId)
+        it, err := ti.Get(ii, tagId)
         if err != nil {
             if log.Is(err, ErrTagNotFound) {
-                fmt.Printf("Unknown tag: [%s] (%04x)\n", indexedIfdName, tagId)
+                fmt.Printf("Unknown tag: [%v] (%04x)\n", ii, tagId)
                 return nil
             } else {
                 log.Panic(err)
@@ -90,7 +90,7 @@ func TestVisit(t *testing.T) {
 
         valueString := ""
         if tagType.Type() == TypeUndefined {
-            value, err := UndefinedValue(indexedIfdName, tagId, valueContext, tagType.ByteOrder())
+            value, err := UndefinedValue(ii, tagId, valueContext, tagType.ByteOrder())
             if log.Is(err, ErrUnhandledUnknownTypedTag) {
                 valueString = "!UNDEFINED!"
             } else if err != nil {
@@ -103,7 +103,7 @@ func TestVisit(t *testing.T) {
             log.PanicIf(err)
         }
 
-        description := fmt.Sprintf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", indexedIfdName, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
+        description := fmt.Sprintf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ii.IfdName, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
         tags = append(tags, description)
 
         return nil
@@ -242,34 +242,54 @@ func TestCollect(t *testing.T) {
         t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children[0].Children[0].Name)
     }
 
-    if lookup[IfdStandard][0].Name != IfdStandard {
+    rootIi, _ := IfdIdOrFail("", IfdStandard)
+
+    if lookup[rootIi][0].Name != IfdStandard {
         t.Fatalf("Lookup for standard IFD not correct.")
-    } else if lookup[IfdStandard][1].Name != IfdStandard {
+    } else if lookup[rootIi][1].Name != IfdStandard {
         t.Fatalf("Lookup for standard IFD not correct.")
-    } else if lookup[IfdExif][0].Name != IfdExif {
+    }
+
+    exifIi, _ := IfdIdOrFail(IfdStandard, IfdExif)
+
+    if lookup[exifIi][0].Name != IfdExif {
         t.Fatalf("Lookup for EXIF IFD not correct.")
-    } else if lookup[IfdGps][0].Name != IfdGps {
+    }
+
+    gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
+
+    if lookup[gpsIi][0].Name != IfdGps {
         t.Fatalf("Lookup for EXIF IFD not correct.")
-    } else if lookup[IfdIop][0].Name != IfdIop {
+    }
+
+    iopIi, _ := IfdIdOrFail(IfdExif, IfdIop)
+
+    if lookup[iopIi][0].Name != IfdIop {
         t.Fatalf("Lookup for EXIF IFD not correct.")
     }
 
     foundExif := 0
     foundGps := 0
-    for _, ite := range lookup[IfdStandard][0].Entries {
+    for _, ite := range lookup[rootIi][0].Entries {
         if ite.ChildIfdName == IfdExif {
             foundExif++
 
-            if IfdTagNames[ite.TagId] != IfdExif {
-                t.Fatalf("EXIF IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTagNames[ite.TagId], IfdExif)
+            name, found := IfdTagNameWithId(IfdStandard, ite.TagId)
+            if found != true {
+                t.Fatalf("could not find tag-ID for EXIF IFD")
+            } else if name != IfdExif {
+                t.Fatalf("EXIF IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, name, IfdExif)
             }
         }
 
         if ite.ChildIfdName == IfdGps {
             foundGps++
 
-            if IfdTagNames[ite.TagId] != IfdGps {
-                t.Fatalf("EXIF GPS tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTagNames[ite.TagId] != IfdGps)
+            name, found := IfdTagNameWithId(IfdStandard, ite.TagId)
+            if found != true {
+                t.Fatalf("could not find tag-ID for GPS IFD")
+            } else if name != IfdGps {
+                t.Fatalf("GPS IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, name, IfdGps)
             }
         }
     }
@@ -281,12 +301,15 @@ func TestCollect(t *testing.T) {
     }
 
     foundIop := 0
-    for _, ite := range lookup[IfdExif][0].Entries {
+    for _, ite := range lookup[exifIi][0].Entries {
         if ite.ChildIfdName == IfdIop {
             foundIop++
 
-            if IfdTagNames[ite.TagId] != IfdIop {
-                t.Fatalf("IOP IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, IfdTagNames[ite.TagId], IfdIop)
+            name, found := IfdTagNameWithId(IfdExif, ite.TagId)
+            if found != true {
+                t.Fatalf("could not find tag-ID for IOP IFD")
+            } else if name != IfdIop {
+                t.Fatalf("IOP IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, name, IfdIop)
             }
         }
     }

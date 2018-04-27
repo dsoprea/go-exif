@@ -144,7 +144,8 @@ func TestIfdTagEntry_Resolver_ValueBytes__Unknown_Field_And_Nonroot_Ifd(t *testi
     eh, index, err := e.Collect(rawExif)
     log.PanicIf(err)
 
-    ifdExif := index.Lookup[IfdExif][0]
+    ii, _ := IfdIdOrFail(IfdStandard, IfdExif)
+    ifdExif := index.Lookup[ii][0]
 
     var ite *IfdTagEntry
     for _, thisIte := range ifdExif.Entries {
