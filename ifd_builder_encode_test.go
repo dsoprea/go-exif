@@ -3,6 +3,7 @@ package exif
 import (
     "testing"
     "bytes"
+    // "fmt"
 
     "github.com/dsoprea/go-logging"
 )
@@ -293,7 +294,154 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     }
 }
 
+func Test_IfdByteEncoder_encodeTagToBytes_childifd__no_allocate(t *testing.T) {
+    ibe := NewIfdByteEncoder()
+
+    ib := &IfdBuilder{
+        ii: RootIi,
+    }
+
+    b := new(bytes.Buffer)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
+
+    addressableOffset := uint32(0x1234)
+    ida := newIfdDataAllocator(addressableOffset)
+
+    childIb := NewIfdBuilder(ExifIi, TestDefaultByteOrder)
+    bt := NewBuilderTagFromConfig(RootIi, IfdExifId, TestDefaultByteOrder, childIb)
+
+    nextIfdOffsetToWrite := uint32(0)
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, nextIfdOffsetToWrite)
+    log.PanicIf(err)
+
+    if childIfdBlock != nil {
+        t.Fatalf("no child-IFDs were expected to be allocated")
+    } else if bytes.Compare(b.Bytes(), []byte { 0x87, 0x69, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00 }) != 0 {
+        t.Fatalf("encoded tag-entry with child-IFD not correct")
+    } else if ida.NextOffset() != addressableOffset {
+        t.Fatalf("allocation offset not expected")
+    }
+}
+
+func Test_IfdByteEncoder_encodeTagToBytes_childifd__with_allocate(t *testing.T) {
+    // Create a child IFD (represented by an IB instance) that we can allocate
+    // space for and then attach to a tag (which would normally be an entry,
+    // then, in a higher IFD).
+
+    childIb := NewIfdBuilder(ExifIi, TestDefaultByteOrder)
+
+    childIbTestTag := builderTag{
+        ii: ExifIi,
+        tagId: 0x8822,
+        value: NewIfdBuilderTagValueFromBytes([]byte { 0x12, 0x34 }),
+    }
+
+    childIb.Add(childIbTestTag)
+
+    // Formally compose the tag that refers to it.
+
+    bt := NewBuilderTagFromConfig(RootIi, IfdExifId, TestDefaultByteOrder, childIb)
+
+    // Encode the tag. Sicne we've actually provided an offset at which we can
+    // allocate data, the child-IFD will automatically be encoded, allocated,
+    // and installed into the allocated-data block (which will follow the IFD
+    // definition in the file, per the specfiication).
+
+    ibe := NewIfdByteEncoder()
+
+    ib := &IfdBuilder{
+        ii: RootIi,
+    }
+
+    b := new(bytes.Buffer)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
+
+    // addressableOffset is the offset of where large data can be allocated
+    // (which follows the IFD table/block). Large, in that it can't be stored
+    // in the table itself. Just used for arithmetic. This is just where the
+    // data for the current IFD can be written. It's not absolute for the EXIF
+    // data in general.
+    addressableOffset := uint32(0x1234)
+    ida := newIfdDataAllocator(addressableOffset)
+
+    // This is the offset of where the next IFD can be written in the EXIF byte
+    // stream. Just used for arithmetic.
+    nextIfdOffsetToWrite := uint32(2000)
+
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, nextIfdOffsetToWrite)
+    log.PanicIf(err)
+
+    if ida.NextOffset() != addressableOffset {
+        t.Fatalf("IDA offset changed but no allocations where expected: (0x%02x)", ida.NextOffset())
+    }
+
+    tagBytes := b.Bytes()
+
+    if len(tagBytes) != 12 {
+        t.Fatalf("Tag not encoded to the right number of bytes: (%d)", len(tagBytes))
+    } else if len(childIfdBlock) != 18 {
+        t.Fatalf("Child IFD is not the right size: (%d)", len(childIfdBlock))
+    }
+
+    iteV, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes)
+    log.PanicIf(err)
+
+    if iteV.TagId != IfdExifId {
+        t.Fatalf("IFD first tag-ID not correct: (0x%02x)", iteV.TagId)
+    } else if iteV.TagIndex != 0 {
+        t.Fatalf("IFD first tag index not correct: (%d)", iteV.TagIndex)
+    } else if iteV.TagType != TypeLong {
+        t.Fatalf("IFD first tag type not correct: (%d)", iteV.TagType)
+    } else if iteV.UnitCount != 1 {
+        t.Fatalf("IFD first tag unit-count not correct: (%d)", iteV.UnitCount)
+    } else if iteV.ValueOffset != nextIfdOffsetToWrite {
+        t.Fatalf("IFD's child-IFD offset (as offset) is not correct: (%d) != (%d)", iteV.ValueOffset, nextIfdOffsetToWrite)
+    } else if bytes.Compare(iteV.RawValueOffset, []byte { 0x0, 0x0, 0x07, 0xd0 }) != 0 {
+        t.Fatalf("IFD's child-IFD offset (as raw bytes) is not correct: [%x]", iteV.RawValueOffset)
+    } else if iteV.ChildIfdName != IfdExif {
+        t.Fatalf("IFD first tag IFD-name name not correct: [%s]", iteV.ChildIfdName)
+    } else if iteV.Ii != RootIi {
+        t.Fatalf("IFD first tag parent IFD not correct: %v", iteV.Ii)
+    }
+
+
+// TODO(dustin): Test writing some tags that require allocation.
+
+
+    // Validate the child's raw IFD bytes.
+
+    childNextIfdOffset, childEntries, err := ParseOneIfd(ExifIi, TestDefaultByteOrder, childIfdBlock, nil)
+    log.PanicIf(err)
+
+    if childNextIfdOffset != uint32(0) {
+        t.Fatalf("Child IFD: Next IFD offset should be (0): (0x%08x)", childNextIfdOffset)
+    } else if len(childEntries) != 1 {
+        t.Fatalf("Child IFD: Expected exactly one entry: (%d)", len(childEntries))
+    }
+
+    ite := childEntries[0]
+
+    if ite.TagId != 0x8822 {
+        t.Fatalf("Child IFD first tag-ID not correct: (0x%02x)", ite.TagId)
+    } else if ite.TagIndex != 0 {
+        t.Fatalf("Child IFD first tag index not correct: (%d)", ite.TagIndex)
+    } else if ite.TagType != TypeShort {
+        t.Fatalf("Child IFD first tag type not correct: (%d)", ite.TagType)
+    } else if ite.UnitCount != 1 {
+        t.Fatalf("Child IFD first tag unit-count not correct: (%d)", ite.UnitCount)
+    } else if ite.ValueOffset != 0x12340000 {
+        t.Fatalf("Child IFD first tag value value (as offset) not correct: (0x%02x)", ite.ValueOffset)
+    } else if bytes.Compare(ite.RawValueOffset, []byte { 0x12, 0x34, 0x0, 0x0 }) != 0 {
+        t.Fatalf("Child IFD first tag value value (as raw bytes) not correct: [%v]", ite.RawValueOffset)
+    } else if ite.ChildIfdName != "" {
+        t.Fatalf("Child IFD first tag IFD-name name not empty: [%s]", ite.ChildIfdName)
+    } else if ite.Ii != ExifIi {
+        t.Fatalf("Child IFD first tag parent IFD not correct: %v", ite.Ii)
+    }
+}
+
 // TODO(dustin): !! Test all types.
 // TODO(dustin): !! Test specific unknown-type tags.
 // TODO(dustin): !! Test what happens with unhandled unknown-type tags (though it should never get to this point in the normal workflow).
-// TODO(dustin): !! Test child IFDs (may not be possible until after writing tests for higher-level IB encode).
+
+// TODO(dustin): !! Once we can correctly build a complete EXIF, test by trying to parse with an Exif instance.

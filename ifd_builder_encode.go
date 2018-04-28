@@ -132,6 +132,11 @@ func (ibe *IfdByteEncoder) TableSize(entryCount int) uint32 {
     return uint32(2) + (ibe.EntrySize() * uint32(entryCount)) + uint32(4)
 }
 
+// encodeTagToBytes encodes the given tag to a byte stream. If
+// `nextIfdOffsetToWrite` is more than (0), recurse into child IFDs
+// (`nextIfdOffsetToWrite` is required in order for them to know where the its
+// IFD data will be written, in order for them to know the offset of where
+// their allocated-data block will start, which follows right behind).
 func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *ByteWriter, ida *ifdDataAllocator, nextIfdOffsetToWrite uint32) (childIfdBlock []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -194,7 +199,6 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
             log.PanicIf(err)
         } else {
             fourBytes := make([]byte, 4)
-// TODO(dustin): We have to test that small (<4 bytes) values are aligned correctly.
             copy(fourBytes, valueBytes)
 
             err = bw.WriteFourBytes(fourBytes)
@@ -212,7 +216,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         if nextIfdOffsetToWrite > 0 {
             var err error
 
-// TODO(dustin): Create a tool to write the structure and allocation of the output data.
+// TODO(dustin): Create a tool to print/dump the structure and allocation of the output data.
 
             // Create the block of IFD data and everything it requires.
             childIfdBlock, err = ibe.encodeAndAttachIfd(bt.value.Ib(), nextIfdOffsetToWrite)
@@ -336,6 +340,10 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
             err = log.Wrap(state.(error))
         }
     }()
+
+    if len(ib.tags) == 0 {
+        log.Panicf("trying to encode an IfdBuilder that doesn't have any tags")
+    }
 
 // TODO(dustin): !! There's a lot of numbers-agreement required in our current implementation (where offsets are independently calculated in multiple areas, such as in the first and second runs of encodeIfdToBytes). Refactor this to share the offsets rather than repeatedly calculating them (which has a risk of fallign out of aligning and there being cosnsitency problems).
     b := new(bytes.Buffer)

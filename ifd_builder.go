@@ -92,24 +92,33 @@ func (bt builderTag) String() string {
 }
 
 // NewBuilderTagFromConfig allows us to easily generate solid, consistent tags
-// for testing with.
+// for testing with. `ii` is the tpye of IFD that owns this tag.
 func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
-    ti := NewTagIndex()
+    var tagValue *IfdBuilderTagValue
 
-    it, err := ti.Get(ii, tagId)
-    log.PanicIf(err)
+    switch value.(type) {
+    case *IfdBuilder:
+        tagValue = NewIfdBuilderTagValueFromIfdBuilder(value.(*IfdBuilder))
+    default:
+        ti := NewTagIndex()
 
-    tt := NewTagType(it.Type, byteOrder)
+        it, err := ti.Get(ii, tagId)
+        log.PanicIf(err)
 
-    ve := NewValueEncoder(byteOrder)
+        tt := NewTagType(it.Type, byteOrder)
 
-    ed, err := ve.EncodeWithType(tt, value)
-    log.PanicIf(err)
+        ve := NewValueEncoder(byteOrder)
+
+        ed, err := ve.EncodeWithType(tt, value)
+        log.PanicIf(err)
+
+        tagValue = NewIfdBuilderTagValueFromBytes(ed.Encoded)
+    }
 
     return builderTag{
         ii: ii,
         tagId: tagId,
-        value: NewIfdBuilderTagValueFromBytes(ed.Encoded),
+        value: tagValue,
     }
 }
 
