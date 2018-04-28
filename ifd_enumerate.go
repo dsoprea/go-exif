@@ -124,6 +124,37 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerato
     return ite
 }
 
+func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumerator) (tag IfdTagEntry, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    tagId, _, err := ite.getUint16()
+    log.PanicIf(err)
+
+    tagType, _, err := ite.getUint16()
+    log.PanicIf(err)
+
+    unitCount, _, err := ite.getUint32()
+    log.PanicIf(err)
+
+    valueOffset, rawValueOffset, err := ite.getUint32()
+    log.PanicIf(err)
+
+    tag = IfdTagEntry{
+        Ii: ii,
+        TagId: tagId,
+        TagIndex: tagIndex,
+        TagType: tagType,
+        UnitCount: unitCount,
+        ValueOffset: valueOffset,
+        RawValueOffset: rawValueOffset,
+    }
+
+    return tag, nil
+}
 
 // TagVisitor is an optional callback that can get hit for every tag we parse
 // through. `addressableData` is the byte array startign after the EXIF header
@@ -150,44 +181,25 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ifdOffset uint32,
 
     entries = make([]IfdTagEntry, tagCount)
 
-    for i := uint16(0); i < tagCount; i++ {
-        tagId, _, err := ite.getUint16()
-        log.PanicIf(err)
-
-        tagType, _, err := ite.getUint16()
-        log.PanicIf(err)
-
-        unitCount, _, err := ite.getUint32()
-        log.PanicIf(err)
-
-        valueOffset, rawValueOffset, err := ite.getUint32()
+    for i := 0; i < int(tagCount); i++ {
+        tag, err := ie.parseTag(ii, i, ite)
         log.PanicIf(err)
 
         if visitor != nil {
-            tt := NewTagType(tagType, ie.byteOrder)
+            tt := NewTagType(tag.TagType, ie.byteOrder)
 
             vc := ValueContext{
-                UnitCount: unitCount,
-                ValueOffset: valueOffset,
-                RawValueOffset: rawValueOffset,
+                UnitCount: tag.UnitCount,
+                ValueOffset: tag.ValueOffset,
+                RawValueOffset: tag.RawValueOffset,
                 AddressableData: ie.exifData[ExifAddressableAreaStart:],
             }
 
-            err := visitor(ii, ifdIndex, tagId, tt, vc)
+            err := visitor(ii, ifdIndex, tag.TagId, tt, vc)
             log.PanicIf(err)
         }
 
-        tag := IfdTagEntry{
-            Ii: ii,
-            TagId: tagId,
-            TagIndex: int(i),
-            TagType: tagType,
-            UnitCount: unitCount,
-            ValueOffset: valueOffset,
-            RawValueOffset: rawValueOffset,
-        }
-
-        childIfdName, isIfd := IfdTagNameWithId(ii.IfdName, tagId)
+        childIfdName, isIfd := IfdTagNameWithId(ii.IfdName, tag.TagId)
 
         // If it's an IFD but not a standard one, it'll just be seen as a LONG
         // (the standard IFD tag type), later, unless we skip it because it's
@@ -200,7 +212,7 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ifdOffset uint32,
 
                 childIi, _ := IfdIdOrFail(ii.IfdName, childIfdName)
 
-                err := ie.scan(childIi, valueOffset, visitor)
+                err := ie.scan(childIi, tag.ValueOffset, visitor)
                 log.PanicIf(err)
             }
         }
