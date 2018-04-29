@@ -760,3 +760,20 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
     return nil
 }
+
+// AddFromConfig quickly and easily composes and adds the tag using the
+// information already known about a tag. Only works with standard tags.
+func (ib *IfdBuilder) AddFromConfig(tagId uint16, value interface{}) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    bt := NewBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
+
+    err = ib.Add(bt)
+    log.PanicIf(err)
+
+    return nil
+}

@@ -3,7 +3,6 @@ package exif
 import (
     "testing"
     "bytes"
-    // "fmt"
 
     "github.com/dsoprea/go-logging"
 )
@@ -181,11 +180,7 @@ func Test_IfdByteEncoder__Arithmetic(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
-    gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
-
-    ib := &IfdBuilder{
-        ii: gpsIi,
-    }
+    ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
     bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12) })
 
@@ -211,11 +206,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
-    gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
-
-    ib := &IfdBuilder{
-        ii: gpsIi,
-    }
+    ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
     bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78) })
 
@@ -241,11 +232,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
-    gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
-
-    ib := &IfdBuilder{
-        ii: gpsIi,
-    }
+    ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -297,9 +284,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
-    ib := &IfdBuilder{
-        ii: RootIi,
-    }
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -349,9 +334,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
     ibe := NewIfdByteEncoder()
 
-    ib := &IfdBuilder{
-        ii: RootIi,
-    }
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -441,7 +424,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
     }
 }
 
-func Test_IfdByteEncoder_encodeTagToBytes_allocate(t *testing.T) {
+func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
     // Encode the tag. Since we've actually provided an offset at which we can
     // allocate data, the child-IFD will automatically be encoded, allocated,
     // and installed into the allocated-data block (which will follow the IFD
@@ -449,9 +432,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_allocate(t *testing.T) {
 
     ibe := NewIfdByteEncoder()
 
-    ib := &IfdBuilder{
-        ii: RootIi,
-    }
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     valueString := "testvalue"
     bt := NewBuilderTagFromConfig(RootIi, 0x000b, TestDefaultByteOrder, valueString)
@@ -515,6 +496,83 @@ func Test_IfdByteEncoder_encodeTagToBytes_allocate(t *testing.T) {
         t.Fatalf("Allocated bytes not correct: %v != %v", allocatedBytes, expectedBytes)
     }
 }
+
+func Test_IfdByteEncoder_encodeIfdToBytes_simple(t *testing.T) {
+    // Build the IB.
+
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
+
+    err := ib.AddFromConfig(0x000b, "asciivalue")
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x00ff, []uint16 { 0x1122 })
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x0100, []uint32 { 0x33445566 })
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    log.PanicIf(err)
+
+    // Write the byte stream.
+
+    ibe := NewIfdByteEncoder()
+
+    // addressableOffset is the offset of where large data can be allocated
+    // (which follows the IFD table/block). Large, in that it can't be stored
+    // in the table itself. Just used for arithmetic. This is just where the
+    // data for the current IFD can be written. It's not absolute for the EXIF
+    // data in general.
+    addressableOffset := uint32(0x1234)
+
+    tableAndAllocated, tableSize, allocatedDataSize, childIfdSizes, err := ibe.encodeIfdToBytes(ib, addressableOffset, uint32(0), false)
+    log.PanicIf(err)
+
+    expectedTableSize := ibe.TableSize(4)
+    if tableSize != expectedTableSize {
+        t.Fatalf("Table-size not the right size: (%d) != (%d)", tableSize, expectedTableSize)
+    } else if len(childIfdSizes) != 0 {
+        t.Fatalf("One or more child IFDs were allocated but shouldn't have been: (%d)", len(childIfdSizes))
+    }
+
+    // The ASCII value plus the rational size.
+    expectedAllocatedSize := 11 + 8
+
+    if int(allocatedDataSize) != expectedAllocatedSize {
+        t.Fatalf("Allocated data size not correct: (%d)", allocatedDataSize)
+    }
+
+    expectedIfdAndDataBytes := []byte {
+        // IFD table block.
+
+        // - Tag count
+        0x00, 0x04,
+
+        // - Tags
+        0x00, 0x0b, 0x00, 0x02, 0x00, 0x00, 0x00, 0x0b, 0x00, 0x00, 0x12, 0x6a,
+        0x00, 0xff, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x11, 0x22, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x33, 0x44, 0x55, 0x66,
+        0x01, 0x3e, 0x00, 0x05, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x12, 0x75,
+
+        // - Next IFD offset
+        0x00, 0x00, 0x00, 0x00,
+
+
+        // IFD data block.
+
+        // - The one ASCII value
+        0x61, 0x73, 0x63, 0x69, 0x69, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x00,
+
+        // - The one rational value
+        0x11, 0x11, 0x22, 0x22, 0x33, 0x33, 0x44, 0x44,
+    }
+
+    if bytes.Compare(tableAndAllocated, expectedIfdAndDataBytes) != 0 {
+        t.Fatalf("IFD table and allocated data not correct: %v", DumpBytesToString(tableAndAllocated))
+    }
+}
+
+// TODO(dustin): !! Write test with both chained and child IFDs
 
 // TODO(dustin): !! Test all types.
 // TODO(dustin): !! Test specific unknown-type tags.
