@@ -294,7 +294,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     }
 }
 
-func Test_IfdByteEncoder_encodeTagToBytes_childifd__no_allocate(t *testing.T) {
+func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
     ib := &IfdBuilder{
@@ -323,7 +323,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childifd__no_allocate(t *testing.T) {
     }
 }
 
-func Test_IfdByteEncoder_encodeTagToBytes_childifd__with_allocate(t *testing.T) {
+func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
     // Create a child IFD (represented by an IB instance) that we can allocate
     // space for and then attach to a tag (which would normally be an entry,
     // then, in a higher IFD).
@@ -342,10 +342,10 @@ func Test_IfdByteEncoder_encodeTagToBytes_childifd__with_allocate(t *testing.T) 
 
     bt := NewBuilderTagFromConfig(RootIi, IfdExifId, TestDefaultByteOrder, childIb)
 
-    // Encode the tag. Sicne we've actually provided an offset at which we can
+    // Encode the tag. Since we've actually provided an offset at which we can
     // allocate data, the child-IFD will automatically be encoded, allocated,
     // and installed into the allocated-data block (which will follow the IFD
-    // definition in the file, per the specfiication).
+    // block/table in the file).
 
     ibe := NewIfdByteEncoder()
 
@@ -406,6 +406,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childifd__with_allocate(t *testing.T) 
 
 
 // TODO(dustin): Test writing some tags that require allocation.
+// TODO(dustin): Do an child-IFD allocation in addition to some tag allocations, and vice-verse.
 
 
     // Validate the child's raw IFD bytes.
