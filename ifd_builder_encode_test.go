@@ -441,6 +441,81 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
     }
 }
 
+func Test_IfdByteEncoder_encodeTagToBytes_allocate(t *testing.T) {
+    // Encode the tag. Since we've actually provided an offset at which we can
+    // allocate data, the child-IFD will automatically be encoded, allocated,
+    // and installed into the allocated-data block (which will follow the IFD
+    // block/table in the file).
+
+    ibe := NewIfdByteEncoder()
+
+    ib := &IfdBuilder{
+        ii: RootIi,
+    }
+
+    valueString := "testvalue"
+    bt := NewBuilderTagFromConfig(RootIi, 0x000b, TestDefaultByteOrder, valueString)
+
+    b := new(bytes.Buffer)
+    bw := NewByteWriter(b, TestDefaultByteOrder)
+
+    // addressableOffset is the offset of where large data can be allocated
+    // (which follows the IFD table/block). Large, in that it can't be stored
+    // in the table itself. Just used for arithmetic. This is just where the
+    // data for the current IFD can be written. It's not absolute for the EXIF
+    // data in general.
+    addressableOffset := uint32(0x1234)
+    ida := newIfdDataAllocator(addressableOffset)
+
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
+    log.PanicIf(err)
+
+    if ida.NextOffset() == addressableOffset {
+        t.Fatalf("IDA offset did not change even though there should've been an allocation.")
+    }
+
+    tagBytes := b.Bytes()
+
+    if len(tagBytes) != 12 {
+        t.Fatalf("Tag not encoded to the right number of bytes: (%d)", len(tagBytes))
+    } else if len(childIfdBlock) != 0 {
+        t.Fatalf("Child IFD not have been allocated.")
+    }
+
+    ite, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes)
+    log.PanicIf(err)
+
+// TODO(dustin): !! When we eventually start allocating values and child-IFDs, be careful that the offsets are calculated correctly.
+
+    if ite.TagId != 0x000b {
+        t.Fatalf("Tag-ID not correct: (0x%02x)", ite.TagId)
+    } else if ite.TagIndex != 0 {
+        t.Fatalf("Tag index not correct: (%d)", ite.TagIndex)
+    } else if ite.TagType != TypeAscii {
+        t.Fatalf("Tag type not correct: (%d)", ite.TagType)
+    } else if ite.UnitCount != (uint32(len(valueString) + 1)) {
+        t.Fatalf("Tag unit-count not correct: (%d)", ite.UnitCount)
+    } else if ite.ValueOffset != addressableOffset {
+        t.Fatalf("Tag's value (as offset) is not correct: (%d) != (%d)", ite.ValueOffset, addressableOffset)
+    } else if bytes.Compare(ite.RawValueOffset, []byte { 0x0, 0x0, 0x12, 0x34 }) != 0 {
+        t.Fatalf("Tag's value (as raw bytes) is not correct: [%x]", ite.RawValueOffset)
+    } else if ite.ChildIfdName != "" {
+        t.Fatalf("Tag's IFD-name should be empty: [%s]", ite.ChildIfdName)
+    } else if ite.Ii != RootIi {
+        t.Fatalf("Tag's parent IFD is not correct: %v", ite.Ii)
+    }
+
+    expectedBuffer := bytes.NewBufferString(valueString)
+    expectedBuffer.Write([]byte { 0x0 })
+    expectedBytes := expectedBuffer.Bytes()
+
+    allocatedBytes := ida.Bytes()
+
+    if bytes.Compare(allocatedBytes, expectedBytes) != 0 {
+        t.Fatalf("Allocated bytes not correct: %v != %v", allocatedBytes, expectedBytes)
+    }
+}
+
 // TODO(dustin): !! Test all types.
 // TODO(dustin): !! Test specific unknown-type tags.
 // TODO(dustin): !! Test what happens with unhandled unknown-type tags (though it should never get to this point in the normal workflow).
