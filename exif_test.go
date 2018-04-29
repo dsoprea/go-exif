@@ -319,6 +319,22 @@ func TestCollect(t *testing.T) {
     }
 }
 
+func TestBuildAndParseExifHeader(t *testing.T) {
+    headerBytes, err := BuildExifHeader(TestDefaultByteOrder, 0x11223344)
+    log.PanicIf(err)
+
+    e := NewExif()
+
+    eh, err := e.ParseExifHeader(headerBytes)
+    log.PanicIf(err)
+
+    if eh.ByteOrder != TestDefaultByteOrder {
+        t.Fatalf("Byte-order of EXIF header not correct.")
+    } else if eh.FirstIfdOffset != 0x11223344 {
+        t.Fatalf("First IFD offset not correct.")
+    }
+}
+
 func init() {
     goPath := os.Getenv("GOPATH")
     if goPath == "" {

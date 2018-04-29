@@ -22,6 +22,8 @@ const (
 
 var (
     exifLogger = log.NewLogger("exif.exif")
+
+    ExifHeaderPrefixBytes = []byte("Exif\000\000")
 )
 
 var (
@@ -31,12 +33,15 @@ var (
 
 
 func IsExif(data []byte) (ok bool) {
-    if bytes.Compare(data[:6], []byte("Exif\000\000")) == 0 {
+    if bytes.Compare(data[:6], ExifHeaderPrefixBytes) == 0 {
         return true
     }
 
     return false
 }
+
+
+// TODO(dustin): Isolated this to its own packge breakout the methods as independent function. There's no use for a dedicated struct.
 
 
 type Exif struct {
@@ -169,4 +174,33 @@ func (e *Exif) Collect(exifData []byte) (eh ExifHeader, index IfdIndex, err erro
     log.PanicIf(err)
 
     return eh, index, nil
+}
+
+func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerBytes []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    b := new(bytes.Buffer)
+
+    _, err = b.Write(ExifHeaderPrefixBytes)
+    log.PanicIf(err)
+
+    if byteOrder == binary.BigEndian {
+        _, err := b.WriteString("MM")
+        log.PanicIf(err)
+    } else {
+        _, err := b.WriteString("II")
+        log.PanicIf(err)
+    }
+
+    _, err = b.Write([]byte { 0x2a, 0x00 })
+    log.PanicIf(err)
+
+    err = binary.Write(b, byteOrder, firstIfdOffset)
+    log.PanicIf(err)
+
+    return b.Bytes(), nil
 }
