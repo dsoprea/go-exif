@@ -32,6 +32,37 @@ func (ite IfdTagEntry) String() string {
     return fmt.Sprintf("IfdTagEntry<TAG-IFD=[%s] TAG-ID=(0x%02x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.ChildIfdName, ite.TagId, TypeNames[ite.TagType], ite.UnitCount)
 }
 
+// ValueString renders a string from whatever the value in this tag is.
+func (ite IfdTagEntry) ValueString(byteOrder binary.ByteOrder, addressableData []byte) (value string, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    vc := ValueContext{
+        UnitCount: ite.UnitCount,
+        ValueOffset: ite.ValueOffset,
+        RawValueOffset: ite.RawValueOffset,
+        AddressableData: addressableData,
+    }
+
+    if ite.TagType == TypeUndefined {
+        valueRaw, err = UndefinedValue(ite.Ii, ite.TagId, vc, byteOrder)
+        log.PanicIf(err)
+
+        value = fmt.Sprintf("%v", valueRaw)
+    } else {
+        tt := NewTagType(ite.TagType, byteOrder)
+
+        value, err = tt.ValueString(vc, false)
+        log.PanicIf(err)
+    }
+
+    return value, nil
+}
+
+// ValueBytes renders a specific list of bytes from the value in this tag.
 func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteOrder) (value []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -39,6 +70,11 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
         }
     }()
 
+    // Return the exact bytes of the unknown-type value. Returning a string
+    // (`ValueString`) is easy because we can just pass everything to
+    // `Sprintf()`. Returning the raw, typed value (`Value`) is easy
+    // (obviously). However, here, in order to produce the list of bytes, we
+    // need to coerce whatever `UndefinedValue()` returns.
     if ite.TagType == TypeUndefined {
         valueContext := ValueContext{
             UnitCount: ite.UnitCount,
@@ -88,6 +124,34 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
     return value, nil
 }
 
+// Value returns the specific, parsed, typed value from the tag.
+func (ite IfdTagEntry) Value(byteOrder binary.ByteOrder, addressableData []byte) (value interface{}, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    vc := ValueContext{
+        UnitCount: ite.UnitCount,
+        ValueOffset: ite.ValueOffset,
+        RawValueOffset: ite.RawValueOffset,
+        AddressableData: addressableData,
+    }
+
+    if ite.TagType == TypeUndefined {
+        value, err = UndefinedValue(ite.Ii, ite.TagId, vc, byteOrder)
+        log.PanicIf(err)
+    } else {
+        tt := NewTagType(ite.TagType, byteOrder)
+
+        value, err = tt.Resolve(vc)
+        log.PanicIf(err)
+    }
+
+    return value, nil
+}
+
 
 // IfdTagEntryValueResolver instances know how to resolve the values for any
 // tag for a particular EXIF block.
@@ -108,6 +172,7 @@ func NewIfdTagEntryValueResolver(exifData []byte, byteOrder binary.ByteOrder) (i
     }
 }
 
+// ValueBytes will resolve embedded or allocated data from the tag and return the raw bytes.
 func (itevr *IfdTagEntryValueResolver) ValueBytes(ite *IfdTagEntry) (value []byte, err error) {
     defer func() {
         if state := recover(); state != nil {

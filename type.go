@@ -416,8 +416,6 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
     } else {
         typeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
 
-        fmt.Printf("Reading (%d) bytes of allocated ASCII from (%d) bytes of allocated data at offset (%d).\n", valueContext.UnitCount, len(valueContext.AddressableData), valueContext.ValueOffset)
-
         value, err = tt.ParseAscii(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
@@ -576,8 +574,8 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         }
     }()
 
-// TODO(dustin): Implement Value(), below.
-    // valueRaw, err := tt.Value(valueContext)
+// TODO(dustin): Implement Resolve(), below.
+    // valueRaw, err := tt.Resolve(valueContext)
     // log.PanicIf(err)
 
     typeId := tt.Type()
@@ -676,59 +674,58 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
     }
 }
 
-// // Value knows how to resolve the given value.
-// //
-// // Since this method lacks the information to process unknown-type tags (e.g.
-// // byte-order, tag-ID, IFD type), it will return an error if attempted. See
-// // `UndefinedValue()`.
+// Value knows how to resolve the given value.
+//
+// Since this method lacks the information to process unknown-type tags (e.g.
+// byte-order, tag-ID, IFD type), it will return an error if attempted. See
+// `UndefinedValue()`.
+func (tt TagType) Resolve(valueContext ValueContext) (value interface{}, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
 
-// // TODO(dustin): !! Rename to Resolve() (to make clear that we're parsing not encoding)
+    typeId := tt.Type()
 
-// func (tt TagType) Value(valueContext ValueContext) (value interface{}, err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
+    if typeId == TypeByte {
+        value, err = tt.ReadByteValues(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeAscii {
+        value, err = tt.ReadAsciiValue(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeAsciiNoNul {
+        value, err = tt.ReadAsciiNoNulValue(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeShort {
+        value, err = tt.ReadShortValues(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeLong {
+        value, err = tt.ReadLongValues(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeRational {
+        value, err = tt.ReadRationalValues(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeSignedLong {
+        value, err = tt.ReadSignedLongValues(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeSignedRational {
+        value, err = tt.ReadSignedRationalValues(valueContext)
+        log.PanicIf(err)
+    } else if typeId == TypeUndefined {
+        log.Panicf("will not parse unknown-type value: %v", tt)
 
-//     typeId := tt.Type()
+        // Never called.
+        return nil, nil
+    } else {
+        log.Panicf("value of type (%d) [%s] is unparseable", typeId, tt)
 
-//     if typeId == TypeByte {
-//         value, err = tt.ReadByteValues(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeAscii {
-//         value, err = tt.ReadAsciiValue(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeAsciiNoNul {
-//         value, err = tt.ReadAsciiNoNulValue(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeShort {
-//         value, err = tt.ReadShortValues(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeLong {
-//         value, err = tt.ReadLongValues(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeRational {
-//         value, err = tt.ReadRationalValues(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeSignedLong {
-//         value, err = tt.ReadSignedLongValues(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeSignedRational {
-//         value, err = tt.ReadSignedRationalValues(valueContext)
-//         log.PanicIf(err)
-//     } else if typeId == TypeUndefined {
-//         log.Panicf("will not parse unknown-type value: %v", tt)
+        // Never called.
+        return nil, nil
+    }
 
-//         // Never called.
-//         return "", nil
-//     } else {
-//         log.Panicf("value of type (%d) [%s] is unparseable", typeId, tt)
-
-//         // Never called.
-//         return "", nil
-//     }
-// }
+    return value, nil
+}
 
 // ValueBytes knows how to encode the given value to a byte slice.
 
