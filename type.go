@@ -416,6 +416,8 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
     } else {
         typeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
 
+        fmt.Printf("Reading (%d) bytes of allocated ASCII from (%d) bytes of allocated data at offset (%d).\n", valueContext.UnitCount, len(valueContext.AddressableData), valueContext.ValueOffset)
+
         value, err = tt.ParseAscii(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
     }
@@ -555,10 +557,18 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
     return value, nil
 }
 
-// ValueString extracts and parses the given value, and returns a flat string.
+// ValueString resolves the given value and returns a flat string.
+//
 // Where the type is not ASCII, `justFirst` indicates whether to just stringify
 // the first item in the slice (or return an empty string if the slice is
 // empty).
+//
+// Since this method lacks the information to process unknown-type tags (e.g.
+// byte-order, tag-ID, IFD type), it will return an error if attempted. See
+// `UndefinedValue()`.
+
+// TODO(dustin): !! Rename to ResolveAsString()
+
 func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value string, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -566,7 +576,13 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         }
     }()
 
-    if tt.Type() == TypeByte {
+// TODO(dustin): Implement Value(), below.
+    // valueRaw, err := tt.Value(valueContext)
+    // log.PanicIf(err)
+
+    typeId := tt.Type()
+
+    if typeId == TypeByte {
         raw, err := tt.ReadByteValues(valueContext)
         log.PanicIf(err)
 
@@ -577,17 +593,17 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         } else {
             return "", nil
         }
-    } else if tt.Type() == TypeAscii {
+    } else if typeId == TypeAscii {
         raw, err := tt.ReadAsciiValue(valueContext)
         log.PanicIf(err)
 
         return fmt.Sprintf("%s", raw), nil
-    } else if tt.Type() == TypeAsciiNoNul {
+    } else if typeId == TypeAsciiNoNul {
         raw, err := tt.ReadAsciiNoNulValue(valueContext)
         log.PanicIf(err)
 
         return fmt.Sprintf("%s", raw), nil
-    } else if tt.Type() == TypeShort {
+    } else if typeId == TypeShort {
         raw, err := tt.ReadShortValues(valueContext)
         log.PanicIf(err)
 
@@ -598,7 +614,7 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         } else {
             return "", nil
         }
-    } else if tt.Type() == TypeLong {
+    } else if typeId == TypeLong {
         raw, err := tt.ReadLongValues(valueContext)
         log.PanicIf(err)
 
@@ -609,7 +625,7 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         } else {
             return "", nil
         }
-    } else if tt.Type() == TypeRational {
+    } else if typeId == TypeRational {
         raw, err := tt.ReadRationalValues(valueContext)
         log.PanicIf(err)
 
@@ -625,7 +641,7 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         } else {
             return "", nil
         }
-    } else if tt.Type() == TypeSignedLong {
+    } else if typeId == TypeSignedLong {
         raw, err := tt.ReadSignedLongValues(valueContext)
         log.PanicIf(err)
 
@@ -636,7 +652,7 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
         } else {
             return "", nil
         }
-    } else if tt.Type() == TypeSignedRational {
+    } else if typeId == TypeSignedRational {
         raw, err := tt.ReadSignedRationalValues(valueContext)
         log.PanicIf(err)
 
@@ -653,12 +669,70 @@ func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value 
             return "", nil
         }
     } else {
-        log.Panicf("value of type (%d) [%s] is unparseable", tt.Type(), tt)
+        log.Panicf("value of type (%d) [%s] is unparseable", typeId, tt)
 
         // Never called.
         return "", nil
     }
 }
+
+// // Value knows how to resolve the given value.
+// //
+// // Since this method lacks the information to process unknown-type tags (e.g.
+// // byte-order, tag-ID, IFD type), it will return an error if attempted. See
+// // `UndefinedValue()`.
+
+// // TODO(dustin): !! Rename to Resolve() (to make clear that we're parsing not encoding)
+
+// func (tt TagType) Value(valueContext ValueContext) (value interface{}, err error) {
+//     defer func() {
+//         if state := recover(); state != nil {
+//             err = log.Wrap(state.(error))
+//         }
+//     }()
+
+//     typeId := tt.Type()
+
+//     if typeId == TypeByte {
+//         value, err = tt.ReadByteValues(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeAscii {
+//         value, err = tt.ReadAsciiValue(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeAsciiNoNul {
+//         value, err = tt.ReadAsciiNoNulValue(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeShort {
+//         value, err = tt.ReadShortValues(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeLong {
+//         value, err = tt.ReadLongValues(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeRational {
+//         value, err = tt.ReadRationalValues(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeSignedLong {
+//         value, err = tt.ReadSignedLongValues(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeSignedRational {
+//         value, err = tt.ReadSignedRationalValues(valueContext)
+//         log.PanicIf(err)
+//     } else if typeId == TypeUndefined {
+//         log.Panicf("will not parse unknown-type value: %v", tt)
+
+//         // Never called.
+//         return "", nil
+//     } else {
+//         log.Panicf("value of type (%d) [%s] is unparseable", typeId, tt)
+
+//         // Never called.
+//         return "", nil
+//     }
+// }
+
+// ValueBytes knows how to encode the given value to a byte slice.
+
+// TODO(dustin): !! Rename to Encode().
 
 func (tt TagType) ValueBytes(byteOrder binary.ByteOrder, value interface{}) (encoded []byte, err error) {
     defer func() {
@@ -673,170 +747,4 @@ func (tt TagType) ValueBytes(byteOrder binary.ByteOrder, value interface{}) (enc
     log.PanicIf(err)
 
     return ed.Encoded, err
-}
-
-
-// UndefinedValue returns the value for a tag of "undefined" type.
-func UndefinedValue(ii IfdIdentity, tagId uint16, valueContext ValueContext, byteOrder binary.ByteOrder) (value interface{}, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    typeLogger.Debugf(nil, "UndefinedValue: IFD=[%v] TAG-ID=(0x%02x)", ii, tagId)
-
-    if ii == ExifIi {
-        if tagId == 0x9000 {
-            // ExifVersion
-
-            tt := NewTagType(TypeAsciiNoNul, byteOrder)
-
-            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
-            log.PanicIf(err)
-
-            return TagUnknownType_GeneralString(valueString), nil
-        } else if tagId == 0xa000 {
-            // FlashpixVersion
-
-            tt := NewTagType(TypeAsciiNoNul, byteOrder)
-
-            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
-            log.PanicIf(err)
-
-            return TagUnknownType_GeneralString(valueString), nil
-        } else if tagId == 0x9286 {
-            // UserComment
-
-            tt := NewTagType(TypeByte, byteOrder)
-
-            valueBytes, err := tt.ReadByteValues(valueContext)
-            log.PanicIf(err)
-
-            unknownUc := TagUnknownType_9298_UserComment{
-                EncodingType: TagUnknownType_9298_UserComment_Encoding_UNDEFINED,
-                EncodingBytes: []byte{},
-            }
-
-            encoding := valueBytes[:8]
-            for encodingIndex, encodingBytes := range TagUnknownType_9298_UserComment_Encodings {
-                if bytes.Compare(encoding, encodingBytes) == 0 {
-                    // If unknown, return the default rather than what we have
-                    // because there will be a big list of NULs (which aren't
-                    // functional) and this won't equal the default instance
-                    // (above).
-                    if encodingIndex == TagUnknownType_9298_UserComment_Encoding_UNDEFINED {
-                        return unknownUc, nil
-                    } else {
-                        uc := TagUnknownType_9298_UserComment{
-                            EncodingType: encodingIndex,
-                            EncodingBytes: valueBytes[8:],
-                        }
-
-                        return uc, nil
-                    }
-                }
-            }
-
-            typeLogger.Warningf(nil, "User-comment encoding not valid. Returning 'unknown' type (the default).")
-            return unknownUc, nil
-        } else if tagId == 0x927c {
-            // MakerNote
-// TODO(dustin): !! This is the Wild Wild West. This very well might be a child IFD, but any and all OEM's define their own formats. If we're going to be writing changes and this is complete EXIF (which may not have the first eight bytes), it might be fine. However, if these are just IFDs they'll be relative to the main EXIF, this will invalidate the MakerNote data for IFDs and any other implementations that use offsets unless we can interpret them all. It be best to return to this later and just exclude this from being written for now, though means a loss of a wealth of image metadata.
-//                  -> We can also just blindly try to interpret as an IFD and just validate that it's looks good (maybe it will even have a 'next ifd' pointer that we can validate is 0x0).
-
-            tt := NewTagType(TypeByte, byteOrder)
-
-            valueBytes, err := tt.ReadByteValues(valueContext)
-            log.PanicIf(err)
-
-
-// TODO(dustin): Doesn't work, but here as an example.
-//             ie := NewIfdEnumerate(valueBytes, byteOrder)
-
-// // TODO(dustin): !! Validate types (might have proprietary types, but it might be worth splitting the list between valid and not validate; maybe fail if a certain proportion are invalid, or maybe aren't less then a certain small integer)?
-//             ii, err := ie.Collect(0x0)
-
-//             for _, entry := range ii.RootIfd.Entries {
-//                 fmt.Printf("ENTRY: 0x%02x %d\n", entry.TagId, entry.TagType)
-//             }
-
-            mn := TagUnknownType_927C_MakerNote{
-                MakerNoteType: valueBytes[:20],
-
-                // MakerNoteBytes has the whole length of bytes. There's always
-                // the chance that the first 20 bytes includes actual data.
-                MakerNoteBytes: valueBytes,
-            }
-
-            return mn, nil
-        } else if tagId == 0x9101 {
-            // ComponentsConfiguration
-
-            tt := NewTagType(TypeByte, byteOrder)
-
-            valueBytes, err := tt.ReadByteValues(valueContext)
-            log.PanicIf(err)
-
-            for configurationId, configurationBytes := range TagUnknownType_9101_ComponentsConfiguration_Configurations {
-                if bytes.Compare(valueBytes, configurationBytes) == 0 {
-                    cc := TagUnknownType_9101_ComponentsConfiguration{
-                        ConfigurationId: configurationId,
-                        ConfigurationBytes: valueBytes,
-                    }
-
-                    return cc, nil
-                }
-            }
-
-            cc := TagUnknownType_9101_ComponentsConfiguration{
-                ConfigurationId: TagUnknownType_9101_ComponentsConfiguration_OTHER,
-                ConfigurationBytes: valueBytes,
-            }
-
-            return cc, nil
-        }
-    } else if ii == GpsIi {
-        if tagId == 0x001c {
-            // GPSAreaInformation
-
-            tt := NewTagType(TypeAsciiNoNul, byteOrder)
-
-            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
-            log.PanicIf(err)
-
-            return TagUnknownType_GeneralString(valueString), nil
-        } else if tagId == 0x001b {
-            // GPSProcessingMethod
-
-            tt := NewTagType(TypeAsciiNoNul, byteOrder)
-
-            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
-            log.PanicIf(err)
-
-            return TagUnknownType_GeneralString(valueString), nil
-        }
-    } else if ii == ExifIopIi {
-        if tagId == 0x0002 {
-            // InteropVersion
-
-            tt := NewTagType(TypeAsciiNoNul, byteOrder)
-
-            valueString, err := tt.ReadAsciiNoNulValue(valueContext)
-            log.PanicIf(err)
-
-            return TagUnknownType_GeneralString(valueString), nil
-        }
-    }
-
-// TODO(dustin): !! Still need to do:
-//
-// complex: 0xa302, 0xa20c, 0x8828
-// long: 0xa301, 0xa300
-
-    // 0xa40b is device-specific and unhandled.
-
-
-    log.Panic(ErrUnhandledUnknownTypedTag)
-    return nil, nil
 }
