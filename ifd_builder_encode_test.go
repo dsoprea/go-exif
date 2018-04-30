@@ -3,6 +3,7 @@ package exif
 import (
     "testing"
     "bytes"
+    "reflect"
 
     "github.com/dsoprea/go-logging"
 )
@@ -572,10 +573,134 @@ func Test_IfdByteEncoder_encodeIfdToBytes_simple(t *testing.T) {
     }
 }
 
+func Test_IfdByteEncoder_encodeIfdToBytes_fullExif(t *testing.T) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.PrintErrorf(err, "Test failure.")
+        }
+    }()
+
+    // Build the IB.
+
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
+
+    err := ib.AddFromConfig(0x000b, "asciivalue")
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x00ff, []uint16 { 0x1122 })
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x0100, []uint32 { 0x33445566 })
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    log.PanicIf(err)
+
+
+    // Encode the IFD to a byte stream.
+
+    ibe := NewIfdByteEncoder()
+
+    // Run a simulation just to figure out the sizes.
+    _, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, uint32(0), uint32(0), false)
+    log.PanicIf(err)
+
+    addressableOffset := ExifDefaultFirstIfdOffset + tableSize
+    nextIfdOffsetToWrite := addressableOffset + allocatedDataSize
+
+    // Run the final encode now that we can correctly assign the offsets.
+    tableAndAllocated, _, _, _, err := ibe.encodeIfdToBytes(ib, addressableOffset, uint32(nextIfdOffsetToWrite), false)
+    log.PanicIf(err)
+
+    if len(tableAndAllocated) != (int(tableSize) + int(allocatedDataSize)) {
+        t.Fatalf("Table-and-data size doesn't match what was expected: (%d) != (%d + %d)", len(tableAndAllocated), tableSize, allocatedDataSize)
+    }
+
+
+    // Wrap the IFD in a formal EXIF block.
+
+    b := new(bytes.Buffer)
+
+    headerBytes, err := BuildExifHeader(TestDefaultByteOrder, ExifDefaultFirstIfdOffset)
+    log.PanicIf(err)
+
+    _, err = b.Write(headerBytes)
+    log.PanicIf(err)
+
+    _, err = b.Write(tableAndAllocated)
+    log.PanicIf(err)
+
+
+    // Now, try parsing it as EXIF data, making sure to resolve (read:
+    // dereference) the values (which will include the allocated ones).
+
+    exifData := b.Bytes()
+
+    e := NewExif()
+
+    eh, index, err := e.Collect(exifData)
+    log.PanicIf(err)
+
+    if eh.ByteOrder != TestDefaultByteOrder {
+        t.Fatalf("EXIF byte-order is not correct: %v", eh.ByteOrder)
+    } else if eh.FirstIfdOffset != ExifDefaultFirstIfdOffset {
+        t.Fatalf("EXIF first IFD-offset not correct: (0x%02x)", eh.FirstIfdOffset)
+    }
+
+    if len(index.Ifds) != 1 {
+        t.Fatalf("There wasn't exactly one IFD decoded: (%d)", len(index.Ifds))
+    }
+
+    ifd := index.RootIfd
+
+    if ifd.ByteOrder != TestDefaultByteOrder {
+        t.Fatalf("IFD byte-order not correct.")
+    } else if ifd.Name != IfdStandard {
+        t.Fatalf("IFD name not correct.")
+    } else if ifd.Index != 0 {
+        t.Fatalf("IFD index not zero: (%d)", ifd.Index)
+    } else if ifd.Offset != RootIfdExifOffset {
+        t.Fatalf("IFD offset not correct.")
+    } else if len(ifd.Entries) != 4 {
+        t.Fatalf("IFD number of entries not correct: (%d)", len(ifd.Entries))
+    } else if ifd.NextIfdOffset != uint32(0) {
+        t.Fatalf("Next-IFD offset is non-zero.")
+    } else if ifd.NextIfd != nil {
+        t.Fatalf("Next-IFD pointer is non-nil.")
+    }
+
+
+    // Verify the values by using the actual, orginal types (this is awesome).
+
+    addressableData := exifData[ExifAddressableAreaStart:]
+
+    expected := []struct{
+        tagId uint16
+        value interface{}
+    }{
+        { tagId: 0x000b, value: "asciivalue" },
+        { tagId: 0x00ff, value: []uint16 { 0x1122 } },
+        { tagId: 0x0100, value: []uint32 { 0x33445566 } },
+        { tagId: 0x013e, value: []Rational {{ Numerator: 0x11112222, Denominator: 0x33334444 }} },
+    }
+
+    for i, e := range ifd.Entries {
+        if e.TagId != expected[i].tagId {
+            t.Fatalf("Tag-ID for entry (%d) not correct: (0x%02x) != (0x%02x)", i, e.TagId, expected[i].tagId)
+        }
+
+        value, err := e.Value(TestDefaultByteOrder, addressableData)
+        log.PanicIf(err)
+
+        if reflect.DeepEqual(value, expected[i].value) != true {
+            t.Fatalf("Value for entry (%d) not correct: [%v] != [%v]", i, value, expected[i].value)
+        }
+    }
+}
+
 // TODO(dustin): !! Write test with both chained and child IFDs
 
 // TODO(dustin): !! Test all types.
 // TODO(dustin): !! Test specific unknown-type tags.
 // TODO(dustin): !! Test what happens with unhandled unknown-type tags (though it should never get to this point in the normal workflow).
-
-// TODO(dustin): !! Once we can correctly build a complete EXIF, test by trying to parse with an Exif instance.

@@ -257,10 +257,6 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
 
     tableSize = ibe.TableSize(len(ib.tags))
 
-    // ifdDataAddressableOffset is the smallest offset where we can allocate
-    // data.
-    ifdDataAddressableOffset := ifdAddressableOffset + tableSize
-
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, ib.byteOrder)
 
@@ -268,7 +264,7 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     err = bw.WriteUint16(uint16(len(ib.tags)))
     log.PanicIf(err)
 
-    ida := newIfdDataAllocator(ifdDataAddressableOffset)
+    ida := newIfdDataAllocator(ifdAddressableOffset)
 
     childIfdBlocks := make([][]byte, 0)
 

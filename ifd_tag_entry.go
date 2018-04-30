@@ -48,7 +48,7 @@ func (ite IfdTagEntry) ValueString(byteOrder binary.ByteOrder, addressableData [
     }
 
     if ite.TagType == TypeUndefined {
-        valueRaw, err = UndefinedValue(ite.Ii, ite.TagId, vc, byteOrder)
+        valueRaw, err := UndefinedValue(ite.Ii, ite.TagId, vc, byteOrder)
         log.PanicIf(err)
 
         value = fmt.Sprintf("%v", valueRaw)
