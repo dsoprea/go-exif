@@ -4,6 +4,7 @@ import (
     "os"
     "errors"
     "bytes"
+    "fmt"
 
     "io/ioutil"
     "encoding/binary"
@@ -16,8 +17,18 @@ const (
     // data.
     RootIfdExifOffset = uint32(0x0008)
 
-    // ExifAddressableAreaStart is the start of where all offsets are relative to.
+    // ExifAddressableAreaStart is the position that all offsets are relative
+    // to. It's actually only about halfway through the header (technically
+    // unallocatable space).
     ExifAddressableAreaStart = uint32(0x6)
+
+    // ExifDefaultFirstIfdOffset is essentially the number of bytes in addition
+    // to `ExifAddressableAreaStart` that you have to move in order to escape
+    // the rest of the header and get to the earliest point where we can put
+    // stuff (which has to be the first IFD). This is the size of the header
+    // sequence containing the two-character byte-order, two-character fixed-
+    // bytes, and the four bytes describing the first-IFD offset.
+    ExifDefaultFirstIfdOffset = uint32(2 + 2 + 4)
 )
 
 var (
@@ -93,6 +104,11 @@ type ExifHeader struct {
     ByteOrder binary.ByteOrder
     FirstIfdOffset uint32
 }
+
+func (eh ExifHeader) String() string {
+    return fmt.Sprintf("ExifHeader<BYTE-ORDER=[%v] FIRST-IFD-OFFSET=(0x%02x)>", eh.ByteOrder, eh.FirstIfdOffset)
+}
+
 
 func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     defer func() {
@@ -187,6 +203,8 @@ func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerB
 
     _, err = b.Write(ExifHeaderPrefixBytes)
     log.PanicIf(err)
+
+    // NOTE: This is the point in the data that all offsets are relative to.
 
     if byteOrder == binary.BigEndian {
         _, err := b.WriteString("MM")
