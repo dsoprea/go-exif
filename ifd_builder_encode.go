@@ -348,24 +348,29 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
     for thisIb := ib; thisIb != nil; thisIb = thisIb.nextIb {
         // Do a dry-run in order to pre-determine its size requirement.
 
-        rawBytes, _, _, _, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, 0, false)
+        _, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, 0, false)
         log.PanicIf(err)
 
-        nextIfdOffsetToWrite = ifdAddressableOffset + uint32(len(rawBytes))
+        addressableOffset := ifdAddressableOffset + tableSize
+        nextIfdOffsetToWrite = addressableOffset + allocatedDataSize
 
         // Write our IFD as well as any child-IFDs (now that we know the offset
         // where new IFDs and their data will be allocated).
 
         setNextIb := thisIb.nextIb != nil
 // TODO(dustin): !! Test the output sizes.
-        rawBytes, _, _, _, err = ibe.encodeIfdToBytes(ib, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
+        tableAndAllocated, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, addressableOffset, nextIfdOffsetToWrite, setNextIb)
         log.PanicIf(err)
 
-        _, err = b.Write(rawBytes)
+        if len(tableAndAllocated) != int(tableSize + allocatedDataSize) {
+            log.Panicf("IFD table and data is not a consistent size: (%d) != (%d)", len(tableAndAllocated), tableSize + allocatedDataSize)
+        }
+
+        _, err = b.Write(tableAndAllocated)
         log.PanicIf(err)
 
         // This will include the child-IFDs, as well. This will actually advance the offset for our next loop.
-        ifdAddressableOffset = ifdAddressableOffset + uint32(len(rawBytes))
+        ifdAddressableOffset = ifdAddressableOffset + uint32(tableSize + allocatedDataSize)
     }
 
     return b.Bytes(), nil
