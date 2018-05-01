@@ -384,7 +384,7 @@ func (ibe *IfdByteEncoder) EncodeToBytes(ib *IfdBuilder) (data []byte, err error
         }
     }()
 
-    data, err = ibe.encodeAndAttachIfd(ib, ExifAddressableAreaStart)
+    data, err = ibe.encodeAndAttachIfd(ib, ExifDefaultFirstIfdOffset)
     log.PanicIf(err)
 
     return data, nil
