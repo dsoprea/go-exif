@@ -36,8 +36,8 @@ var (
 
     ExifHeaderPrefixBytes = []byte("Exif\000\000")
 
-    // DefaultEncodeByteOrder is the default byte-order for encoding operations.
-    DefaultEncodeByteOrder = binary.BigEndian
+    // EncodeDefaultByteOrder is the default byte-order for encoding operations.
+    EncodeDefaultByteOrder = binary.BigEndian
 )
 
 var (

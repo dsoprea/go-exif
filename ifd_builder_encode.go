@@ -407,7 +407,7 @@ func (ibe *IfdByteEncoder) EncodeToExif(ib *IfdBuilder) (data []byte, err error)
 
     b := new(bytes.Buffer)
 
-    headerBytes, err := BuildExifHeader(DefaultEncodeByteOrder, ExifDefaultFirstIfdOffset)
+    headerBytes, err := BuildExifHeader(EncodeDefaultByteOrder, ExifDefaultFirstIfdOffset)
     log.PanicIf(err)
 
     _, err = b.Write(headerBytes)

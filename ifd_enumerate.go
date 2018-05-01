@@ -16,9 +16,11 @@ var (
 
 
 // IfdTagEnumerator knows how to decode an IFD and all of the tags it
-// describes. Note that the IFDs and the actual values floating throughout the
-// whole EXIF block, but the IFD itself has just a minor header and a set of
-// repeating, statically-sized records. So, the tags (though not their values)
+// describes.
+//
+// The IFDs and the actual values can float throughout the EXIF block, but the
+// IFD itself is just a minor header followed by a set of repeating,
+// statically-sized records. So, the tags (though notnecessarily their values)
 // are fairly simple to enumerate.
 type IfdTagEnumerator struct {
     byteOrder binary.ByteOrder

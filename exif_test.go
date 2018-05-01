@@ -333,6 +333,21 @@ func TestBuildAndParseExifHeader(t *testing.T) {
     } else if eh.FirstIfdOffset != 0x11223344 {
         t.Fatalf("First IFD offset not correct.")
     }
+
+    fmt.Printf("%v\n", eh)
+}
+
+func ExampleBuildExifHeader() {
+    headerBytes, err := BuildExifHeader(EncodeDefaultByteOrder, 0x11223344)
+    log.PanicIf(err)
+
+    e := NewExif()
+
+    eh, err := e.ParseExifHeader(headerBytes)
+    log.PanicIf(err)
+
+    fmt.Printf("%v\n", eh)
+    // Output: ExifHeader<BYTE-ORDER=[BigEndian] FIRST-IFD-OFFSET=(0x11223344)>
 }
 
 func init() {
