@@ -112,7 +112,7 @@ func (eh ExifHeader) String() string {
     return fmt.Sprintf("ExifHeader<BYTE-ORDER=[%v] FIRST-IFD-OFFSET=(0x%02x)>", eh.ByteOrder, eh.FirstIfdOffset)
 }
 
-
+// ParseExifHeader parses the bytes at the very top of the header.
 func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -159,6 +159,7 @@ func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     return eh, nil
 }
 
+// Visit recursively invokes a callback for every tag.
 func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -177,6 +178,7 @@ func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err er
     return eh, nil
 }
 
+// Collect recursively builds a static structure of all IFDs and tags.
 func (e *Exif) Collect(exifData []byte) (eh ExifHeader, index IfdIndex, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -195,6 +197,7 @@ func (e *Exif) Collect(exifData []byte) (eh ExifHeader, index IfdIndex, err erro
     return eh, index, nil
 }
 
+// BuildExifHeader constructs the bytes that go in the very beginning.
 func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerBytes []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
