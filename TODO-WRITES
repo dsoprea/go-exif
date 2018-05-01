@@ -1,22 +1,4 @@
-run the example exif reader tool against all of my images.
-
-
-updating tags:
-
-- if the data fits in the previous structure or allocation, stick with it and just update the length.
-  - Note that, if the size decreases to <=4 bytes, we might need to deallocate and embed the value directly in the offset LONG (per the spec).
-
-adding tags:
-
-- It would be safest to identify where the next IFD would start (or, (len(raw_exif_data) + 1) if we're in the last IFD), and just append the data, shift the offset of the next IFD, and update the IFD offset (either the pointer in a tag or the offset following the last IFD if we're past the first in a chain).
-  - We might not otherwise be able to derive the total size of the current tags given 1) those tags having an unknown type with a size that is not easily calculated, and 2) non-standard tags that we simply don't know how to parse.
-  - Note that we need to build a table of IFD offsets as well as keep track where the offset of each was recorded.
-
-- allow to delete tags
-- allow to delete whole IFDs (and implicitly deallocate tags).
-  - Only possible if we can parse them and determine the offset and length for the value.
-
-- allow to create IFDs.
+run the example exif reader tool against all local images, to test.
 
 
 Other
@@ -26,8 +8,3 @@ Other
 - consider writing a couple of quick tools for GPS
   - parsing GeJSON and GPX data and installing GPS tags to the EXIF
   - writing GeJSON and GPX data *from* the EXIF
-
-
-Notes
-==
-We might be discretionary in allowing people to *easily* update certain undefined-type tags if they're too complex. We might provide a method to allow them to pass a raw bye-array and count and take responsibility for that values structure (so we don't prevent sufficiently-advanced users from doing from they need to do.
