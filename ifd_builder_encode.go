@@ -376,8 +376,9 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
     return b.Bytes(), nil
 }
 
-// EncodeToBytes is the base encoding step.
-func (ibe *IfdByteEncoder) EncodeToBytes(ib *IfdBuilder) (data []byte, err error) {
+// EncodeToExifPayload is the base encoding step that transcribes the entire IB
+// structure to its on-disk layout.
+func (ibe *IfdByteEncoder) EncodeToExifPayload(ib *IfdBuilder) (data []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -388,4 +389,32 @@ func (ibe *IfdByteEncoder) EncodeToBytes(ib *IfdBuilder) (data []byte, err error
     log.PanicIf(err)
 
     return data, nil
+}
+
+// EncodeToExif calls EncodeToExifPayload and then packages the result into a
+// complete EXIF block.
+func (ibe *IfdByteEncoder) EncodeToExif(ib *IfdBuilder) (data []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    encodedIfds, err := ibe.EncodeToExifPayload(ib)
+    log.PanicIf(err)
+
+    // Wrap the IFD in a formal EXIF block.
+
+    b := new(bytes.Buffer)
+
+    headerBytes, err := BuildExifHeader(DefaultEncodeByteOrder, ExifDefaultFirstIfdOffset)
+    log.PanicIf(err)
+
+    _, err = b.Write(headerBytes)
+    log.PanicIf(err)
+
+    _, err = b.Write(encodedIfds)
+    log.PanicIf(err)
+
+    return b.Bytes(), nil
 }

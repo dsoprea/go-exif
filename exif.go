@@ -35,6 +35,9 @@ var (
     exifLogger = log.NewLogger("exif.exif")
 
     ExifHeaderPrefixBytes = []byte("Exif\000\000")
+
+    // DefaultEncodeByteOrder is the default byte-order for encoding operations.
+    DefaultEncodeByteOrder = binary.BigEndian
 )
 
 var (
