@@ -333,8 +333,6 @@ func TestBuildAndParseExifHeader(t *testing.T) {
     } else if eh.FirstIfdOffset != 0x11223344 {
         t.Fatalf("First IFD offset not correct.")
     }
-
-    fmt.Printf("%v\n", eh)
 }
 
 func ExampleBuildExifHeader() {

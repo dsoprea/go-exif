@@ -122,6 +122,31 @@ func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.Byte
     }
 }
 
+// NewBuilderTagFromConfigWithName allows us to easily generate solid, consistent tags
+// for testing with. `ii` is the tpye of IFD that owns this tag. This can not be
+// an IFD (IFDs are not associated with standardized, official names).
+func NewBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) builderTag {
+    ti := NewTagIndex()
+
+    it, err := ti.GetWithName(ii, tagName)
+    log.PanicIf(err)
+
+    tt := NewTagType(it.Type, byteOrder)
+
+    ve := NewValueEncoder(byteOrder)
+
+    ed, err := ve.EncodeWithType(tt, value)
+    log.PanicIf(err)
+
+    tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
+
+    return builderTag{
+        ii: ii,
+        tagId: it.Id,
+        value: tagValue,
+    }
+}
+
 
 type IfdBuilder struct {
     // ifd is the IfdIdentity instance of the IFD that owns the current tag.
@@ -259,8 +284,7 @@ func (ib *IfdBuilder) dump(levels int) {
         fmt.Printf("\n")
 
         for i, tag := range ib.tags {
-// TODO(dustin): Pre-supposes that IFDs are uniquely named, which is fince since we're in charge of their actual naming (only the tag-IDs are important in the spec). However, we're referring to them by name which is inconsistent with our implementation where we take the name as non-unique and our self-imposed unique IDs as the better choice. Reimplement using these.
-            _, isChildIb := IfdTagNames[ib.ii.IfdName][tag.tagId]
+            _, isChildIb := IfdTagNameWithId(ib.ii.IfdName, tag.tagId)
 
             tagName := ""
 
@@ -333,153 +357,6 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []s
 func (ib *IfdBuilder) DumpToStrings() (lines []string) {
     return ib.dumpToStrings(ib, "", lines)
 }
-
-// // calculateRawTableSize returns the number of bytes required just to store the
-// // basic IFD header and tags. This needs to be called before we can even write
-// // the tags so that we can know where the data starts and can calculate offsets.
-// func (ib *IfdBuilder) calculateTableSize() (size uint32, err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
-
-
-// // TODO(dustin): !! Finish.
-
-
-//     return 0, nil
-// }
-
-// // calculateDataSize returns the number of bytes required the offset-based data
-// // of the IFD.
-// func (ib *IfdBuilder) calculateDataSize(tableSize uint32) (size uint32, err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
-
-
-// // TODO(dustin): !! Finish.
-
-
-//     return 0, nil
-// }
-
-// // generateBytes populates the given table and data byte-arrays. `dataOffset`
-// // is the distance from the beginning of the IFD to the beginning of the IFD's
-// // data (following the IFD's table). It may be used to calculate the final
-// // offset of the data we store there so that we can reference it from the IFD
-// // table. The `ioi` is used to know where to insert child IFDs at.
-// //
-// // len(ifdTableRaw) == calculateTableSize()
-// // len(ifdDataRaw) == calculateDataSize()
-// func (ib *IfdBuilder) generateBytes(dataOffset uint32, ifdTableRaw, ifdDataRaw []byte, ioi *ifdOffsetIterator) (err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
-
-
-// // TODO(dustin): !! Finish.
-
-// // TODO(dustin): !! Some offsets of existing IFDs will have to be reallocated if there are any updates. We'll need to be able to resolve the original value against the original EXIF data for that, which we currently don't have access to, yet, from here.
-// // TODO(dustin): !! Test that the offsets are identical if there are no changes (on principle).
-
-
-//     return nil
-// }
-
-// // allocateIfd will produce the two byte-arrays for every IFD and bump the IOI
-// // for the next IFD. This is the foundation of how offsets are calculated.
-// func (ib *IfdBuilder) allocateIfd(tableSize, dataSize uint32, ioi *ifdOffsetIterator) (tableRaw []byte, dataRaw []byte, dataOffset uint32, err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
-
-//     // Allocate the size required and iterate our offset marker
-//     // appropriately so the IFD-build knows where it can calculate its
-//     // offsets from.
-
-//     tableRaw = make([]byte, tableSize)
-//     dataRaw = make([]byte, dataSize)
-
-//     dataOffset = ioi.Offset() + tableSize
-//     ioi.Step(tableSize + dataSize)
-
-//     return tableRaw, dataRaw, dataOffset, nil
-// }
-
-// // BuildExif returns a new byte array of EXIF data.
-// func (ib *IfdBuilder) BuildExif() (new []byte, err error) {
-//     defer func() {
-//         if state := recover(); state != nil {
-//             err = log.Wrap(state.(error))
-//         }
-//     }()
-
-//     b := bytes.Buffer{}
-
-//     ioi := &ifdOffsetIterator{
-//         offset: RootIfdExifOffset,
-//     }
-
-//     ptr := ib
-
-//     for ; ptr != nil ; {
-//         // Figure out the size requirements.
-
-//         tableSize, err := ptr.calculateTableSize()
-//         log.PanicIf(err)
-
-//         dataSize, err := ptr.calculateDataSize(tableSize)
-//         log.PanicIf(err)
-
-//         // Allocate the size required and iterate our offset marker
-//         // appropriately so the IFD-build knows where it can calculate its
-//         // offsets from.
-
-//         tableRaw, dataRaw, dataOffset, err := ib.allocateIfd(tableSize, dataSize, ioi)
-//         log.PanicIf(err)
-
-//         // Build.
-
-//         err = ptr.generateBytes(dataOffset, tableRaw, dataRaw, ioi)
-//         log.PanicIf(err)
-
-//         // Attach the new data to the stream.
-
-//         _, err = b.Write(tableRaw)
-//         log.PanicIf(err)
-
-//         _, err = b.Write(dataRaw)
-//         log.PanicIf(err)
-
-//         ptr = ptr.nextIb
-
-//         // Write the offset of the next IFD (or 0x0 for none).
-
-//         nextIfdOffset := uint32(0)
-
-//         if ptr != nil {
-//             // This might've been iterated by `generateBytes()`. It'll also
-//             // point at the next offset that we can install an IFD to.
-//             nextIfdOffset = ioi.Offset()
-//         }
-
-//         nextIfdOffsetBytes := make([]byte, 4)
-//         ib.byteOrder.PutUint32(nextIfdOffsetBytes, nextIfdOffset)
-
-//         _, err = b.Write(nextIfdOffsetBytes)
-//         log.PanicIf(err)
-//     }
-
-//     return b.Bytes(), nil
-// }
 
 func (ib *IfdBuilder) SetNextIfd(nextIb *IfdBuilder) (err error) {
     defer func() {
@@ -771,6 +648,24 @@ func (ib *IfdBuilder) AddFromConfig(tagId uint16, value interface{}) (err error)
     }()
 
     bt := NewBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
+
+    err = ib.Add(bt)
+    log.PanicIf(err)
+
+    return nil
+}
+
+// AddFromConfigWithName quickly and easily composes and adds the tag using the
+// information already known about a tag (using the name). Only works with
+// standard tags.
+func (ib *IfdBuilder) AddFromConfigWithName(tagName string, value interface{}) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    bt := NewBuilderTagFromConfigWithName(ib.ii, tagName, ib.byteOrder, value)
 
     err = ib.Add(bt)
     log.PanicIf(err)

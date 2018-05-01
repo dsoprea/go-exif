@@ -1218,3 +1218,42 @@ func TestNewBuilderTagFromConfig_TwoUnits(t *testing.T) {
         t.Fatalf("value not correct")
     }
 }
+
+func TestNewBuilderTagFromConfigWithName(t *testing.T) {
+    bt := NewBuilderTagFromConfigWithName(ExifIi, "ISOSpeed", TestDefaultByteOrder, []uint32 { uint32(0x1234), uint32(0x5678) })
+
+    if bt.ii != ExifIi {
+        t.Fatalf("II in builderTag not correct")
+    } else if bt.tagId != 0x8833 {
+        t.Fatalf("tag-ID not correct")
+    } else if bytes.Compare(bt.value.Bytes(), []byte {
+            0x0, 0x0, 0x12, 0x34,
+            0x0, 0x0, 0x56, 0x78, }) != 0 {
+        t.Fatalf("value not correct")
+    }
+}
+
+func TestAddFromConfigWithName(t *testing.T) {
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
+
+    err := ib.AddFromConfigWithName("ProcessingSoftware", "some software")
+    log.PanicIf(err)
+
+    if len(ib.tags) != 1 {
+        t.Fatalf("Exactly one tag was not found: (%d)", len(ib.tags))
+    }
+
+    bt := ib.tags[0]
+
+    if bt.ii != RootIi {
+        t.Fatalf("II not correct: %s", bt.ii)
+    } else if bt.tagId != 0x000b {
+        t.Fatalf("Tag-ID not correct: (0x%02x)", bt.tagId)
+    }
+
+    s := string(bt.value.Bytes())
+
+    if s != "some software\000" {
+        t.Fatalf("Value not correct: (%d) [%s]", len(s), s)
+    }
+}

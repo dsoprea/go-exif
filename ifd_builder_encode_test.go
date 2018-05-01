@@ -748,22 +748,22 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 
     ib := NewIfdBuilder(RootIi, EncodeDefaultByteOrder)
 
-    err := ib.AddFromConfig(0x000b, "asciivalue")
+    err := ib.AddFromConfigWithName("ProcessingSoftware", "asciivalue")
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x0150, []uint8 { 0x11 })
+    err = ib.AddFromConfigWithName("DotRange", []uint8 { 0x11 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x00ff, []uint16 { 0x2233 })
+    err = ib.AddFromConfigWithName("SubfileType", []uint16 { 0x2233 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x0100, []uint32 { 0x44556677 })
+    err = ib.AddFromConfigWithName("ImageWidth", []uint32 { 0x44556677 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    err = ib.AddFromConfigWithName("WhitePoint", []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x9201, []SignedRational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    err = ib.AddFromConfigWithName("ShutterSpeedValue", []SignedRational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
     log.PanicIf(err)
 
 

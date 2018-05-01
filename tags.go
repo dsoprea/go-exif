@@ -51,7 +51,8 @@ var (
         },
     }
 
-    // IfdTagNames is populated in the init(), below.
+    // IfdTagNames contains the tag ID-to-name mappings and is populated by
+    // init().
     IfdTagNames = map[string]map[uint16]string {}
 
     // IFD Identities. These are often how we refer to IFDs, from call to call.
@@ -126,12 +127,13 @@ func (it IndexedTag) IsName(ifd, name string) bool {
     return it.Name == name && it.Ifd == ifd
 }
 
-func (it IndexedTag) Is(id uint16) bool {
-    return it.Id == id
+func (it IndexedTag) Is(ifd string, id uint16) bool {
+    return it.Id == id && it.Ifd == ifd
 }
 
 type TagIndex struct {
     tagsByIfd map[string]map[uint16]*IndexedTag
+    tagsByIfdR map[string]map[string]*IndexedTag
 }
 
 func NewTagIndex() *TagIndex {
@@ -153,6 +155,7 @@ func (ti *TagIndex) load() (err error) {
 
     // Read static data.
 
+// TODO(dustin): !! Load this from init() so we're not doing it every time.
     f, err := os.Open(tagDataFilepath)
     log.PanicIf(err)
 
@@ -167,6 +170,7 @@ func (ti *TagIndex) load() (err error) {
     // Load structure.
 
     tagsByIfd := make(map[string]map[uint16]*IndexedTag)
+    tagsByIfdR := make(map[string]map[string]*IndexedTag)
 
     count := 0
     for ifdName, tags := range encodedIfds {
@@ -175,7 +179,7 @@ func (ti *TagIndex) load() (err error) {
             tagName := tagInfo.Name
             tagTypeName := tagInfo.TypeName
 
-// TODO(dustin): !! Non-standard types but present types. Ignore for right now.
+// TODO(dustin): !! Non-standard types, but found in real data. Ignore for right now.
 if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" {
     continue
 }
@@ -193,6 +197,9 @@ if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" 
                 Type: tagTypeId,
             }
 
+
+            // Store by ID.
+
             family, found := tagsByIfd[ifdName]
             if found == false {
                 family = make(map[uint16]*IndexedTag)
@@ -205,17 +212,34 @@ if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" 
 
             family[tagId] = tag
 
+
+            // Store by name.
+
+            familyR, found := tagsByIfdR[ifdName]
+            if found == false {
+                familyR = make(map[string]*IndexedTag)
+                tagsByIfdR[ifdName] = familyR
+            }
+
+            if _, found := familyR[tagName]; found == true {
+                log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", ifdName, tagName)
+            }
+
+            familyR[tagName] = tag
+
             count++
         }
     }
 
     ti.tagsByIfd = tagsByIfd
+    ti.tagsByIfdR = tagsByIfdR
 
     tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
 
     return nil
 }
 
+// Get returns information about the non-IFD tag.
 func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -236,6 +260,22 @@ func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
     return it, nil
 }
 
+// Get returns information about the non-IFD tag.
+func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    it, found := ti.tagsByIfdR[ii.IfdName][name]
+    if found != true {
+        log.Panicf("tag with IFD [%s] and name [%s] not known", ii.IfdName, name)
+    }
+
+    return it, nil
+}
+
 // IfdTagWithId returns true if the given tag points to a child IFD block.
 func IfdTagNameWithIdOrFail(parentIfdName string, tagId uint16) string {
     name, found := IfdTagNameWithId(parentIfdName, tagId)
@@ -247,6 +287,9 @@ func IfdTagNameWithIdOrFail(parentIfdName string, tagId uint16) string {
 }
 
 // IfdTagWithId returns true if the given tag points to a child IFD block.
+
+// TODO(dustin): !! Rewrite to take an IfdIdentity, instead. We shouldn't expect that IFD names are globally unique.
+
 func IfdTagNameWithId(parentIfdName string, tagId uint16) (name string, found bool) {
     if tags, found := IfdTagNames[parentIfdName]; found == true {
         if name, found = tags[tagId]; found == true {

@@ -19,7 +19,18 @@ func TestGet(t *testing.T) {
     it, err := ti.Get(RootIi, 0x10f)
     log.PanicIf(err)
 
-    if it.Is(0x10f) == false || it.IsName("IFD", "Make") == false {
+    if it.Is("IFD", 0x10f) == false || it.IsName("IFD", "Make") == false {
+        t.Fatalf("tag info not correct")
+    }
+}
+
+func TestGetWithName(t *testing.T) {
+    ti := NewTagIndex()
+
+    it, err := ti.GetWithName(RootIi, "Make")
+    log.PanicIf(err)
+
+    if it.Is("IFD", 0x10f) == false || it.Is("IFD", 0x10f) == false {
         t.Fatalf("tag info not correct")
     }
 }
