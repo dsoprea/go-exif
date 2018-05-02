@@ -21,7 +21,7 @@ Remaining Tasks:
 To get the project:
 
 ```
-$ go get github.com/dsoprea/go-exif
+$ go get -t github.com/dsoprea/go-exif
 ```
 
 
