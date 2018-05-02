@@ -19,6 +19,7 @@ import (
     "flag"
 
     "io/ioutil"
+    "encoding/json"
 
     "github.com/dsoprea/go-logging"
     "github.com/dsoprea/go-exif"
@@ -26,7 +27,22 @@ import (
 
 var (
     filepathArgument = ""
+    printAsJsonArgument = false
 )
+
+
+type IfdEntry struct {
+    IfdName string `json:"ifd_name"`
+    ParentIfdName string `json:"parent_ifd_name"`
+    IfdIndex int `json:"ifd_index"`
+    TagId uint16 `json:"tag_id"`
+    TagName string `json:"tag_name"`
+    TagTypeId uint16 `json:"tag_type_id"`
+    TagTypeName string `json:"tag_type_name"`
+    UnitCount uint32 `json:"unit_count"`
+    Value interface{} `json:"value"`
+    ValueString string `json:"value_string"`
+}
 
 func main() {
     defer func() {
@@ -36,7 +52,8 @@ func main() {
         }
     }()
 
-    flag.StringVar(&filepathArgument, "filepath", "", "File-path of image.")
+    flag.StringVar(&filepathArgument, "filepath", "", "File-path of image")
+    flag.BoolVar(&printAsJsonArgument, "json", false, "Print JSON")
 
     flag.Parse()
 
@@ -68,6 +85,8 @@ func main() {
 
     // Run the parse.
 
+    entries := make([]IfdEntry, 0)
+
     ti := exif.NewTagIndex()
     visitor := func(ii exif.IfdIdentity, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
         defer func() {
@@ -88,10 +107,12 @@ func main() {
         }
 
         valueString := ""
+        var value interface{}
         if tagType.Type() == exif.TypeUndefined {
-            value, err := exif.UndefinedValue(ii, tagId, valueContext, tagType.ByteOrder())
+            var err error
+            value, err = exif.UndefinedValue(ii, tagId, valueContext, tagType.ByteOrder())
             if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
-                valueString = "!UNDEFINED!"
+                value = nil
             } else if err != nil {
                 log.Panic(err)
             } else {
@@ -100,12 +121,39 @@ func main() {
         } else {
             valueString, err = tagType.ResolveAsString(valueContext, true)
             log.PanicIf(err)
+
+            value = valueString
         }
 
-        fmt.Printf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", ii, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
+        entry := IfdEntry{
+            IfdName: ii.IfdName,
+            ParentIfdName: ii.ParentIfdName,
+            IfdIndex: ifdIndex,
+            TagId: tagId,
+            TagName: it.Name,
+            TagTypeId: tagType.Type(),
+            TagTypeName: tagType.Name(),
+            UnitCount: valueContext.UnitCount,
+            Value: value,
+            ValueString: valueString,
+        }
+
+        entries = append(entries, entry)
+
         return nil
     }
 
     _, err = e.Visit(data[foundAt:], visitor)
     log.PanicIf(err)
+
+    if printAsJsonArgument == true {
+        data, err := json.MarshalIndent(entries, "", "    ")
+        log.PanicIf(err)
+
+        fmt.Println(string(data))
+    } else {
+        for _, entry := range entries {
+            fmt.Printf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdName, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.ValueString)
+        }
+    }
 }

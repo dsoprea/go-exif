@@ -38,9 +38,9 @@ Create an instance of the `Exif` type and call `Scan()` with a byte-slice, where
 Obviously, it is most efficient to properly parse the media file and then provide the specific EXIF data to be parsed, but there is also a heuristic for finding the EXIF data within the media blob, directly. This means that, at least for testing or curiosity, **you do not have to parse or even understand the format of image or audio file in order to find and decode the EXIF information inside of it.** See the usage of the `IsExif` method in the example.
 
 
-### Example Reader Tool
+### Reader Tool
 
-The example reader implementation below is included as a runnable tool:
+There is a reader implementation included as a runnable tool:
 
 ```
 $ go get github.com/dsoprea/go-exif/exif-read-tool
@@ -59,6 +59,72 @@ IFD=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]
 IFD=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]
 IFD=[IFD] ID=(0x0132) NAME=[DateTime] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]
 ...
+```
+
+You can also print the raw, parsed data as JSON:
+
+```
+$ exif-read-tool -filepath "<media file-path>" -json
+```
+
+Example output:
+
+```
+[
+    {
+        "ifd_name": "IFD",
+        "parent_ifd_name": "",
+        "ifd_index": 0,
+        "tag_id": 271,
+        "tag_name": "Make",
+        "tag_type_id": 2,
+        "tag_type_name": "ASCII",
+        "unit_count": 6,
+        "value": "Canon",
+        "value_string": "Canon"
+    },
+    {
+        "ifd_name": "IFD",
+        "parent_ifd_name": "",
+        "ifd_index": 0,
+        "tag_id": 272,
+        "tag_name": "Model",
+        "tag_type_id": 2,
+        "tag_type_name": "ASCII",
+        "unit_count": 22,
+        "value": "Canon EOS 5D Mark III",
+        "value_string": "Canon EOS 5D Mark III"
+    },
+...
+    {
+        "ifd_name": "Exif",
+        "parent_ifd_name": "IFD",
+        "ifd_index": 0,
+        "tag_id": 37121,
+        "tag_name": "ComponentsConfiguration",
+        "tag_type_id": 7,
+        "tag_type_name": "UNDEFINED",
+        "unit_count": 4,
+        "value": {
+            "ConfigurationId": 2,
+            "ConfigurationBytes": "AQIDAA=="
+        },
+        "value_string": "ComponentsConfiguration\u003cID=[YCBCR] BYTES=[1 2 3 0]\u003e"
+    },
+...
+    {
+        "ifd_name": "IFD",
+        "parent_ifd_name": "",
+        "ifd_index": 1,
+        "tag_id": 514,
+        "tag_name": "JPEGInterchangeFormatLength",
+        "tag_type_id": 4,
+        "tag_type_name": "LONG",
+        "unit_count": 1,
+        "value": "21491",
+        "value_string": "21491"
+    }
+]
 ```
 
 
@@ -89,21 +155,14 @@ if foundAt == -1 {
 // Run the parse.
 
 ti := exif.NewTagIndex()
-visitor := func(indexedIfdName string, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-            log.Panic(err)
-        }
-    }()
-
-    it, err := ti.Get(indexedIfdName, tagId)
+visitor := func(ii exif.IfdIdentity, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
+    it, err := ti.Get(ii, tagId)
     if err != nil {
         if log.Is(err, exif.ErrTagNotFound) {
             fmt.Printf("WARNING: Unknown tag: [%s] (%04x)\n", indexedIfdName, tagId)
             return nil
         } else {
-            log.Panic(err)
+            panic(err)
         }
     }
 
@@ -113,16 +172,18 @@ visitor := func(indexedIfdName string, tagId uint16, tagType exif.TagType, value
         if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
             valueString = "!UNDEFINED!"
         } else if err != nil {
-            log.Panic(err)
+            panic(err)
         } else {
             valueString = fmt.Sprintf("%v", value)
         }
     } else {
         valueString, err = tagType.ResolveAsString(valueContext, true)
-        log.PanicIf(err)
+        if err != nil {
+            panic(err)
+        }
     }
 
-    fmt.Printf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", indexedIfdName, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
+    fmt.Printf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", ii.IfdName, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
     return nil
 }
 
@@ -131,7 +192,7 @@ log.PanicIf(err)
 ```
 
 
-## *How You Can Help*
+## *Contributing*
 
 EXIF has an excellently-documented structure but there are a lot of devices and manufacturers out there. There are only so many files that we can personally find to test against, and most of these are images that have been generated only in the past few years. JPEG, being the largest implementor of EXIF, has been around for even longer (but not much). Therefore, there is a lot of different kinds of compatibility to test for.
 
