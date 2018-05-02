@@ -73,6 +73,14 @@ type builderTag struct {
     value *IfdBuilderTagValue
 }
 
+func NewBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
+    return builderTag{
+        ii: ii,
+        tagId: tagId,
+        value: value,
+    }
+}
+
 func (bt builderTag) String() string {
     valuePhrase := ""
 

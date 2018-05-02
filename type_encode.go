@@ -204,6 +204,9 @@ func (ve *ValueEncoder) encodeSignedRationals(value []SignedRational) (ed Encode
     return ed, nil
 }
 
+// Encode returns bytes for the given value, infering type from the actual
+// value. This does not support `TypeAsciiNoNull` (all strings are encoded as
+// `TypeAscii`).
 func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -240,6 +243,8 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
     return ed, nil
 }
 
+// EncodeWithType returns bytes for the given value, using the given `TagType`
+// value to determine how to encode. This supports `TypeAsciiNoNul`.
 func (ve *ValueEncoder) EncodeWithType(tt TagType, value interface{}) (ed EncodedData, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -253,6 +258,9 @@ func (ve *ValueEncoder) EncodeWithType(tt TagType, value interface{}) (ed Encode
         log.PanicIf(err)
     case TypeAscii:
         ed, err = ve.encodeAscii(value.(string))
+        log.PanicIf(err)
+    case TypeAsciiNoNul:
+        ed, err = ve.encodeAsciiNoNul(value.(string))
         log.PanicIf(err)
     case TypeShort:
         ed, err = ve.encodeShorts(value.([]uint16))

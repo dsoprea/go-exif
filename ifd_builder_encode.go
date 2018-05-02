@@ -216,8 +216,6 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         if nextIfdOffsetToWrite > 0 {
             var err error
 
-// TODO(dustin): Create a tool to print/dump the structure and allocation of the output data.
-
             // Create the block of IFD data and everything it requires.
             childIfdBlock, err = ibe.encodeAndAttachIfd(bt.value.Ib(), nextIfdOffsetToWrite)
             log.PanicIf(err)
@@ -341,7 +339,6 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
         log.Panicf("trying to encode an IfdBuilder that doesn't have any tags")
     }
 
-// TODO(dustin): !! There's a lot of numbers-agreement required in our current implementation (where offsets are independently calculated in multiple areas, such as in the first and second runs of encodeIfdToBytes). Refactor this to share the offsets rather than repeatedly calculating them (which has a risk of fallign out of aligning and there being cosnsitency problems).
     b := new(bytes.Buffer)
 
     nextIfdOffsetToWrite := uint32(0)
@@ -358,7 +355,7 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
         // where new IFDs and their data will be allocated).
 
         setNextIb := thisIb.nextIb != nil
-// TODO(dustin): !! Test the output sizes.
+
         tableAndAllocated, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, addressableOffset, nextIfdOffsetToWrite, setNextIb)
         log.PanicIf(err)
 

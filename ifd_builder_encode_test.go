@@ -192,7 +192,6 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-// TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
     childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
@@ -218,7 +217,6 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-// TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
     childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
@@ -244,7 +242,6 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
     bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a) })
 
-// TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
     childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
@@ -262,7 +259,6 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
     bt = NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34) })
 
-// TODO(dustin): !! Test with and without nextIfdOffsetToWrite.
     childIfdBlock, err = ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
@@ -389,11 +385,6 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
         t.Fatalf("IFD first tag parent IFD not correct: %v", iteV.Ii)
     }
 
-
-// TODO(dustin): Test writing some tags that require allocation.
-// TODO(dustin): Do an child-IFD allocation in addition to some tag allocations, and vice-verse.
-
-
     // Validate the child's raw IFD bytes.
 
     childNextIfdOffset, childEntries, err := ParseOneIfd(ExifIi, TestDefaultByteOrder, childIfdBlock, nil)
@@ -467,8 +458,6 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 
     ite, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes)
     log.PanicIf(err)
-
-// TODO(dustin): !! When we eventually start allocating values and child-IFDs, be careful that the offsets are calculated correctly.
 
     if ite.TagId != 0x000b {
         t.Fatalf("Tag-ID not correct: (0x%02x)", ite.TagId)
@@ -735,6 +724,8 @@ func Test_IfdByteEncoder_EncodeToExifPayload(t *testing.T) {
 func Test_IfdByteEncoder_EncodeToExif(t *testing.T) {
     ib := getExifSimpleTestIb()
 
+// TODO(dustin): Do a child-IFD allocation in addition to the tag allocations.
+
     ibe := NewIfdByteEncoder()
 
     exifData, err := ibe.EncodeToExif(ib)
@@ -805,6 +796,5 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 
 // TODO(dustin): !! Write test with both chained and child IFDs
 
-// TODO(dustin): !! Test all types.
 // TODO(dustin): !! Test specific unknown-type tags.
 // TODO(dustin): !! Test what happens with unhandled unknown-type tags (though it should never get to this point in the normal workflow).
