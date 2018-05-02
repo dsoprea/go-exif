@@ -144,30 +144,20 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         }
     }()
 
-    ti := NewTagIndex()
-
     // Write tag-ID.
     err = bw.WriteUint16(bt.tagId)
     log.PanicIf(err)
 
-    // Write type.
-
-    it, err := ti.Get(ib.ii, bt.tagId)
-    log.PanicIf(err)
-
     // Works for both values and child IFDs (which have an official size of
     // LONG).
-    err = bw.WriteUint16(it.Type)
+    err = bw.WriteUint16(bt.typeId)
     log.PanicIf(err)
 
     // Write unit-count.
 
-// TODO(dustin): !! Test that we write a list of shorts, uints, etc.. correctly.
-// TODO(dustin): !! Make sure we test all of the different cases below.
-
     if bt.value.IsBytes() == true {
-        effectiveType := it.Type
-        if it.Type == TypeUndefined {
+        effectiveType := bt.typeId
+        if bt.typeId == TypeUndefined {
             effectiveType = TypeByte
         }
 

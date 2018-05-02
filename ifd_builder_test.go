@@ -9,10 +9,6 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
-
-// TODO(dustin): !! We need to have knowledge of the types so that we can validate or induce extra info for the adds.
-
-
 func TestAdd(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 

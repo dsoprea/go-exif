@@ -28,7 +28,7 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
     // have the bytes.
 
     encodedValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
-    bt := NewBuilderTag(ii, 0x9000, encodedValue)
+    bt := NewStandardBuilderTag(ii, 0x9000, encodedValue)
 
 
     // Stage the build.
@@ -73,3 +73,6 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
         t.Fatalf("Tag's parent IFD is not correct: %v", ite.Ii)
     }
 }
+
+// TODO(dustin): !! Add tests for remaining, well-defined unknown
+// TODO(dustin): !! Test what happens with unhandled unknown-type tags (though it should never get to this point in the normal workflow).

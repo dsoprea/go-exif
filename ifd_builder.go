@@ -66,6 +66,7 @@ type builderTag struct {
     ii IfdIdentity
 
     tagId uint16
+    typeId uint16
 
     // value is either a value that can be encoded, an IfdBuilder instance (for
     // child IFDs), or an IfdTagEntry instance representing an existing,
@@ -73,10 +74,34 @@ type builderTag struct {
     value *IfdBuilderTagValue
 }
 
-func NewBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
+func NewBuilderTag(ii IfdIdentity, tagId uint16, typeId uint16, value *IfdBuilderTagValue) builderTag {
     return builderTag{
         ii: ii,
         tagId: tagId,
+        typeId: typeId,
+        value: value,
+    }
+}
+
+func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
+    ti := NewTagIndex()
+
+    it, err := ti.Get(ii, tagId)
+    log.PanicIf(err)
+
+    return builderTag{
+        ii: ii,
+        tagId: tagId,
+        typeId: it.Type,
+        value: value,
+    }
+}
+
+func NewChildIfdTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
+    return builderTag{
+        ii: ii,
+        tagId: tagId,
+        typeId: TypeLong,
         value: value,
     }
 }
@@ -102,18 +127,21 @@ func (bt builderTag) String() string {
 // NewBuilderTagFromConfig allows us to easily generate solid, consistent tags
 // for testing with. `ii` is the tpye of IFD that owns this tag.
 func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
+    var typeId uint16
     var tagValue *IfdBuilderTagValue
 
     switch value.(type) {
     case *IfdBuilder:
         tagValue = NewIfdBuilderTagValueFromIfdBuilder(value.(*IfdBuilder))
+        typeId = TypeLong
     default:
         ti := NewTagIndex()
 
         it, err := ti.Get(ii, tagId)
         log.PanicIf(err)
 
-        tt := NewTagType(it.Type, byteOrder)
+        typeId = it.Type
+        tt := NewTagType(typeId, byteOrder)
 
         ve := NewValueEncoder(byteOrder)
 
@@ -123,11 +151,11 @@ func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.Byte
         tagValue = NewIfdBuilderTagValueFromBytes(ed.Encoded)
     }
 
-    return builderTag{
-        ii: ii,
-        tagId: tagId,
-        value: tagValue,
-    }
+    return NewBuilderTag(
+        ii,
+        tagId,
+        typeId,
+        tagValue)
 }
 
 // NewBuilderTagFromConfigWithName allows us to easily generate solid, consistent tags
@@ -148,11 +176,11 @@ func NewBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byteOrder b
 
     tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
 
-    return builderTag{
-        ii: ii,
-        tagId: it.Id,
-        value: tagValue,
-    }
+    return NewBuilderTag(
+            ii,
+            it.Id,
+            it.Type,
+            tagValue)
 }
 
 
@@ -554,11 +582,10 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
 
     value := NewIfdBuilderTagValueFromIfdBuilder(childIb)
 
-    bt := builderTag{
-        ii: childIb.ii,
-        tagId: childIb.ifdTagId,
-        value: value,
-    }
+    bt := NewChildIfdTag(
+            childIb.ii,
+            childIb.ifdTagId,
+            value)
 
     ib.tags = append(ib.tags, bt)
 
@@ -614,6 +641,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
         bt := builderTag{
             tagId: ite.TagId,
+            typeId: ite.TagType,
         }
 
         if itevr == nil {

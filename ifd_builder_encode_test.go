@@ -180,6 +180,13 @@ func Test_IfdByteEncoder__Arithmetic(t *testing.T) {
 }
 
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.PrintErrorf(err, "Test failure.")
+        }
+    }()
+
     ibe := NewIfdByteEncoder()
 
     ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
@@ -313,11 +320,10 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
     childIb := NewIfdBuilder(ExifIi, TestDefaultByteOrder)
 
-    childIbTestTag := builderTag{
-        ii: ExifIi,
-        tagId: 0x8822,
-        value: NewIfdBuilderTagValueFromBytes([]byte { 0x12, 0x34 }),
-    }
+    childIbTestTag := NewStandardBuilderTag(
+            ExifIi,
+            0x8822,
+            NewIfdBuilderTagValueFromBytes([]byte { 0x12, 0x34 }))
 
     childIb.Add(childIbTestTag)
 
@@ -795,6 +801,3 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 }
 
 // TODO(dustin): !! Write test with both chained and child IFDs
-
-// TODO(dustin): !! Test specific unknown-type tags.
-// TODO(dustin): !! Test what happens with unhandled unknown-type tags (though it should never get to this point in the normal workflow).
