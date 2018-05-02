@@ -555,7 +555,7 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
     return value, nil
 }
 
-// ValueString resolves the given value and returns a flat string.
+// ResolveAsString resolves the given value and returns a flat string.
 //
 // Where the type is not ASCII, `justFirst` indicates whether to just stringify
 // the first item in the slice (or return an empty string if the slice is
@@ -564,10 +564,7 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
 // Since this method lacks the information to process unknown-type tags (e.g.
 // byte-order, tag-ID, IFD type), it will return an error if attempted. See
 // `UndefinedValue()`.
-
-// TODO(dustin): !! Rename to ResolveAsString()
-
-func (tt TagType) ValueString(valueContext ValueContext, justFirst bool) (value string, err error) {
+func (tt TagType) ResolveAsString(valueContext ValueContext, justFirst bool) (value string, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))

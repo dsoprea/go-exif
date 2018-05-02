@@ -118,7 +118,7 @@ visitor := func(indexedIfdName string, tagId uint16, tagType exif.TagType, value
             valueString = fmt.Sprintf("%v", value)
         }
     } else {
-        valueString, err = tagType.ValueString(valueContext, true)
+        valueString, err = tagType.ResolveAsString(valueContext, true)
         log.PanicIf(err)
     }
 

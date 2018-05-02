@@ -55,7 +55,7 @@ func (ite IfdTagEntry) ValueString(byteOrder binary.ByteOrder, addressableData [
     } else {
         tt := NewTagType(ite.TagType, byteOrder)
 
-        value, err = tt.ValueString(vc, false)
+        value, err = tt.ResolveAsString(vc, false)
         log.PanicIf(err)
     }
 

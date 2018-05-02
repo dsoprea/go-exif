@@ -85,7 +85,7 @@ func main() {
                 valueString = fmt.Sprintf("%v", value)
             }
         } else {
-            valueString, err = tagType.ValueString(valueContext, true)
+            valueString, err = tagType.ResolveAsString(valueContext, true)
             log.PanicIf(err)
         }
 
