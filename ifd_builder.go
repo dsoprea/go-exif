@@ -97,7 +97,7 @@ func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagVal
     }
 }
 
-func NewChildIfdTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
+func NewChildIfdBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
     return builderTag{
         ii: ii,
         tagId: tagId,
@@ -124,32 +124,23 @@ func (bt builderTag) String() string {
     return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ii, valuePhrase)
 }
 
-// NewBuilderTagFromConfig allows us to easily generate solid, consistent tags
-// for testing with. `ii` is the tpye of IFD that owns this tag.
-func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
-    var typeId uint16
-    var tagValue *IfdBuilderTagValue
+// NewStandardBuilderTagFromConfig constructs a `builderTag` instance. The type
+// is looked up. `ii` is the type of IFD that owns this tag.
+func NewStandardBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
+    ti := NewTagIndex()
 
-    switch value.(type) {
-    case *IfdBuilder:
-        tagValue = NewIfdBuilderTagValueFromIfdBuilder(value.(*IfdBuilder))
-        typeId = TypeLong
-    default:
-        ti := NewTagIndex()
+    it, err := ti.Get(ii, tagId)
+    log.PanicIf(err)
 
-        it, err := ti.Get(ii, tagId)
-        log.PanicIf(err)
+    typeId := it.Type
+    tt := NewTagType(typeId, byteOrder)
 
-        typeId = it.Type
-        tt := NewTagType(typeId, byteOrder)
+    ve := NewValueEncoder(byteOrder)
 
-        ve := NewValueEncoder(byteOrder)
+    ed, err := ve.EncodeWithType(tt, value)
+    log.PanicIf(err)
 
-        ed, err := ve.EncodeWithType(tt, value)
-        log.PanicIf(err)
-
-        tagValue = NewIfdBuilderTagValueFromBytes(ed.Encoded)
-    }
+    tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
 
     return NewBuilderTag(
         ii,
@@ -158,10 +149,29 @@ func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.Byte
         tagValue)
 }
 
-// NewBuilderTagFromConfigWithName allows us to easily generate solid, consistent tags
-// for testing with. `ii` is the tpye of IFD that owns this tag. This can not be
+// NewStandardBuilderTagFromConfig constructs a `builderTag` instance. The type is
+// explicitly provided. `ii` is the type of IFD that owns this tag.
+func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, typeId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
+    tt := NewTagType(typeId, byteOrder)
+
+    ve := NewValueEncoder(byteOrder)
+
+    ed, err := ve.EncodeWithType(tt, value)
+    log.PanicIf(err)
+
+    tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
+
+    return NewBuilderTag(
+        ii,
+        tagId,
+        typeId,
+        tagValue)
+}
+
+// NewStandardBuilderTagFromConfigWithName allows us to easily generate solid, consistent tags
+// for testing with. `ii` is the type of IFD that owns this tag. This can not be
 // an IFD (IFDs are not associated with standardized, official names).
-func NewBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) builderTag {
+func NewStandardBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) builderTag {
     ti := NewTagIndex()
 
     it, err := ti.GetWithName(ii, tagName)
@@ -582,7 +592,7 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
 
     value := NewIfdBuilderTagValueFromIfdBuilder(childIb)
 
-    bt := NewChildIfdTag(
+    bt := NewChildIfdBuilderTag(
             childIb.ii,
             childIb.ifdTagId,
             value)
@@ -683,7 +693,7 @@ func (ib *IfdBuilder) AddFromConfig(tagId uint16, value interface{}) (err error)
         }
     }()
 
-    bt := NewBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
+    bt := NewStandardBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
 
     err = ib.Add(bt)
     log.PanicIf(err)
@@ -701,7 +711,7 @@ func (ib *IfdBuilder) AddFromConfigWithName(tagName string, value interface{}) (
         }
     }()
 
-    bt := NewBuilderTagFromConfigWithName(ib.ii, tagName, ib.byteOrder, value)
+    bt := NewStandardBuilderTagFromConfigWithName(ib.ii, tagName, ib.byteOrder, value)
 
     err = ib.Add(bt)
     log.PanicIf(err)

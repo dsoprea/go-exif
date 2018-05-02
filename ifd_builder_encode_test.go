@@ -191,7 +191,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 
     ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
-    bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12) })
+    bt := NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12) })
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -216,7 +216,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 
     ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
-    bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78) })
+    bt := NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78) })
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -247,7 +247,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-    bt := NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a) })
+    bt := NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a) })
 
     childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
@@ -264,7 +264,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
     // Test that another allocation encodes to the new offset.
 
-    bt = NewBuilderTagFromConfig(GpsIi, 0x0000, TestDefaultByteOrder, []uint8 { uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34) })
+    bt = NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34) })
 
     childIfdBlock, err = ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
     log.PanicIf(err)
@@ -298,7 +298,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T
     ida := newIfdDataAllocator(addressableOffset)
 
     childIb := NewIfdBuilder(ExifIi, TestDefaultByteOrder)
-    bt := NewBuilderTagFromConfig(RootIi, IfdExifId, TestDefaultByteOrder, childIb)
+    tagValue := NewIfdBuilderTagValueFromIfdBuilder(childIb)
+    bt := NewChildIfdBuilderTag(RootIi, IfdExifId, tagValue)
 
     nextIfdOffsetToWrite := uint32(0)
     childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, nextIfdOffsetToWrite)
@@ -329,7 +330,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
     // Formally compose the tag that refers to it.
 
-    bt := NewBuilderTagFromConfig(RootIi, IfdExifId, TestDefaultByteOrder, childIb)
+    tagValue := NewIfdBuilderTagValueFromIfdBuilder(childIb)
+    bt := NewChildIfdBuilderTag(RootIi, IfdExifId, tagValue)
 
     // Encode the tag. Since we've actually provided an offset at which we can
     // allocate data, the child-IFD will automatically be encoded, allocated,
@@ -434,7 +436,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     valueString := "testvalue"
-    bt := NewBuilderTagFromConfig(RootIi, 0x000b, TestDefaultByteOrder, valueString)
+    bt := NewStandardBuilderTagFromConfig(RootIi, uint16(0x000b), TestDefaultByteOrder, valueString)
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
