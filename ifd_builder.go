@@ -664,7 +664,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
         } else {
             var err error
 
-            valueBytes, err := itevr.ValueBytes(&ite)
+            valueBytes, err := itevr.ValueBytes(ite)
             if err != nil {
                 if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
                     ifdBuilderLogger.Warningf(nil, "Unknown-type tag can't be parsed so it can't be copied to the new IFD.")

@@ -4,7 +4,6 @@ import (
     "os"
     "path"
     "fmt"
-    "errors"
 
     "gopkg.in/yaml.v2"
     "github.com/dsoprea/go-logging"
@@ -81,7 +80,6 @@ var (
 
 var (
     tagsLogger = log.NewLogger("exif.tags")
-    ErrTagNotFound = errors.New("tag not found")
 )
 
 
@@ -270,7 +268,7 @@ func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, er
 
     it, found := ti.tagsByIfdR[ii.IfdName][name]
     if found != true {
-        log.Panicf("tag with IFD [%s] and name [%s] not known", ii.IfdName, name)
+        log.Panic(ErrTagNotFound)
     }
 
     return it, nil

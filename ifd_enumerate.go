@@ -126,7 +126,7 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerato
     return ite
 }
 
-func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumerator) (tag IfdTagEntry, err error) {
+func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumerator) (tag *IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -145,7 +145,7 @@ func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumer
     valueOffset, rawValueOffset, err := ite.getUint32()
     log.PanicIf(err)
 
-    tag = IfdTagEntry{
+    tag = &IfdTagEntry{
         Ii: ii,
         TagId: tagId,
         TagIndex: tagIndex,
@@ -173,7 +173,7 @@ type TagVisitor func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []IfdTagEntry, err error) {
+func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -185,7 +185,7 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumer
 
     ifdEnumerateLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
 
-    entries = make([]IfdTagEntry, tagCount)
+    entries = make([]*IfdTagEntry, tagCount)
 
     for i := 0; i < int(tagCount); i++ {
         tag, err := ie.parseTag(ii, i, ite)
@@ -269,6 +269,7 @@ func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor) (err error) {
     return nil
 }
 
+
 type Ifd struct {
     ByteOrder binary.ByteOrder
 
@@ -278,12 +279,62 @@ type Ifd struct {
     Index int
     Offset uint32
 
-// TODO(dustin): !! Add a find method.
-    Entries []IfdTagEntry
+    Entries []*IfdTagEntry
+    EntriesByTagId map[uint16][]*IfdTagEntry
 
     Children []*Ifd
     NextIfdOffset uint32
     NextIfd *Ifd
+}
+
+// FindTagWithId returns a list of tags (usually just zero or one) that match
+// the given tag ID. This is efficient.
+func (ifd Ifd) FindTagWithId(tagId uint16) (results []*IfdTagEntry, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    results, found := ifd.EntriesByTagId[tagId]
+    if found != true {
+        log.Panic(ErrTagNotFound)
+    }
+
+    return results, nil
+}
+
+// FindTagWithName returns a list of tags (usually just zero or one) that match
+// the given tag name. This is not efficient (though the labor is trivial).
+func (ifd Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    ti := NewTagIndex()
+
+    ii := ifd.Identity()
+    it, err := ti.GetWithName(ii, tagName)
+    if log.Is(err, ErrTagNotFound) == true {
+        log.Panic(ErrTagNotStandard)
+    } else if err != nil {
+        log.Panic(err)
+    }
+
+    results = make([]*IfdTagEntry, 0)
+    for _, ite := range ifd.Entries {
+        if ite.TagId == it.Id {
+            results = append(results, ite)
+        }
+    }
+
+    if len(results) == 0 {
+        log.Panic(ErrTagNotFound)
+    }
+
+    return results, nil
 }
 
 func (ifd Ifd) String() string {
@@ -359,7 +410,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
     ifds := make([]*Ifd, 0)
     lookup := make(map[IfdIdentity][]*Ifd)
 
-    queue := []QueuedIfd {
+    queue := []QueuedIfd{
         {
             Ii: RootIi,
             Index: 0,
@@ -390,6 +441,16 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
         id := len(ifds)
 
+        entriesByTagId := make(map[uint16][]*IfdTagEntry)
+        for _, tag := range entries {
+            tags, found := entriesByTagId[tag.TagId]
+            if found == false {
+                tags = make([]*IfdTagEntry, 0)
+            }
+
+            entriesByTagId[tag.TagId] = append(tags, tag)
+        }
+
         ifd := Ifd{
             ByteOrder: ie.byteOrder,
             Id: id,
@@ -398,6 +459,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             Index: index,
             Offset: offset,
             Entries: entries,
+            EntriesByTagId: entriesByTagId,
             Children: make([]*Ifd, 0),
             NextIfdOffset: nextIfdOffset,
         }
@@ -441,7 +503,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
                 IfdName: entry.ChildIfdName,
             }
 
-            qi := QueuedIfd {
+            qi := QueuedIfd{
                 Ii: childId,
                 Index: 0,
                 Offset: entry.ValueOffset,
@@ -456,7 +518,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             // Allow the next link to know what the previous link was.
             edges[nextIfdOffset] = &ifd
 
-            qi := QueuedIfd {
+            qi := QueuedIfd{
                 Ii: ii,
                 Index: index + 1,
                 Offset: nextIfdOffset,
@@ -476,7 +538,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 // ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
 // testing.
-func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitor) (nextIfdOffset uint32, entries []IfdTagEntry, err error) {
+func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitor) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -496,7 +558,7 @@ func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, vi
 }
 
 // ParseOneTag is a hack to use an IE to parse a raw tag block.
-func ParseOneTag(ii IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (tag IfdTagEntry, err error) {
+func ParseOneTag(ii IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (tag *IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))

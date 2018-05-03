@@ -58,7 +58,7 @@ func TestIfdTagEntry_ValueBytes_RealData(t *testing.T) {
     var ite *IfdTagEntry
     for _, thisIte := range index.RootIfd.Entries {
         if thisIte.TagId == 0x0110 {
-            ite = &thisIte
+            ite = thisIte
             break
         }
     }
@@ -102,7 +102,7 @@ func TestIfdTagEntry_Resolver_ValueBytes(t *testing.T) {
     var ite *IfdTagEntry
     for _, thisIte := range index.RootIfd.Entries {
         if thisIte.TagId == 0x0110 {
-            ite = &thisIte
+            ite = thisIte
             break
         }
     }
@@ -150,7 +150,7 @@ func TestIfdTagEntry_Resolver_ValueBytes__Unknown_Field_And_Nonroot_Ifd(t *testi
     var ite *IfdTagEntry
     for _, thisIte := range ifdExif.Entries {
         if thisIte.TagId == 0x9000 {
-            ite = &thisIte
+            ite = thisIte
             break
         }
     }
@@ -170,5 +170,110 @@ func TestIfdTagEntry_Resolver_ValueBytes__Unknown_Field_And_Nonroot_Ifd(t *testi
         t.Fatalf("Decoded bytes not the right count.")
     } else if bytes.Compare(decodedBytes, expected) != 0 {
         t.Fatalf("Recovered unknown value is not correct.")
+    }
+}
+
+func Test_Ifd_FindTagWithId_Hit(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd := index.RootIfd
+    results, err := ifd.FindTagWithId(0x011b)
+
+    if len(results) != 1 {
+        t.Fatalf("Exactly one result was not found: (%d)", len(results))
+    } else if results[0].TagId != 0x011b {
+        t.Fatalf("The result was not expected: %v", results[0])
+    }
+}
+
+func Test_Ifd_FindTagWithId_Miss(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd := index.RootIfd
+
+    _, err = ifd.FindTagWithId(0xffff)
+    if err == nil {
+        t.Fatalf("Expected error for not-found tag.")
+    } else if log.Is(err, ErrTagNotFound) == false {
+        log.Panic(err)
+    }
+}
+
+func Test_Ifd_FindTagWithName_Hit(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd := index.RootIfd
+    results, err := ifd.FindTagWithName("YResolution")
+
+    if len(results) != 1 {
+        t.Fatalf("Exactly one result was not found: (%d)", len(results))
+    } else if results[0].TagId != 0x011b {
+        t.Fatalf("The result was not expected: %v", results[0])
+    }
+}
+
+func Test_Ifd_FindTagWithName_Miss(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd := index.RootIfd
+
+    _, err = ifd.FindTagWithName("PlanarConfiguration")
+    if err == nil {
+        t.Fatalf("Expected error for not-found tag.")
+    } else if log.Is(err, ErrTagNotFound) == false {
+        log.Panic(err)
+    }
+}
+
+func Test_Ifd_FindTagWithName_NonStandard(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd := index.RootIfd
+
+    _, err = ifd.FindTagWithName("GeorgeNotAtHome")
+    if err == nil {
+        t.Fatalf("Expected error for not-found tag.")
+    } else if log.Is(err, ErrTagNotStandard) == false {
+        log.Panic(err)
     }
 }

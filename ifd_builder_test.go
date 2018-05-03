@@ -152,21 +152,21 @@ func TestAddTagsFromExisting(t *testing.T) {
 
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-    entries := make([]IfdTagEntry, 3)
+    entries := make([]*IfdTagEntry, 3)
 
-    entries[0] = IfdTagEntry{
+    entries[0] = &IfdTagEntry{
         TagId: 0x11,
         TagType: TypeByte,
         UnitCount: 4,
         RawValueOffset: []byte { 0x12, 0, 0, 0 },
     }
 
-    entries[1] = IfdTagEntry{
+    entries[1] = &IfdTagEntry{
         TagId: 0x22,
         ChildIfdName: "some ifd",
     }
 
-    entries[2] = IfdTagEntry{
+    entries[2] = &IfdTagEntry{
         TagId: 0x33,
         TagType: TypeByte,
         UnitCount: 4,
@@ -192,18 +192,18 @@ func TestAddTagsFromExisting(t *testing.T) {
 func TestAddTagsFromExisting__Includes(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-    entries := make([]IfdTagEntry, 3)
+    entries := make([]*IfdTagEntry, 3)
 
-    entries[0] = IfdTagEntry{
+    entries[0] = &IfdTagEntry{
         TagId: 0x11,
     }
 
-    entries[1] = IfdTagEntry{
+    entries[1] = &IfdTagEntry{
         TagId: 0x22,
         ChildIfdName: "some ifd",
     }
 
-    entries[2] = IfdTagEntry{
+    entries[2] = &IfdTagEntry{
         TagId: 0x33,
     }
 
@@ -224,18 +224,18 @@ func TestAddTagsFromExisting__Includes(t *testing.T) {
 func TestAddTagsFromExisting__Excludes(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-    entries := make([]IfdTagEntry, 3)
+    entries := make([]*IfdTagEntry, 3)
 
-    entries[0] = IfdTagEntry{
+    entries[0] = &IfdTagEntry{
         TagId: 0x11,
     }
 
-    entries[1] = IfdTagEntry{
+    entries[1] = &IfdTagEntry{
         TagId: 0x22,
         ChildIfdName: "some ifd",
     }
 
-    entries[2] = IfdTagEntry{
+    entries[2] = &IfdTagEntry{
         TagId: 0x33,
     }
 
