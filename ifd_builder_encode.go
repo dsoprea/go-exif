@@ -346,11 +346,16 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
         setNextIb := thisIb.nextIb != nil
 
-        tableAndAllocated, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, addressableOffset, nextIfdOffsetToWrite, setNextIb)
+        tableAndAllocated, tableSize, allocatedDataSize, childIfdSizes, err := ibe.encodeIfdToBytes(ib, addressableOffset, nextIfdOffsetToWrite, setNextIb)
         log.PanicIf(err)
 
-        if len(tableAndAllocated) != int(tableSize + allocatedDataSize) {
-            log.Panicf("IFD table and data is not a consistent size: (%d) != (%d)", len(tableAndAllocated), tableSize + allocatedDataSize)
+        totalChildIfdSize := uint32(0)
+        for _, childIfdSize := range childIfdSizes {
+            totalChildIfdSize += childIfdSize
+        }
+
+        if len(tableAndAllocated) != int(tableSize + allocatedDataSize + totalChildIfdSize) {
+            log.Panicf("IFD table and data is not a consistent size: (%d) != (%d)", len(tableAndAllocated), tableSize + allocatedDataSize + totalChildIfdSize)
         }
 
         _, err = b.Write(tableAndAllocated)

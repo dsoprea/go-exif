@@ -352,7 +352,7 @@ func (ifd Ifd) Identity() IfdIdentity {
     return ifd.Ii
 }
 
-func (ifd Ifd) printNode(level int, nextLink bool) {
+func (ifd Ifd) printTree(level int, printTags bool, nextLink bool) {
     indent := strings.Repeat(" ", level * 2)
 
     prefix := " "
@@ -360,21 +360,105 @@ func (ifd Ifd) printNode(level int, nextLink bool) {
         prefix = ">"
     }
 
-    fmt.Printf("%s%s%s\n", indent, prefix, ifd)
+    fmt.Printf("%s%sIFD: %s\n", indent, prefix, ifd)
 
+    // Quickly create an index of the child-IFDs.
+
+    childIfdIndex := make(map[string]*Ifd)
     for _, childIfd := range ifd.Children {
-        childIfd.printNode(level + 1, false)
+        childIfdIndex[childIfd.Ii.IfdName] = childIfd
+    }
+
+    // Now, print the tags while also descending to child-IFDS as we encounter them.
+
+    ifdsFoundCount := 0
+
+    ti := NewTagIndex()
+    for _, tag := range ifd.Entries {
+        if printTags == true {
+            if tag.ChildIfdName != "" {
+                fmt.Printf("%s - TAG: %s\n", indent, tag)
+            } else {
+                it, err := ti.Get(ifd.Identity(), tag.TagId)
+
+                tagName := ""
+                if err == nil {
+                    tagName = it.Name
+                }
+
+                fmt.Printf("%s - TAG: %s NAME=[%s]\n", indent, tag, tagName)
+            }
+        }
+
+        if tag.ChildIfdName != "" {
+            ifdsFoundCount++
+
+            childIfd, found := childIfdIndex[tag.ChildIfdName]
+            if found != true {
+                log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
+            }
+
+            childIfd.printTree(level + 1, printTags, false)
+        }
+    }
+
+    if len(ifd.Children) != ifdsFoundCount {
+        log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.Children), ifdsFoundCount)
     }
 
     if ifd.NextIfd != nil {
-        ifd.NextIfd.printNode(level, true)
+        ifd.NextIfd.printTree(level, printTags, true)
     }
 }
 
-func (ifd Ifd) PrintTree() {
-    ifd.printNode(0, false)
+// PrintTree prints the IFD hierarchy.
+func (ifd Ifd) PrintTree(printTags bool) {
+    ifd.printTree(0, printTags, false)
 }
 
+func (ifd Ifd) dumpTree(tagsDump []string) []string {
+    if tagsDump == nil {
+        tagsDump = make([]string, 0)
+    }
+
+    // Quickly create an index of the child-IFDs.
+
+    childIfdIndex := make(map[string]*Ifd)
+    for _, childIfd := range ifd.Children {
+        childIfdIndex[childIfd.Ii.IfdName] = childIfd
+    }
+
+    ifdsFoundCount := 0
+    for _, tag := range ifd.Entries {
+        if ifd.ParentIfd != nil {
+            tagsDump = append(tagsDump, fmt.Sprintf("[%s]->[%s] (0x%02x)", ifd.ParentIfd.Ii.IfdName, tag.Ii.IfdName, tag.TagId))
+        } else {
+            tagsDump = append(tagsDump, fmt.Sprintf("[ROOT]->[%s] (0x%02x)", tag.Ii.IfdName, tag.TagId))
+        }
+
+        if tag.ChildIfdName != "" {
+            ifdsFoundCount++
+
+            childIfd, found := childIfdIndex[tag.ChildIfdName]
+            if found != true {
+                log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
+            }
+
+            tagsDump = childIfd.dumpTree(tagsDump)
+        }
+    }
+
+    if len(ifd.Children) != ifdsFoundCount {
+        log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.Children), ifdsFoundCount)
+    }
+
+    return tagsDump
+}
+
+// DumpTree returns a list of strings describing the IFD hierarchy.
+func (ifd Ifd) DumpTree() []string {
+    return ifd.dumpTree(nil)
+}
 
 type QueuedIfd struct {
     Ii IfdIdentity

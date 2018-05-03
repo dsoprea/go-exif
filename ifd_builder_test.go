@@ -87,7 +87,7 @@ func TestAdd(t *testing.T) {
     }
 }
 
-func TestSetNextIfd(t *testing.T) {
+func TestSetNextIb(t *testing.T) {
     ib1 := NewIfdBuilder(RootIi, TestDefaultByteOrder)
     ib2 := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
@@ -95,7 +95,7 @@ func TestSetNextIfd(t *testing.T) {
         t.Fatalf("Next-IFD for IB1 not initially terminal.")
     }
 
-    err := ib1.SetNextIfd(ib2)
+    err := ib1.SetNextIb(ib2)
     log.PanicIf(err)
 
     if ib1.nextIb != ib2 {

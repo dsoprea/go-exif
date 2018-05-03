@@ -268,7 +268,7 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdB
 
         newIb = NewIfdBuilder(ii, binary.BigEndian)
         if lastIb != nil {
-            lastIb.SetNextIfd(newIb)
+            lastIb.SetNextIb(newIb)
         }
 
         if rootIb == nil {
@@ -410,7 +410,7 @@ func (ib *IfdBuilder) DumpToStrings() (lines []string) {
     return ib.dumpToStrings(ib, "", lines)
 }
 
-func (ib *IfdBuilder) SetNextIfd(nextIb *IfdBuilder) (err error) {
+func (ib *IfdBuilder) SetNextIb(nextIb *IfdBuilder) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))

@@ -742,6 +742,94 @@ func Test_IfdByteEncoder_EncodeToExif(t *testing.T) {
     validateExifSimpleTestIb(exifData, t)
 }
 
+func Test_IfdByteEncoder_EncodeToExif_WithChild(t *testing.T) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.PrintErrorf(err, "Test failure.")
+        }
+    }()
+
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
+
+    err := ib.AddFromConfig(0x000b, "asciivalue")
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x00ff, []uint16 { 0x1122 })
+    log.PanicIf(err)
+
+
+    // Add a child IB right in the middle.
+
+    childIb := NewIfdBuilder(ExifIi, EncodeDefaultByteOrder)
+
+    err = childIb.AddFromConfigWithName("ISOSpeedRatings", []uint16 { 0x1122 })
+    log.PanicIf(err)
+
+    err = childIb.AddFromConfigWithName("ISOSpeed", []uint32 { 0x33445566 })
+    log.PanicIf(err)
+
+    err = ib.AddChildIb(childIb)
+    log.PanicIf(err)
+
+
+    err = ib.AddFromConfig(0x0100, []uint32 { 0x33445566 })
+    log.PanicIf(err)
+
+    err = ib.AddFromConfig(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    log.PanicIf(err)
+
+
+// TODO(dustin): !! Finish this.
+    // // Link to another IB (sibling relationship). The root IFD may occur twice
+    // // in some JPEGs (for thumbnail or FlashPix images).
+
+    // nextIb := NewIfdBuilder(RootIi, TestDefaultByteOrder)
+
+    // err = nextIb.AddFromConfig(0x0101, []uint32 { 0x11223344 })
+    // log.PanicIf(err)
+
+    // err = nextIb.AddFromConfig(0x0102, []uint16 { 0x5566 })
+    // log.PanicIf(err)
+
+    // ib.SetNextIb(nextIb)
+
+
+    // Encode.
+
+    ibe := NewIfdByteEncoder()
+
+    exifData, err := ibe.EncodeToExif(ib)
+    log.PanicIf(err)
+
+
+    // Parse.
+
+    e := NewExif()
+
+    _, index, err := e.Collect(exifData)
+    log.PanicIf(err)
+
+
+    // index.RootIfd.PrintTree(true)
+
+    tagsDump := index.RootIfd.DumpTree()
+
+    expected := []string {
+        "[ROOT]->[IFD] (0x0b)",
+        "[ROOT]->[IFD] (0xff)",
+        "[ROOT]->[IFD] (0x8769)",
+        "[IFD]->[Exif] (0x8827)",
+        "[IFD]->[Exif] (0x8833)",
+        "[ROOT]->[IFD] (0x100)",
+        "[ROOT]->[IFD] (0x13e)",
+    }
+
+    if reflect.DeepEqual(tagsDump, expected) != true {
+        t.Fatalf("IFD hierarchy not correct")
+    }
+}
+
 func ExampleIfdByteEncoder_EncodeToExif() {
     // Construct an IFD.
 
@@ -801,5 +889,80 @@ func ExampleIfdByteEncoder_EncodeToExif() {
     // 4: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x13e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [{286335522 858997828}]
     // 5: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x9201) TAG-TYPE=[SRATIONAL] UNIT-COUNT=(1)> [{286335522 858997828}]
 }
+
+// func ExampleIfdByteEncoder_EncodeToExif_WithChild() {
+//     // Construct an IFD.
+
+//     ib := NewIfdBuilder(RootIi, EncodeDefaultByteOrder)
+
+//     err := ib.AddFromConfigWithName("ProcessingSoftware", "asciivalue")
+//     log.PanicIf(err)
+
+//     err = ib.AddFromConfigWithName("DotRange", []uint8 { 0x11 })
+//     log.PanicIf(err)
+
+//     err = ib.AddFromConfigWithName("SubfileType", []uint16 { 0x2233 })
+//     log.PanicIf(err)
+
+
+//     // Add a child IB right in the middle.
+
+//     childIb := NewIfdBuilder(ExifIi, EncodeDefaultByteOrder)
+
+//     err = childIb.AddFromConfigWithName("ISOSpeedRatings", []uint16 { 0x1122 })
+//     log.PanicIf(err)
+
+//     err = childIb.AddFromConfigWithName("ISOSpeed", []uint32 { 0x33445566 })
+//     log.PanicIf(err)
+
+//     err = ib.AddChildIb(childIb)
+//     log.PanicIf(err)
+
+
+//     err = ib.AddFromConfigWithName("ImageWidth", []uint32 { 0x44556677 })
+//     log.PanicIf(err)
+
+//     err = ib.AddFromConfigWithName("WhitePoint", []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+//     log.PanicIf(err)
+
+//     err = ib.AddFromConfigWithName("ShutterSpeedValue", []SignedRational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+//     log.PanicIf(err)
+
+
+//     // Encode it.
+
+//     ibe := NewIfdByteEncoder()
+
+//     exifData, err := ibe.EncodeToExif(ib)
+//     log.PanicIf(err)
+
+
+//     // Parse it so we can see it.
+
+//     e := NewExif()
+
+//     _, index, err := e.Collect(exifData)
+//     log.PanicIf(err)
+
+//     // addressableData is the byte-slice where the allocated data can be
+//     // resolved (where position 0x0 will correlate with offset 0x0).
+//     addressableData := exifData[ExifAddressableAreaStart:]
+
+//     for i, e := range index.RootIfd.Entries {
+//         value, err := e.Value(EncodeDefaultByteOrder, addressableData)
+//         log.PanicIf(err)
+
+//         fmt.Printf("%d: %s %v\n", i, e, value)
+//     }
+
+//     // Output:
+//     //
+//     // 0: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0b) TAG-TYPE=[ASCII] UNIT-COUNT=(11)> asciivalue
+//     // 1: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x150) TAG-TYPE=[BYTE] UNIT-COUNT=(1)> [17]
+//     // 2: IfdTagEntry<TAG-IFD=[] TAG-ID=(0xff) TAG-TYPE=[SHORT] UNIT-COUNT=(1)> [8755]
+//     // 3: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x100) TAG-TYPE=[LONG] UNIT-COUNT=(1)> [1146447479]
+//     // 4: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x13e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [{286335522 858997828}]
+//     // 5: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x9201) TAG-TYPE=[SRATIONAL] UNIT-COUNT=(1)> [{286335522 858997828}]
+// }
 
 // TODO(dustin): !! Write test with both chained and child IFDs
