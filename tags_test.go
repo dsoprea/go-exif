@@ -108,7 +108,7 @@ func TestIfdTagIdWithIdentityOrFail_Miss(t *testing.T) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
-            if err.Error() != "no tag for invalid IFD identity" {
+            if err.Error() != "no tag for invalid IFD identity: IfdIdentity<PARENT-NAME=[invalid-parent] NAME=[invalid-child]>" {
                 log.Panic(err)
             }
         }

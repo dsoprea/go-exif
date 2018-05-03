@@ -235,7 +235,13 @@ func NewIfdBuilder(ii IfdIdentity, byteOrder binary.ByteOrder) (ib *IfdBuilder) 
 // information as the given IFD.
 func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
     ii := ifd.Identity()
-    ifdTagId := IfdTagIdWithIdentityOrFail(ii)
+
+    var ifdTagId uint16
+
+    // There is no tag-ID for the root IFD. It will never be a child IFD.
+    if ii != RootIi {
+        ifdTagId = IfdTagIdWithIdentityOrFail(ii)
+    }
 
     ib = &IfdBuilder{
         ii: ii,

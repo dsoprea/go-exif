@@ -315,14 +315,14 @@ func IfdTagIdWithIdentityOrFail(ii IfdIdentity) (tagId uint16) {
         if tagId, found = tags[ii.IfdName]; found == true {
             if tagId == 0 {
                 // This IFD is not the type that can be linked to from a tag.
-                log.Panicf("not a child IFD")
+                log.Panicf("not a child IFD: [%s]", ii.IfdName)
             }
 
             return tagId
         }
     }
 
-    log.Panicf("no tag for invalid IFD identity")
+    log.Panicf("no tag for invalid IFD identity: %v", ii)
     return 0
 }
 

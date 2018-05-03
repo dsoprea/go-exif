@@ -1162,14 +1162,15 @@ func TestNewIfdBuilderFromExistingChain(t *testing.T) {
 
 
 func TestNewIfdBuilderWithExistingIfd(t *testing.T) {
-    ii, _ := IfdIdOrFail(IfdStandard, IfdGps)
-    tagId := IfdTagIdWithIdentityOrFail(ii)
+    tagId := IfdTagIdWithIdentityOrFail(GpsIi)
 
     parentIfd := &Ifd{
+        Ii: RootIi,
         Name: IfdStandard,
     }
 
     ifd := &Ifd{
+        Ii: GpsIi,
         Name: IfdGps,
         ByteOrder: TestDefaultByteOrder,
         Offset: 0x123,

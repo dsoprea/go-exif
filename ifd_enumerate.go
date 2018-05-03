@@ -273,6 +273,8 @@ func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor) (err error) {
 type Ifd struct {
     ByteOrder binary.ByteOrder
 
+    Ii IfdIdentity
+
     Id int
     ParentIfd *Ifd
     Name string
@@ -347,15 +349,7 @@ func (ifd Ifd) String() string {
 }
 
 func (ifd Ifd) Identity() IfdIdentity {
-    parentIfdName := ""
-    if ifd.ParentIfd != nil {
-        parentIfdName = ifd.ParentIfd.Name
-    }
-
-// TODO(dustin): !! We should be checking using the parent ID, not the parent name.
-    ii, _ := IfdIdOrFail(parentIfdName, ifd.Name)
-
-    return ii
+    return ifd.Ii
 }
 
 func (ifd Ifd) printNode(level int, nextLink bool) {
@@ -426,6 +420,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
         }
 
         ii := queue[0].Ii
+
+
         name := ii.IfdName
         index := queue[0].Index
         offset := queue[0].Offset
@@ -453,6 +449,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
         ifd := Ifd{
             ByteOrder: ie.byteOrder,
+            Ii: ii,
             Id: id,
             ParentIfd: parentIfd,
             Name: name,
