@@ -169,7 +169,7 @@ func TestVisit(t *testing.T) {
         "IFD=[Exif] ID=(0xa434) NAME=[LensModel] COUNT=(22) TYPE=[ASCII] VALUE=[EF16-35mm f/4L IS USM]",
         "IFD=[Exif] ID=(0xa435) NAME=[LensSerialNumber] COUNT=(11) TYPE=[ASCII] VALUE=[2400001068]",
         "IFD=[IFD] ID=(0x8825) NAME=[GPSTag] COUNT=(1) TYPE=[LONG] VALUE=[9554]",
-        "IFD=[GPSInfo] ID=(0x0000) NAME=[GPSVersionID] COUNT=(4) TYPE=[BYTE] VALUE=[2]",
+        "IFD=[GPSInfo] ID=(0x0000) NAME=[GPSVersionID] COUNT=(4) TYPE=[BYTE] VALUE=[0x02]",
         "IFD=[IFD] ID=(0x0103) NAME=[Compression] COUNT=(1) TYPE=[SHORT] VALUE=[6]",
         "IFD=[IFD] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
         "IFD=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
@@ -179,7 +179,25 @@ func TestVisit(t *testing.T) {
     }
 
     if reflect.DeepEqual(tags, expected) == false {
-        t.Fatalf("tags not correct:\n%v", tags)
+        fmt.Printf("\n")
+        fmt.Printf("ACTUAL:\n")
+        fmt.Printf("\n")
+
+        for _, line := range tags {
+            fmt.Println(line)
+        }
+
+        fmt.Printf("\n")
+        fmt.Printf("EXPECTED:\n")
+        fmt.Printf("\n")
+
+        for _, line := range expected {
+            fmt.Println(line)
+        }
+
+        fmt.Printf("\n")
+
+        t.Fatalf("tags not correct.")
     }
 }
 

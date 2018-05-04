@@ -582,9 +582,9 @@ func (tt TagType) ResolveAsString(valueContext ValueContext, justFirst bool) (va
         log.PanicIf(err)
 
         if justFirst == false {
-            return fmt.Sprintf("%v", raw), nil
+            return DumpBytesToString(raw), nil
         } else if valueContext.UnitCount > 0 {
-            return fmt.Sprintf("%v", raw[0]), nil
+            return fmt.Sprintf("0x%02x", raw[0]), nil
         } else {
             return "", nil
         }

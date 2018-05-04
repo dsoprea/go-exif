@@ -33,7 +33,7 @@ func (ite IfdTagEntry) String() string {
 }
 
 // ValueString renders a string from whatever the value in this tag is.
-func (ite IfdTagEntry) ValueString(byteOrder binary.ByteOrder, addressableData []byte) (value string, err error) {
+func (ite IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.ByteOrder) (value string, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -125,7 +125,7 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 }
 
 // Value returns the specific, parsed, typed value from the tag.
-func (ite IfdTagEntry) Value(byteOrder binary.ByteOrder, addressableData []byte) (value interface{}, err error) {
+func (ite IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder) (value interface{}, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))

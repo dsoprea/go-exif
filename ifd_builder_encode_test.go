@@ -568,7 +568,7 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
             t.Fatalf("Tag-ID for entry (%d) not correct: (0x%02x) != (0x%02x)", i, e.TagId, expected[i].tagId)
         }
 
-        value, err := e.Value(TestDefaultByteOrder, addressableData)
+        value, err := e.Value(addressableData, TestDefaultByteOrder)
         log.PanicIf(err)
 
         if reflect.DeepEqual(value, expected[i].value) != true {
@@ -742,7 +742,7 @@ func Test_IfdByteEncoder_EncodeToExif(t *testing.T) {
     validateExifSimpleTestIb(exifData, t)
 }
 
-func Test_IfdByteEncoder_EncodeToExif_WithChild(t *testing.T) {
+func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -780,10 +780,11 @@ func Test_IfdByteEncoder_EncodeToExif_WithChild(t *testing.T) {
     log.PanicIf(err)
 
 
-// TODO(dustin): !! Finish this.
-    // // Link to another IB (sibling relationship). The root IFD may occur twice
-    // // in some JPEGs (for thumbnail or FlashPix images).
+    // Link to another IB (sibling relationship). The root IFD may occur twice
+    // in some JPEGs (for thumbnail or FlashPix images).
 
+
+// TODO(dustin): !! Debugging.
     // nextIb := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     // err = nextIb.AddFromConfig(0x0101, []uint32 { 0x11223344 })
@@ -874,7 +875,7 @@ func ExampleIfdByteEncoder_EncodeToExif() {
     addressableData := exifData[ExifAddressableAreaStart:]
 
     for i, e := range index.RootIfd.Entries {
-        value, err := e.Value(EncodeDefaultByteOrder, addressableData)
+        value, err := e.Value(addressableData, EncodeDefaultByteOrder)
         log.PanicIf(err)
 
         fmt.Printf("%d: %s %v\n", i, e, value)
@@ -949,7 +950,7 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 //     addressableData := exifData[ExifAddressableAreaStart:]
 
 //     for i, e := range index.RootIfd.Entries {
-//         value, err := e.Value(EncodeDefaultByteOrder, addressableData)
+//         value, err := e.Value(addressableData, EncodeDefaultByteOrder)
 //         log.PanicIf(err)
 
 //         fmt.Printf("%d: %s %v\n", i, e, value)
