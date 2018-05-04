@@ -51,6 +51,28 @@ func Test_IfdTagEntry_ValueString_Embedded(t *testing.T) {
     }
 }
 
+func Test_IfdTagEntry_ValueString_Unknown(t *testing.T) {
+    data := []uint8 { '0', '2', '3', '0' }
+
+    ite := IfdTagEntry{
+        TagId: 0x9000,
+        TagIndex: 0,
+        TagType: TypeUndefined,
+        UnitCount: 4,
+        ValueOffset: 0x0,
+        RawValueOffset: data,
+        Ii: ExifIi,
+    }
+
+    value, err := ite.ValueString(nil, TestDefaultByteOrder)
+    log.PanicIf(err)
+
+    expected := "0230"
+    if value != expected {
+        t.Fatalf("Value not expected: [%s] != [%s]", value, expected)
+    }
+}
+
 func Test_IfdTagEntry_ValueBytes_Allocated(t *testing.T) {
     ite := IfdTagEntry{
         TagId: 0x1,
