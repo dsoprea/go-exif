@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/dsoprea/go-multiparse.svg?branch=master)](https://travis-ci.org/dsoprea/go-exif)
-[![Coverage Status](https://coveralls.io/repos/github/dsoprea/go-multiparse/badge.svg?branch=master)](https://coveralls.io/github/dsoprea/go-exif?branch=master)
+[![Build Status](https://travis-ci.org/dsoprea/go-exif.svg?branch=master)](https://travis-ci.org/dsoprea/go-exif)
+[![Coverage Status](https://coveralls.io/repos/github/dsoprea/go-exif/badge.svg?branch=master)](https://coveralls.io/github/dsoprea/go-exif?branch=master)
 
 ## Overview
 
