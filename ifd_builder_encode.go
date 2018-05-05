@@ -2,12 +2,17 @@ package exif
 
 import (
     "bytes"
+    // "fmt"
 
     "encoding/binary"
 
     "github.com/dsoprea/go-logging"
 )
 
+const (
+    // Tag-ID + Tag-Type + Unit-Count + Value/Offset.
+    IfdTagEntrySize = uint32(2 + 2 + 4 + 4)
+)
 
 type ByteWriter struct {
     b *bytes.Buffer
@@ -122,14 +127,9 @@ func NewIfdByteEncoder() (ibe *IfdByteEncoder) {
     return new(IfdByteEncoder)
 }
 
-func (ibe *IfdByteEncoder) EntrySize() uint32 {
-    // Tag-ID + Tag-Type + Unit-Count + Value/Offset.
-    return uint32(2 + 2 + 4 + 4)
-}
-
 func (ibe *IfdByteEncoder) TableSize(entryCount int) uint32 {
     // Tag-Count + (Entry-Size * Entry-Count) + Next-IFD-Offset.
-    return uint32(2) + (ibe.EntrySize() * uint32(entryCount)) + uint32(4)
+    return uint32(2) + (IfdTagEntrySize * uint32(entryCount)) + uint32(4)
 }
 
 // encodeTagToBytes encodes the given tag to a byte stream. If
@@ -289,8 +289,10 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     // next cycle.
     if setNextIb == true {
         nextIfdOffsetToWrite += tableSize + dataSize + childIfdsTotalSize
+        // fmt.Printf("SETTING NEXT-IFD TO: (0x%02x)\n", nextIfdOffsetToWrite)
     } else {
         nextIfdOffsetToWrite = 0
+        // fmt.Printf("NOT SETTING NEXT-IFD.\n")
     }
 
     // Write address of next IFD in chain.
@@ -362,7 +364,7 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
         log.PanicIf(err)
 
         // This will include the child-IFDs, as well. This will actually advance the offset for our next loop.
-        ifdAddressableOffset = ifdAddressableOffset + uint32(tableSize + allocatedDataSize)
+        ifdAddressableOffset += uint32(tableSize + allocatedDataSize)
     }
 
     return b.Bytes(), nil

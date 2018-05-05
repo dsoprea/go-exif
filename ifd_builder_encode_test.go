@@ -172,9 +172,9 @@ func Test_IfdDataAllocator_Allocate_InitialOffset2(t *testing.T) {
 func Test_IfdByteEncoder__Arithmetic(t *testing.T) {
     ibe := NewIfdByteEncoder()
 
-    if (ibe.TableSize(1) - ibe.TableSize(0)) != ibe.EntrySize() {
+    if (ibe.TableSize(1) - ibe.TableSize(0)) != IfdTagEntrySize {
         t.Fatalf("table-size/entry-size not consistent (1)")
-    } else if (ibe.TableSize(11) - ibe.TableSize(10)) != ibe.EntrySize() {
+    } else if (ibe.TableSize(11) - ibe.TableSize(10)) != IfdTagEntrySize {
         t.Fatalf("table-size/entry-size not consistent (2)")
     }
 }
@@ -784,7 +784,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
     // in some JPEGs (for thumbnail or FlashPix images).
 
 
-// TODO(dustin): !! Debugging.
+// TODO(dustin): !! Debug this.
     // nextIb := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     // err = nextIb.AddFromConfig(0x0101, []uint32 { 0x11223344 })
@@ -878,17 +878,17 @@ func ExampleIfdByteEncoder_EncodeToExif() {
         value, err := e.Value(addressableData, EncodeDefaultByteOrder)
         log.PanicIf(err)
 
-        fmt.Printf("%d: %s %v\n", i, e, value)
+        fmt.Printf("%d: %s [%v]\n", i, e, value)
     }
 
     // Output:
     //
-    // 0: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0b) TAG-TYPE=[ASCII] UNIT-COUNT=(11)> asciivalue
-    // 1: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x150) TAG-TYPE=[BYTE] UNIT-COUNT=(1)> [17]
-    // 2: IfdTagEntry<TAG-IFD=[] TAG-ID=(0xff) TAG-TYPE=[SHORT] UNIT-COUNT=(1)> [8755]
-    // 3: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x100) TAG-TYPE=[LONG] UNIT-COUNT=(1)> [1146447479]
-    // 4: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x13e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [{286335522 858997828}]
-    // 5: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x9201) TAG-TYPE=[SRATIONAL] UNIT-COUNT=(1)> [{286335522 858997828}]
+    // 0: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0b) TAG-TYPE=[ASCII] UNIT-COUNT=(11)> [asciivalue]
+    // 1: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x150) TAG-TYPE=[BYTE] UNIT-COUNT=(1)> [[17]]
+    // 2: IfdTagEntry<TAG-IFD=[] TAG-ID=(0xff) TAG-TYPE=[SHORT] UNIT-COUNT=(1)> [[8755]]
+    // 3: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x100) TAG-TYPE=[LONG] UNIT-COUNT=(1)> [[1146447479]]
+    // 4: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x13e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
+    // 5: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x9201) TAG-TYPE=[SRATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
 }
 
 // func ExampleIfdByteEncoder_EncodeToExif_WithChild() {
