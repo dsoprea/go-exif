@@ -416,10 +416,12 @@ func (ifd Ifd) PrintTree(printTags bool) {
     ifd.printTree(0, printTags, false)
 }
 
-func (ifd Ifd) dumpTree(tagsDump []string) []string {
+func (ifd Ifd) dumpTree(tagsDump []string, level int) []string {
     if tagsDump == nil {
         tagsDump = make([]string, 0)
     }
+
+    indent := strings.Repeat(" ", level * 2)
 
     // Quickly create an index of the child-IFDs.
 
@@ -428,13 +430,19 @@ func (ifd Ifd) dumpTree(tagsDump []string) []string {
         childIfdIndex[childIfd.Ii.IfdName] = childIfd
     }
 
+    var ifdPhrase string
+    if ifd.ParentIfd != nil {
+        ifdPhrase = fmt.Sprintf("[%s]->[%s]:(%d)", ifd.ParentIfd.Ii.IfdName, ifd.Ii.IfdName, ifd.Index)
+    } else {
+        ifdPhrase = fmt.Sprintf("[ROOT]->[%s]:(%d)", ifd.Ii.IfdName, ifd.Index)
+    }
+
+    startBlurb := fmt.Sprintf("%s> IFD %s TOP", indent, ifdPhrase)
+    tagsDump = append(tagsDump, startBlurb)
+
     ifdsFoundCount := 0
     for _, tag := range ifd.Entries {
-        if ifd.ParentIfd != nil {
-            tagsDump = append(tagsDump, fmt.Sprintf("[%s]->[%s] (0x%04x)", ifd.ParentIfd.Ii.IfdName, tag.Ii.IfdName, tag.TagId))
-        } else {
-            tagsDump = append(tagsDump, fmt.Sprintf("[ROOT]->[%s] (0x%04x)", tag.Ii.IfdName, tag.TagId))
-        }
+        tagsDump = append(tagsDump, fmt.Sprintf("%s  - (0x%04x)", indent, tag.TagId))
 
         if tag.ChildIfdName != "" {
             ifdsFoundCount++
@@ -444,7 +452,7 @@ func (ifd Ifd) dumpTree(tagsDump []string) []string {
                 log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
             }
 
-            tagsDump = childIfd.dumpTree(tagsDump)
+            tagsDump = childIfd.dumpTree(tagsDump, level + 1)
         }
     }
 
@@ -452,12 +460,22 @@ func (ifd Ifd) dumpTree(tagsDump []string) []string {
         log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.Children), ifdsFoundCount)
     }
 
+    finishBlurb := fmt.Sprintf("%s< IFD %s BOTTOM", indent, ifdPhrase)
+    tagsDump = append(tagsDump, finishBlurb)
+
+    if ifd.NextIfd != nil {
+        siblingBlurb := fmt.Sprintf("%s* LINKING TO SIBLING IFD [%s]:(%d)", indent, ifd.NextIfd.Ii.IfdName, ifd.NextIfd.Index)
+        tagsDump = append(tagsDump, siblingBlurb)
+
+        tagsDump = ifd.NextIfd.dumpTree(tagsDump, level)
+    }
+
     return tagsDump
 }
 
 // DumpTree returns a list of strings describing the IFD hierarchy.
 func (ifd Ifd) DumpTree() []string {
-    return ifd.dumpTree(nil)
+    return ifd.dumpTree(nil, 0)
 }
 
 type QueuedIfd struct {
