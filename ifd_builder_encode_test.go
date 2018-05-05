@@ -776,6 +776,19 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
     err = ib.AddFromConfig(0x0100, []uint32 { 0x33445566 })
     log.PanicIf(err)
 
+
+    // Add another child IB, just to ensure a little more punishment and make
+    // sure we're managing our allocation offsets correctly.
+
+    childIb2 := NewIfdBuilder(GpsIi, EncodeDefaultByteOrder)
+
+    err = childIb2.AddFromConfigWithName("GPSAltitudeRef", []uint8 { 0x11, 0x22 })
+    log.PanicIf(err)
+
+    err = ib.AddChildIb(childIb2)
+    log.PanicIf(err)
+
+
     err = ib.AddFromConfig(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
     log.PanicIf(err)
 
@@ -811,23 +824,42 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
     _, index, err := e.Collect(exifData)
     log.PanicIf(err)
 
-
-    // index.RootIfd.PrintTree(true)
-
     tagsDump := index.RootIfd.DumpTree()
 
     expected := []string {
-        "[ROOT]->[IFD] (0x0b)",
-        "[ROOT]->[IFD] (0xff)",
+        "[ROOT]->[IFD] (0x000b)",
+        "[ROOT]->[IFD] (0x00ff)",
         "[ROOT]->[IFD] (0x8769)",
         "[IFD]->[Exif] (0x8827)",
         "[IFD]->[Exif] (0x8833)",
-        "[ROOT]->[IFD] (0x100)",
-        "[ROOT]->[IFD] (0x13e)",
+        "[ROOT]->[IFD] (0x0100)",
+        "[ROOT]->[IFD] (0x8825)",
+        "[IFD]->[GPSInfo] (0x0005)",
+        "[ROOT]->[IFD] (0x013e)",
     }
 
     if reflect.DeepEqual(tagsDump, expected) != true {
-        t.Fatalf("IFD hierarchy not correct")
+        fmt.Printf("\n")
+
+        fmt.Printf("Actual:\n")
+        fmt.Printf("\n")
+
+        for i, line := range tagsDump {
+            fmt.Printf("%d: %s\n", i, line)
+        }
+
+        fmt.Printf("\n")
+
+        fmt.Printf("Expected:\n")
+        fmt.Printf("\n")
+
+        for i, line := range expected {
+            fmt.Printf("%d: %s\n", i, line)
+        }
+
+        fmt.Printf("\n")
+
+        t.Fatalf("IFD hierarchy not correct.")
     }
 }
 

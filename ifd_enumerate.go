@@ -431,9 +431,9 @@ func (ifd Ifd) dumpTree(tagsDump []string) []string {
     ifdsFoundCount := 0
     for _, tag := range ifd.Entries {
         if ifd.ParentIfd != nil {
-            tagsDump = append(tagsDump, fmt.Sprintf("[%s]->[%s] (0x%02x)", ifd.ParentIfd.Ii.IfdName, tag.Ii.IfdName, tag.TagId))
+            tagsDump = append(tagsDump, fmt.Sprintf("[%s]->[%s] (0x%04x)", ifd.ParentIfd.Ii.IfdName, tag.Ii.IfdName, tag.TagId))
         } else {
-            tagsDump = append(tagsDump, fmt.Sprintf("[ROOT]->[%s] (0x%02x)", tag.Ii.IfdName, tag.TagId))
+            tagsDump = append(tagsDump, fmt.Sprintf("[ROOT]->[%s] (0x%04x)", tag.Ii.IfdName, tag.TagId))
         }
 
         if tag.ChildIfdName != "" {
