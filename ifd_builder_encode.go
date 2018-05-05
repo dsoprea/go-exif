@@ -2,7 +2,6 @@ package exif
 
 import (
     "bytes"
-    // "fmt"
 
     "encoding/binary"
 
@@ -288,15 +287,18 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     // N the link from this IFD to the next IFD that will be written in the
     // next cycle.
     if setNextIb == true {
-        nextIfdOffsetToWrite += dataSize
-        // fmt.Printf("SETTING NEXT-IFD FOR %s TO: (0x%04x)\n", ib.ii, nextIfdOffsetToWrite)
-    } else {
-        nextIfdOffsetToWrite = 0
-    }
+        // Write address of next IFD in chain. This will be the original
+        // allocation offset plus the size of everything we have allocated for
+        // this IFD and its child-IFDs.
 
-    // Write address of next IFD in chain.
-    err = bw.WriteUint32(nextIfdOffsetToWrite)
-    log.PanicIf(err)
+        offset := ifdAddressableOffset + dataSize
+
+        err := bw.WriteUint32(offset)
+        log.PanicIf(err)
+    } else {
+        err := bw.WriteUint32(0)
+        log.PanicIf(err)
+    }
 
     _, err = b.Write(dataBytes)
     log.PanicIf(err)
@@ -335,8 +337,6 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
     nextIfdOffsetToWrite := uint32(0)
     for thisIb := ib; thisIb != nil; thisIb = thisIb.nextIb {
         // Do a dry-run in order to pre-determine its size requirement.
-
-        // fmt.Printf("BUILDING IFD: %s   ifdAddressableOffset=(0x%04x)\n", ib.ii, ifdAddressableOffset)
 
         _, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, 0, false)
         log.PanicIf(err)
