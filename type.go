@@ -725,14 +725,14 @@ func (tt TagType) Resolve(valueContext ValueContext) (value interface{}, err err
 }
 
 // Encode knows how to encode the given value to a byte slice.
-func (tt TagType) Encode(byteOrder binary.ByteOrder, value interface{}) (encoded []byte, err error) {
+func (tt TagType) Encode(value interface{}) (encoded []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    ve := NewValueEncoder(byteOrder)
+    ve := NewValueEncoder(tt.byteOrder)
 
     ed, err := ve.EncodeWithType(tt, value)
     log.PanicIf(err)
