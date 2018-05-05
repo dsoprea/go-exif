@@ -724,11 +724,8 @@ func (tt TagType) Resolve(valueContext ValueContext) (value interface{}, err err
     return value, nil
 }
 
-// ValueBytes knows how to encode the given value to a byte slice.
-
-// TODO(dustin): !! Rename to Encode().
-
-func (tt TagType) ValueBytes(byteOrder binary.ByteOrder, value interface{}) (encoded []byte, err error) {
+// Encode knows how to encode the given value to a byte slice.
+func (tt TagType) Encode(byteOrder binary.ByteOrder, value interface{}) (encoded []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
