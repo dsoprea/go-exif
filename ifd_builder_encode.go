@@ -285,14 +285,13 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
         childIfdsTotalSize += len_
     }
 
-    // Set the link from this IFD to the next IFD that will be written in the
+    // N the link from this IFD to the next IFD that will be written in the
     // next cycle.
     if setNextIb == true {
-        nextIfdOffsetToWrite += tableSize + dataSize + childIfdsTotalSize
-        // fmt.Printf("SETTING NEXT-IFD TO: (0x%02x)\n", nextIfdOffsetToWrite)
+        nextIfdOffsetToWrite += dataSize
+        // fmt.Printf("SETTING NEXT-IFD FOR %s TO: (0x%04x)\n", ib.ii, nextIfdOffsetToWrite)
     } else {
         nextIfdOffsetToWrite = 0
-        // fmt.Printf("NOT SETTING NEXT-IFD.\n")
     }
 
     // Write address of next IFD in chain.
@@ -337,18 +336,20 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
     for thisIb := ib; thisIb != nil; thisIb = thisIb.nextIb {
         // Do a dry-run in order to pre-determine its size requirement.
 
+        // fmt.Printf("BUILDING IFD: %s   ifdAddressableOffset=(0x%04x)\n", ib.ii, ifdAddressableOffset)
+
         _, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, 0, false)
         log.PanicIf(err)
 
-        addressableOffset := ifdAddressableOffset + tableSize
-        nextIfdOffsetToWrite = addressableOffset + allocatedDataSize
+        ifdAddressableOffset += tableSize
+        nextIfdOffsetToWrite = ifdAddressableOffset + allocatedDataSize
 
         // Write our IFD as well as any child-IFDs (now that we know the offset
         // where new IFDs and their data will be allocated).
 
         setNextIb := thisIb.nextIb != nil
 
-        tableAndAllocated, tableSize, allocatedDataSize, childIfdSizes, err := ibe.encodeIfdToBytes(ib, addressableOffset, nextIfdOffsetToWrite, setNextIb)
+        tableAndAllocated, tableSize, allocatedDataSize, childIfdSizes, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
         log.PanicIf(err)
 
         totalChildIfdSize := uint32(0)
@@ -363,8 +364,8 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
         _, err = b.Write(tableAndAllocated)
         log.PanicIf(err)
 
-        // This will include the child-IFDs, as well. This will actually advance the offset for our next loop.
-        ifdAddressableOffset += uint32(tableSize + allocatedDataSize)
+        // Advance past what we've allocated, thus far.
+        ifdAddressableOffset = nextIfdOffsetToWrite
     }
 
     return b.Bytes(), nil
