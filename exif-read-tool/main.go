@@ -26,8 +26,8 @@ import (
 )
 
 var (
-    filepathArgument = ""
-    printAsJsonArgument = false
+    filepathArg = ""
+    printAsJsonArg = false
 )
 
 
@@ -52,17 +52,17 @@ func main() {
         }
     }()
 
-    flag.StringVar(&filepathArgument, "filepath", "", "File-path of image")
-    flag.BoolVar(&printAsJsonArgument, "json", false, "Print JSON")
+    flag.StringVar(&filepathArg, "filepath", "", "File-path of image")
+    flag.BoolVar(&printAsJsonArg, "json", false, "Print JSON")
 
     flag.Parse()
 
-    if filepathArgument == "" {
+    if filepathArg == "" {
         fmt.Printf("Please provide a file-path for an image.\n")
         os.Exit(1)
     }
 
-    f, err := os.Open(filepathArgument)
+    f, err := os.Open(filepathArg)
     log.PanicIf(err)
 
     data, err := ioutil.ReadAll(f)
@@ -146,7 +146,7 @@ func main() {
     _, err = e.Visit(data[foundAt:], visitor)
     log.PanicIf(err)
 
-    if printAsJsonArgument == true {
+    if printAsJsonArg == true {
         data, err := json.MarshalIndent(entries, "", "    ")
         log.PanicIf(err)
 

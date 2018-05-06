@@ -271,6 +271,11 @@ func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor) (err error) {
 
 
 type Ifd struct {
+    // This is just for convenience, just so that we can easily get the values
+    // and not involve other projects in semantics that they won't otherwise
+    // need to know.
+    addressableData []byte
+
     ByteOrder binary.ByteOrder
 
     Ii IfdIdentity
@@ -287,6 +292,19 @@ type Ifd struct {
     Children []*Ifd
     NextIfdOffset uint32
     NextIfd *Ifd
+}
+
+func (ifd *Ifd) TagValue(ite *IfdTagEntry) (value interface{}, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    value, err = ite.Value(ifd.addressableData, ifd.ByteOrder)
+    log.PanicIf(err)
+
+    return value, nil
 }
 
 // FindTagWithId returns a list of tags (usually just zero or one) that match
@@ -550,6 +568,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
         }
 
         ifd := Ifd{
+            addressableData: ie.exifData[ExifAddressableAreaStart:],
+
             ByteOrder: ie.byteOrder,
             Ii: ii,
             Id: id,
