@@ -106,6 +106,10 @@ func NewChildIfdBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagVal
     }
 }
 
+func (bt builderTag) Value() (value *IfdBuilderTagValue) {
+    return bt.value
+}
+
 func (bt builderTag) String() string {
     valuePhrase := ""
 
@@ -137,8 +141,18 @@ func NewStandardBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder bin
 
     ve := NewValueEncoder(byteOrder)
 
-    ed, err := ve.EncodeWithType(tt, value)
-    log.PanicIf(err)
+    var ed EncodedData
+    if it.Type == TypeUndefined {
+        var err error
+
+        ed, err = EncodeUndefined(ii, tagId, value)
+        log.PanicIf(err)
+    } else {
+        var err error
+
+        ed, err = ve.EncodeWithType(tt, value)
+        log.PanicIf(err)
+    }
 
     tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
 
@@ -156,8 +170,18 @@ func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, typeId uint16, byteOr
 
     ve := NewValueEncoder(byteOrder)
 
-    ed, err := ve.EncodeWithType(tt, value)
-    log.PanicIf(err)
+    var ed EncodedData
+    if typeId == TypeUndefined {
+        var err error
+
+        ed, err = EncodeUndefined(ii, tagId, value)
+        log.PanicIf(err)
+    } else {
+        var err error
+
+        ed, err = ve.EncodeWithType(tt, value)
+        log.PanicIf(err)
+    }
 
     tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
 
@@ -181,8 +205,18 @@ func NewStandardBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byt
 
     ve := NewValueEncoder(byteOrder)
 
-    ed, err := ve.EncodeWithType(tt, value)
-    log.PanicIf(err)
+    var ed EncodedData
+    if it.Type == TypeUndefined {
+        var err error
+
+        ed, err = EncodeUndefined(ii, it.Id, value)
+        log.PanicIf(err)
+    } else {
+        var err error
+
+        ed, err = ve.EncodeWithType(tt, value)
+        log.PanicIf(err)
+    }
 
     tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
 
@@ -266,8 +300,9 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdB
 
         ii := thisExistingIfd.Identity()
 
-        newIb = NewIfdBuilder(ii, binary.BigEndian)
+        newIb = NewIfdBuilder(ii, rootIfd.ByteOrder)
         if lastIb != nil {
+            fmt.Printf("SETTING NEXT-IB: %s\n", newIb)
             lastIb.SetNextIb(newIb)
         }
 
@@ -294,28 +329,12 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdB
 func (ib *IfdBuilder) String() string {
     nextIfdPhrase := ""
     if ib.nextIb != nil {
-        nextIfdPhrase = ib.nextIb.ii.String()
+// TODO(dustin): We were setting this to ii.String(), but we were getting hex-data when printing this after building from an existing chain.
+        nextIfdPhrase = ib.nextIb.ii.IfdName
     }
 
     return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
 }
-
-
-// // ifdOffsetIterator keeps track of where the next IFD should be written
-// // (relative to the end of the EXIF header bytes; all addresses are relative to
-// // this).
-// type ifdOffsetIterator struct {
-//     offset uint32
-// }
-
-// func (ioi *ifdOffsetIterator) Step(size uint32) {
-//     ioi.offset += size
-// }
-
-// func (ioi *ifdOffsetIterator) Offset() uint32 {
-//     return ioi.offset
-// }
-
 
 func (ib *IfdBuilder) Tags() (tags []builderTag) {
     return ib.tags
@@ -565,6 +584,14 @@ func (ib *IfdBuilder) Add(bt builderTag) (err error) {
         }
     }()
 
+    if bt.ii == ZeroIi {
+        log.Panicf("builderTag IfdIdentity is not set: %s", bt)
+    } else if bt.typeId == 0x0 {
+        log.Panicf("builderTag type-ID is not set: %s", bt)
+    } else if bt.value == nil {
+        log.Panicf("builderTag value is not set: %s", bt)
+    }
+
     if bt.value.IsIb() == true {
         log.Panicf("child IfdBuilders must be added via AddChildIb() not Add()")
     }
@@ -655,10 +682,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
             }
         }
 
-        bt := builderTag{
-            tagId: ite.TagId,
-            typeId: ite.TagType,
-        }
+        var value *IfdBuilderTagValue
 
         if itevr == nil {
             // rawValueOffsetCopy is our own private copy of the original data.
@@ -666,7 +690,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
             rawValueOffsetCopy := make([]byte, len(ite.RawValueOffset))
             copy(rawValueOffsetCopy, ite.RawValueOffset)
 
-            bt.value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
+            value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
         } else {
             var err error
 
@@ -680,8 +704,10 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
                 log.Panic(err)
             }
 
-            bt.value = NewIfdBuilderTagValueFromBytes(valueBytes)
+            value = NewIfdBuilderTagValueFromBytes(valueBytes)
         }
+
+        bt := NewBuilderTag(ifd.Ii, ite.TagId, ite.TagType, value)
 
         err := ib.Add(bt)
         log.PanicIf(err)
@@ -707,6 +733,27 @@ func (ib *IfdBuilder) AddFromConfig(tagId uint16, value interface{}) (err error)
     return nil
 }
 
+// SetFromConfig quickly and easily composes and adds or replaces the tag using
+// the information already known about a tag. Only works with standard tags.
+func (ib *IfdBuilder) SetFromConfig(tagId uint16, value interface{}) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+// TODO(dustin): !! Add test.
+
+    bt := NewStandardBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
+
+    i, err := ib.Find(tagId)
+    log.PanicIf(err)
+
+    ib.tags[i] = bt
+
+    return nil
+}
+
 // AddFromConfigWithName quickly and easily composes and adds the tag using the
 // information already known about a tag (using the name). Only works with
 // standard tags.
@@ -721,6 +768,33 @@ func (ib *IfdBuilder) AddFromConfigWithName(tagName string, value interface{}) (
 
     err = ib.Add(bt)
     log.PanicIf(err)
+
+    return nil
+}
+
+// SetFromConfigWithName quickly and easily composes and adds or replaces the
+// tag using the information already known about a tag (using the name). Only
+// works with standard tags.
+func (ib *IfdBuilder) SetFromConfigWithName(tagName string, value interface{}) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+// TODO(dustin): !! Add test.
+
+    bt := NewStandardBuilderTagFromConfigWithName(ib.ii, tagName, ib.byteOrder, value)
+
+    i, err := ib.Find(bt.tagId)
+    log.PanicIf(err)
+
+    fmt.Printf("FOUND [%s] AT POSITION (%d) OF (%d)\n", tagName, i + 1, len(ib.tags))
+
+    fmt.Printf("ORIGINAL TAG: %s\n", ib.tags[i])
+    fmt.Printf("UPDATED TAG: %s\n", bt)
+
+    ib.tags[i] = bt
 
     return nil
 }

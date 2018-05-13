@@ -93,7 +93,7 @@ type TagUnknownType_9298_UserComment struct {
 }
 
 func (uc TagUnknownType_9298_UserComment) String() string {
-    return fmt.Sprintf("UserComment<ENCODING=[%s] V=%v>", TagUnknownType_9298_UserComment_Encoding_Names[uc.EncodingType], uc.EncodingBytes)
+    return fmt.Sprintf("UserComment<SIZE=(%d) ENCODING=[%s] V=%v>", len(uc.EncodingBytes), TagUnknownType_9298_UserComment_Encoding_Names[uc.EncodingType], uc.EncodingBytes)
 }
 
 func (uc TagUnknownType_9298_UserComment) ValueBytes() (value []byte, err error) {
@@ -142,6 +142,61 @@ func (cc TagUnknownType_9101_ComponentsConfiguration) String() string {
 
 func (uc TagUnknownType_9101_ComponentsConfiguration) ValueBytes() (value []byte, err error) {
     return uc.ConfigurationBytes, nil
+}
+
+
+func EncodeUnknown_9286(uc TagUnknownType_9298_UserComment) (encoded []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    b := new(bytes.Buffer)
+
+    encodingTypeBytes := TagUnknownType_9298_UserComment_Encodings[uc.EncodingType]
+
+    _, err = b.Write(encodingTypeBytes)
+    log.PanicIf(err)
+
+    _, err = b.Write(uc.EncodingBytes)
+    log.PanicIf(err)
+
+    return b.Bytes(), nil
+}
+
+
+type EncodeableUndefinedValue struct {
+    Ii IfdIdentity
+    TagId uint16
+    Parameters interface{}
+}
+
+func EncodeUndefined(ii IfdIdentity, tagId uint16, value interface{}) (ed EncodedData, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+// TODO(dustin): !! Finish implementing these.
+    if ii == ExifIi {
+        if tagId == 0x9286 {
+            encoded, err := EncodeUnknown_9286(value.(TagUnknownType_9298_UserComment))
+            log.PanicIf(err)
+
+            ed.Type = TypeUndefined
+            ed.Encoded = encoded
+            ed.UnitCount = uint32(len(encoded))
+
+            return ed, nil
+        }
+    }
+
+    log.Panicf("undefined value not encodable: %s (0x%02x)", ii, tagId)
+
+    // Never called.
+    return EncodedData{}, nil
 }
 
 

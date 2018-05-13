@@ -354,7 +354,7 @@ func TestBuildAndParseExifHeader(t *testing.T) {
 }
 
 func ExampleBuildExifHeader() {
-    headerBytes, err := BuildExifHeader(EncodeDefaultByteOrder, 0x11223344)
+    headerBytes, err := BuildExifHeader(TestDefaultByteOrder, 0x11223344)
     log.PanicIf(err)
 
     e := NewExif()

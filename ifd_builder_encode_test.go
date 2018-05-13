@@ -762,7 +762,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
     // Add a child IB right in the middle.
 
-    childIb := NewIfdBuilder(ExifIi, EncodeDefaultByteOrder)
+    childIb := NewIfdBuilder(ExifIi, TestDefaultByteOrder)
 
     err = childIb.AddFromConfigWithName("ISOSpeedRatings", []uint16 { 0x1122 })
     log.PanicIf(err)
@@ -781,7 +781,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
     // Add another child IB, just to ensure a little more punishment and make
     // sure we're managing our allocation offsets correctly.
 
-    childIb2 := NewIfdBuilder(GpsIi, EncodeDefaultByteOrder)
+    childIb2 := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
     err = childIb2.AddFromConfigWithName("GPSAltitudeRef", []uint8 { 0x11, 0x22 })
     log.PanicIf(err)
@@ -869,7 +869,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 func ExampleIfdByteEncoder_EncodeToExif() {
     // Construct an IFD.
 
-    ib := NewIfdBuilder(RootIi, EncodeDefaultByteOrder)
+    ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     err := ib.AddFromConfigWithName("ProcessingSoftware", "asciivalue")
     log.PanicIf(err)
@@ -910,7 +910,7 @@ func ExampleIfdByteEncoder_EncodeToExif() {
     addressableData := exifData[ExifAddressableAreaStart:]
 
     for i, e := range index.RootIfd.Entries {
-        value, err := e.Value(addressableData, EncodeDefaultByteOrder)
+        value, err := e.Value(addressableData, TestDefaultByteOrder)
         log.PanicIf(err)
 
         fmt.Printf("%d: %s [%v]\n", i, e, value)

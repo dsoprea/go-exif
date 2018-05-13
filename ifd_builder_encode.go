@@ -2,6 +2,7 @@ package exif
 
 import (
     "bytes"
+    "fmt"
 
     "encoding/binary"
 
@@ -143,6 +144,12 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         }
     }()
 
+// TODO(dustin): !! This function is running more times than it should.
+
+    if bt.tagId == 0x9286 {
+        fmt.Printf("ENCODING/WRITING: %s\n", bt)
+    }
+
     // Write tag-ID.
     err = bw.WriteUint16(bt.tagId)
     log.PanicIf(err)
@@ -181,12 +188,24 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         // Write four-byte value/offset.
 
         if len_ > 4 {
+            if bt.tagId == 0x9286 {
+                fmt.Printf("USERCOMMENTS: Allocating: [%s]\n", string(valueBytes[:5]))
+            }
+
             offset, err := ida.Allocate(valueBytes)
             log.PanicIf(err)
+
+            if bt.tagId == 0x9286 {
+                fmt.Printf("USERCOMMENTS: Offset: (%d) [0x%02x]\n", offset, offset)
+            }
 
             err = bw.WriteUint32(offset)
             log.PanicIf(err)
         } else {
+            if bt.tagId == 0x9286 {
+                fmt.Printf("USERCOMMENTS: Not allocating: [%v]\n", valueBytes)
+            }
+
             fourBytes := make([]byte, 4)
             copy(fourBytes, valueBytes)
 
@@ -402,7 +421,7 @@ func (ibe *IfdByteEncoder) EncodeToExif(ib *IfdBuilder) (data []byte, err error)
 
     b := new(bytes.Buffer)
 
-    headerBytes, err := BuildExifHeader(EncodeDefaultByteOrder, ExifDefaultFirstIfdOffset)
+    headerBytes, err := BuildExifHeader(ib.byteOrder, ExifDefaultFirstIfdOffset)
     log.PanicIf(err)
 
     _, err = b.Write(headerBytes)
