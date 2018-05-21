@@ -289,25 +289,21 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 
 // NewIfdBuilderFromExistingChain creates a chain of IB instances from an
 // IFD chain generated from real data.
-func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdBuilder) {
+func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (firstIb *IfdBuilder) {
     itevr := NewIfdTagEntryValueResolver(exifData, rootIfd.ByteOrder)
 
 // TODO(dustin): !! When we actually write the code to flatten the IB to bytes, make sure to skip the tags that have a nil value (which will happen when we add-from-exsting without a resolver instance).
 
-    var newIb *IfdBuilder
+    var lastIb *IfdBuilder
+    i := 0
     for thisExistingIfd := rootIfd; thisExistingIfd != nil; thisExistingIfd = thisExistingIfd.NextIfd {
-        lastIb := newIb
-
         ii := thisExistingIfd.Identity()
 
-        newIb = NewIfdBuilder(ii, rootIfd.ByteOrder)
-        if lastIb != nil {
-            fmt.Printf("SETTING NEXT-IB: %s\n", newIb)
+        newIb := NewIfdBuilder(ii, thisExistingIfd.ByteOrder)
+        if firstIb == nil {
+            firstIb = newIb
+        } else {
             lastIb.SetNextIb(newIb)
-        }
-
-        if rootIb == nil {
-            rootIb = newIb
         }
 
         err := newIb.AddTagsFromExisting(thisExistingIfd, itevr, nil, nil)
@@ -321,9 +317,12 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (rootIb *IfdB
             err = newIb.AddChildIb(childIb)
             log.PanicIf(err)
         }
+
+        lastIb = newIb
+        i++
     }
 
-    return rootIb
+    return firstIb
 }
 
 func (ib *IfdBuilder) String() string {
@@ -333,66 +332,110 @@ func (ib *IfdBuilder) String() string {
         nextIfdPhrase = ib.nextIb.ii.IfdName
     }
 
-    return fmt.Sprintf("IfdBuilder<NAME=[%s] TAG-ID=(0x%02x) BO=[%s] COUNT=(%d) OFFSET=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii, ib.ifdTagId, ib.byteOrder, len(ib.tags), ib.existingOffset, nextIfdPhrase)
+    return fmt.Sprintf("IfdBuilder<PARENT-IFD=[%s] IFD=[%s] TAG-ID=(0x%02x) COUNT=(%d) OFF=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii.ParentIfdName, ib.ii.IfdName, ib.ifdTagId, len(ib.tags), ib.existingOffset, nextIfdPhrase)
 }
 
 func (ib *IfdBuilder) Tags() (tags []builderTag) {
     return ib.tags
 }
 
-func (ib *IfdBuilder) dump(levels int) {
-    indent := strings.Repeat(" ", levels * 4)
-
-    if levels == 0 {
-        fmt.Printf("%sIFD: %s\n", indent, ib)
-    } else {
-        fmt.Printf("%sChild IFD: %s\n", indent, ib)
-    }
+func (ib *IfdBuilder) printTagTree(levels int) {
+    indent := strings.Repeat(" ", levels * 2)
 
     ti := NewTagIndex()
-
-    if len(ib.tags) > 0 {
-        fmt.Printf("\n")
-
-        for i, tag := range ib.tags {
-            _, isChildIb := IfdTagNameWithId(ib.ii.IfdName, tag.tagId)
-
-            tagName := ""
-
-            // If a normal tag (not a child IFD) get the name.
-            if isChildIb == true {
-                tagName = "<Child IFD>"
-            } else {
-                it, err := ti.Get(tag.ii, tag.tagId)
-                if log.Is(err, ErrTagNotFound) == true {
-                    tagName = "<UNKNOWN>"
-                } else if err != nil {
-                    log.Panic(err)
-                } else {
-                    tagName = it.Name
-                }
-            }
-
-            fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, tag)
-
-            if isChildIb == true {
-                if tag.value.IsIb() == false {
-                    log.Panicf("tag-ID (0x%02x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
-                }
-
-                fmt.Printf("\n")
-
-                childIb := tag.value.Ib()
-                childIb.dump(levels + 1)
-            }
+    i := 0
+    for currentIb := ib; currentIb != nil; currentIb = currentIb.nextIb {
+        prefix := " "
+        if i > 0 {
+            prefix = ">"
         }
 
-        fmt.Printf("\n")
+        if levels == 0 {
+            fmt.Printf("%s%sIFD: %s\n", indent, prefix, currentIb)
+        } else {
+            fmt.Printf("%s%sChild IFD: %s\n", indent, prefix, currentIb)
+        }
+
+        if len(currentIb.tags) > 0 {
+            fmt.Printf("\n")
+
+            for i, tag := range currentIb.tags {
+                _, isChildIb := IfdTagNameWithId(currentIb.ii.IfdName, tag.tagId)
+
+                tagName := ""
+
+                // If a normal tag (not a child IFD) get the name.
+                if isChildIb == true {
+                    tagName = "<Child IFD>"
+                } else {
+                    it, err := ti.Get(tag.ii, tag.tagId)
+                    if log.Is(err, ErrTagNotFound) == true {
+                        tagName = "<UNKNOWN>"
+                    } else if err != nil {
+                        log.Panic(err)
+                    } else {
+                        tagName = it.Name
+                    }
+                }
+
+                fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, tag)
+
+                if isChildIb == true {
+                    if tag.value.IsIb() == false {
+                        log.Panicf("tag-ID (0x%02x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
+                    }
+
+                    fmt.Printf("\n")
+
+                    childIb := tag.value.Ib()
+                    childIb.printTagTree(levels + 1)
+                }
+            }
+
+            fmt.Printf("\n")
+        }
+
+        i++
     }
 }
 
-func (ib *IfdBuilder) Dump() {
-    ib.dump(0)
+func (ib *IfdBuilder) PrintTagTree() {
+    ib.printTagTree(0)
+}
+
+func (ib *IfdBuilder) printIfdTree(levels int) {
+    indent := strings.Repeat(" ", levels * 2)
+
+    i := 0
+    for currentIb := ib; currentIb != nil; currentIb = currentIb.nextIb {
+        prefix := " "
+        if i > 0 {
+            prefix = ">"
+        }
+
+        fmt.Printf("%s%s%s\n", indent, prefix,currentIb)
+
+        if len(currentIb.tags) > 0 {
+            for _, tag := range currentIb.tags {
+                _, isChildIb := IfdTagNameWithId(currentIb.ii.IfdName, tag.tagId)
+
+                if isChildIb == true {
+                    if tag.value.IsIb() == false {
+                        log.Panicf("tag-ID (0x%02x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
+                    }
+
+                    childIb := tag.value.Ib()
+                    childIb.printIfdTree(levels + 1)
+                }
+            }
+        }
+
+        i++
+    }
+}
+
+func (ib *IfdBuilder) PrintIfdTree() {
+    ib.printIfdTree(0)
 }
 
 func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []string) (linesOutput []string) {
@@ -788,11 +831,6 @@ func (ib *IfdBuilder) SetFromConfigWithName(tagName string, value interface{}) (
 
     i, err := ib.Find(bt.tagId)
     log.PanicIf(err)
-
-    fmt.Printf("FOUND [%s] AT POSITION (%d) OF (%d)\n", tagName, i + 1, len(ib.tags))
-
-    fmt.Printf("ORIGINAL TAG: %s\n", ib.tags[i])
-    fmt.Printf("UPDATED TAG: %s\n", bt)
 
     ib.tags[i] = bt
 

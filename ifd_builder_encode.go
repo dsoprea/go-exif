@@ -3,6 +3,7 @@ package exif
 import (
     "bytes"
     "fmt"
+    "strings"
 
     "encoding/binary"
 
@@ -121,15 +122,78 @@ func (ida *ifdDataAllocator) Bytes() []byte {
 // out all of the allocations and indirection that is required for extended
 // data.
 type IfdByteEncoder struct {
+    // journal holds a list of actions taken while encoding.
+    journal [][3]string
 }
 
 func NewIfdByteEncoder() (ibe *IfdByteEncoder) {
-    return new(IfdByteEncoder)
+    return &IfdByteEncoder{
+        journal: make([][3]string, 0),
+    }
+}
+
+func (ibe *IfdByteEncoder) Journal() [][3]string {
+    return ibe.journal
 }
 
 func (ibe *IfdByteEncoder) TableSize(entryCount int) uint32 {
     // Tag-Count + (Entry-Size * Entry-Count) + Next-IFD-Offset.
     return uint32(2) + (IfdTagEntrySize * uint32(entryCount)) + uint32(4)
+}
+
+func (ibe *IfdByteEncoder) pushToJournal(where, direction, format string, args ...interface{}) {
+    event := [3]string {
+        direction,
+        where,
+        fmt.Sprintf(format, args...),
+    }
+
+    ibe.journal = append(ibe.journal, event)
+}
+
+// PrintJournal prints a hierarchical representation of the steps taken during
+// encoding.
+func (ibe *IfdByteEncoder) PrintJournal() {
+    maxWhereLength := 0
+    for _, event := range ibe.journal {
+        where := event[1]
+
+        len_ := len(where)
+        if len_ > maxWhereLength {
+            maxWhereLength = len_
+        }
+    }
+
+    level := 0
+    for i, event := range ibe.journal {
+        direction := event[0]
+        where := event[1]
+        message := event[2]
+
+        if direction != ">" && direction != "<" && direction != "-" {
+            log.Panicf("journal operation not valid: [%s]", direction)
+        }
+
+        if direction == "<" {
+            if level <= 0 {
+                log.Panicf("journal operations unbalanced (too many closes)")
+            }
+
+            level--
+        }
+
+        indent := strings.Repeat("  ", level)
+
+        fmt.Printf("%3d %s%s %s: %s\n", i, indent, direction, where, message)
+
+        if direction == ">" {
+            level++
+        }
+    }
+
+    if level != 0 {
+        log.Panicf("journal operations unbalanced (too many opens)")
+    }
 }
 
 // encodeTagToBytes encodes the given tag to a byte stream. If
@@ -143,12 +207,6 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
             err = log.Wrap(state.(error))
         }
     }()
-
-// TODO(dustin): !! This function is running more times than it should.
-
-    if bt.tagId == 0x9286 {
-        fmt.Printf("ENCODING/WRITING: %s\n", bt)
-    }
 
     // Write tag-ID.
     err = bw.WriteUint16(bt.tagId)
@@ -188,24 +246,12 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         // Write four-byte value/offset.
 
         if len_ > 4 {
-            if bt.tagId == 0x9286 {
-                fmt.Printf("USERCOMMENTS: Allocating: [%s]\n", string(valueBytes[:5]))
-            }
-
             offset, err := ida.Allocate(valueBytes)
             log.PanicIf(err)
-
-            if bt.tagId == 0x9286 {
-                fmt.Printf("USERCOMMENTS: Offset: (%d) [0x%02x]\n", offset, offset)
-            }
 
             err = bw.WriteUint32(offset)
             log.PanicIf(err)
         } else {
-            if bt.tagId == 0x9286 {
-                fmt.Printf("USERCOMMENTS: Not allocating: [%v]\n", valueBytes)
-            }
-
             fourBytes := make([]byte, 4)
             copy(fourBytes, valueBytes)
 
@@ -224,9 +270,13 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         if nextIfdOffsetToWrite > 0 {
             var err error
 
+            ibe.pushToJournal("encodeTagToBytes", ">", "[%s]->[%s]", ib.ii.IfdName, bt.value.Ib().ii.IfdName)
+
             // Create the block of IFD data and everything it requires.
             childIfdBlock, err = ibe.encodeAndAttachIfd(bt.value.Ib(), nextIfdOffsetToWrite)
             log.PanicIf(err)
+
+            ibe.pushToJournal("encodeTagToBytes", "<", "[%s]->[%s]", bt.value.Ib().ii.IfdName, ib.ii.IfdName)
 
             // Use the next-IFD offset for it. The IFD will actually get
             // attached after we return.
@@ -236,6 +286,8 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
         } else {
             // No child-IFDs are to be allocated. Finish the entry with a NULL
             // pointer.
+
+            ibe.pushToJournal("encodeTagToBytes", "-", "*Not* descending to child: [%s]", bt.value.Ib().ii.IfdName)
 
             err = bw.WriteUint32(0)
             log.PanicIf(err)
@@ -260,6 +312,8 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
             err = log.Wrap(state.(error))
         }
     }()
+
+    ibe.pushToJournal("encodeIfdToBytes", ">", "%s", ib)
 
     tableSize = ibe.TableSize(len(ib.tags))
 
@@ -309,10 +363,18 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
         // Write address of next IFD in chain. This will be the original
         // allocation offset plus the size of everything we have allocated for
         // this IFD and its child-IFDs.
+        //
+        // It is critical that this number is stepped properly. We experienced
+        // an issue whereby it first looked like we were duplicating the IFD and
+        // then that we were duplicating the tags in the wrong IFD, and then
+        // finally we determined that the next-IFD offset for the first IFD was
+        // accidentally pointing back to the EXIF IFD, so we were visiting it
+        // twice when visiting through the tags after decoding. It was an
+        // expensive bug to find.
 
-        offset := ifdAddressableOffset + dataSize
+        ibe.pushToJournal("encodeIfdToBytes", "-", "Setting 'next' IFD to (0x%08x).", nextIfdOffsetToWrite)
 
-        err := bw.WriteUint32(offset)
+        err := bw.WriteUint32(nextIfdOffsetToWrite)
         log.PanicIf(err)
     } else {
         err := bw.WriteUint32(0)
@@ -336,6 +398,8 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
         log.PanicIf(err)
     }
 
+    ibe.pushToJournal("encodeIfdToBytes", "<", "%s", ib)
+
     return b.Bytes(), tableSize, dataSize, childIfdSizes, nil
 }
 
@@ -347,6 +411,8 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
         }
     }()
 
+    ibe.pushToJournal("encodeAndAttachIfd", ">", "%s", ib)
+
     if len(ib.tags) == 0 {
         log.Panicf("trying to encode an IfdBuilder that doesn't have any tags")
     }
@@ -354,11 +420,18 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
     b := new(bytes.Buffer)
 
     nextIfdOffsetToWrite := uint32(0)
+    i := 0
     for thisIb := ib; thisIb != nil; thisIb = thisIb.nextIb {
         // Do a dry-run in order to pre-determine its size requirement.
 
-        _, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, 0, false)
+        ibe.pushToJournal("encodeAndAttachIfd", ">", "Beginning encoding process: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.ii.IfdName, nextIfdOffsetToWrite)
+
+        ibe.pushToJournal("encodeAndAttachIfd", ">", "Calculating size: (%d) [%s]", i, thisIb.ii.IfdName)
+
+        _, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(thisIb, ifdAddressableOffset, 0, false)
         log.PanicIf(err)
+
+        ibe.pushToJournal("encodeAndAttachIfd", "<", "Finished calculating size: (%d) [%s]", i, thisIb.ii.IfdName)
 
         ifdAddressableOffset += tableSize
         nextIfdOffsetToWrite = ifdAddressableOffset + allocatedDataSize
@@ -368,8 +441,14 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
         setNextIb := thisIb.nextIb != nil
 
-        tableAndAllocated, tableSize, allocatedDataSize, childIfdSizes, err := ibe.encodeIfdToBytes(ib, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
+        ibe.pushToJournal("encodeAndAttachIfd", ">", "Encoding starting: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.ii.IfdName, nextIfdOffsetToWrite)
+
+        tableAndAllocated, tableSize, allocatedDataSize, childIfdSizes, err :=
+            ibe.encodeIfdToBytes(thisIb, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
+
         log.PanicIf(err)
+
+        ibe.pushToJournal("encodeAndAttachIfd", "<", "Encoding done: (%d) [%s]", i, thisIb.ii.IfdName)
 
         totalChildIfdSize := uint32(0)
         for _, childIfdSize := range childIfdSizes {
@@ -383,9 +462,16 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
         _, err = b.Write(tableAndAllocated)
         log.PanicIf(err)
 
+// TODO(dustin): !! The core problem is the offset being the same for two IFDs.
         // Advance past what we've allocated, thus far.
         ifdAddressableOffset = nextIfdOffsetToWrite
+
+        ibe.pushToJournal("encodeAndAttachIfd", "<", "Finishing encoding process: (%d) [%s] [FINAL:] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, ib.ii.IfdName, nextIfdOffsetToWrite)
+
+        i++
     }
+
+    ibe.pushToJournal("encodeAndAttachIfd", "<", "%s", ib)
 
     return b.Bytes(), nil
 }
