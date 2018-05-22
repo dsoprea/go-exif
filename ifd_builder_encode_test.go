@@ -847,8 +847,8 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 < IFD [ROOT]->[IFD]:(0) BOTTOM
 * LINKING TO SIBLING IFD [IFD]:(1)
 > IFD [ROOT]->[IFD]:(1) TOP
-  - (0x8827)
-  - (0x8833)
+  - (0x0101)
+  - (0x0102)
 < IFD [ROOT]->[IFD]:(1) BOTTOM`
 
     if actual != expected {

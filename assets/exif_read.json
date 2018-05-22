@@ -354,7 +354,7 @@
             "EncodingType": 3,
             "EncodingBytes": ""
         },
-        "value_string": "UserComment\u003cENCODING=[UNDEFINED] V=[]\u003e"
+        "value_string": "UserComment\u003cSIZE=(0) ENCODING=[UNDEFINED] V=[]\u003e"
     },
     {
         "ifd_name": "Exif",

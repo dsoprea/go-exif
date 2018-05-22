@@ -13,6 +13,8 @@ func TestAdd(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -21,6 +23,8 @@ func TestAdd(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -29,6 +33,8 @@ func TestAdd(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -39,6 +45,8 @@ func TestAdd(t *testing.T) {
     originalBytes := []byte { 0x11, 0x22, 0x33 }
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x44,
         value: NewIfdBuilderTagValueFromBytes([]byte(originalBytes)),
     }
@@ -110,6 +118,8 @@ func TestAddChildIb(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -124,6 +134,8 @@ func TestAddChildIb(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -174,6 +186,7 @@ func TestAddTagsFromExisting(t *testing.T) {
     }
 
     ifd := &Ifd{
+        Ii: RootIi,
         Entries: entries,
     }
 
@@ -195,19 +208,26 @@ func TestAddTagsFromExisting__Includes(t *testing.T) {
     entries := make([]*IfdTagEntry, 3)
 
     entries[0] = &IfdTagEntry{
+        Ii: RootIi,
+        TagType: TypeByte,
         TagId: 0x11,
     }
 
     entries[1] = &IfdTagEntry{
+        Ii: RootIi,
+        TagType: TypeByte,
         TagId: 0x22,
         ChildIfdName: "some ifd",
     }
 
     entries[2] = &IfdTagEntry{
+        Ii: RootIi,
+        TagType: TypeByte,
         TagId: 0x33,
     }
 
     ifd := &Ifd{
+        Ii: RootIi,
         Entries: entries,
     }
 
@@ -227,19 +247,26 @@ func TestAddTagsFromExisting__Excludes(t *testing.T) {
     entries := make([]*IfdTagEntry, 3)
 
     entries[0] = &IfdTagEntry{
+        Ii: RootIi,
+        TagType: TypeByte,
         TagId: 0x11,
     }
 
     entries[1] = &IfdTagEntry{
+        Ii: RootIi,
+        TagType: TypeByte,
         TagId: 0x22,
         ChildIfdName: "some ifd",
     }
 
     entries[2] = &IfdTagEntry{
+        Ii: RootIi,
+        TagType: TypeByte,
         TagId: 0x33,
     }
 
     ifd := &Ifd{
+        Ii: RootIi,
         Entries: entries,
     }
 
@@ -257,6 +284,8 @@ func TestFindN_First_1(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -265,6 +294,8 @@ func TestFindN_First_1(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -273,6 +304,8 @@ func TestFindN_First_1(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -301,6 +334,8 @@ func TestFindN_First_2_1Returned(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -309,6 +344,8 @@ func TestFindN_First_2_1Returned(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -317,6 +354,8 @@ func TestFindN_First_2_1Returned(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -345,6 +384,8 @@ func TestFindN_First_2_2Returned(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -353,6 +394,8 @@ func TestFindN_First_2_2Returned(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -361,6 +404,8 @@ func TestFindN_First_2_2Returned(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -369,6 +414,8 @@ func TestFindN_First_2_2Returned(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -377,6 +424,8 @@ func TestFindN_First_2_2Returned(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string5")),
     }
@@ -412,6 +461,8 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -420,6 +471,8 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -428,6 +481,8 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -436,6 +491,8 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -444,6 +501,8 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string5")),
     }
@@ -452,6 +511,8 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string6")),
     }
@@ -480,6 +541,8 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -488,6 +551,8 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -496,6 +561,8 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -504,6 +571,8 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -543,6 +612,8 @@ func TestFind_Hit(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -551,6 +622,8 @@ func TestFind_Hit(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -559,6 +632,8 @@ func TestFind_Hit(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -567,6 +642,8 @@ func TestFind_Hit(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -593,6 +670,8 @@ func TestFind_Miss(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -601,6 +680,8 @@ func TestFind_Miss(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -609,6 +690,8 @@ func TestFind_Miss(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -617,6 +700,8 @@ func TestFind_Miss(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -636,6 +721,8 @@ func TestReplace(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -644,6 +731,8 @@ func TestReplace(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -652,6 +741,8 @@ func TestReplace(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -669,6 +760,8 @@ func TestReplace(t *testing.T) {
     }
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x99,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -690,6 +783,8 @@ func TestReplaceN(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -698,6 +793,8 @@ func TestReplaceN(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -706,6 +803,8 @@ func TestReplaceN(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -723,6 +822,8 @@ func TestReplaceN(t *testing.T) {
     }
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0xA9,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -744,6 +845,8 @@ func TestDeleteFirst(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -752,6 +855,8 @@ func TestDeleteFirst(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -760,6 +865,8 @@ func TestDeleteFirst(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -768,6 +875,8 @@ func TestDeleteFirst(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -836,6 +945,8 @@ func TestDeleteN(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -844,6 +955,8 @@ func TestDeleteN(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -852,6 +965,8 @@ func TestDeleteN(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -860,6 +975,8 @@ func TestDeleteN(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -928,6 +1045,8 @@ func TestDeleteN_Two(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -936,6 +1055,8 @@ func TestDeleteN_Two(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -944,6 +1065,8 @@ func TestDeleteN_Two(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -952,6 +1075,8 @@ func TestDeleteN_Two(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -1003,6 +1128,8 @@ func TestDeleteAll(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     bt := builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x11,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string")),
     }
@@ -1011,6 +1138,8 @@ func TestDeleteAll(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string2")),
     }
@@ -1019,6 +1148,8 @@ func TestDeleteAll(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x22,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string3")),
     }
@@ -1027,6 +1158,8 @@ func TestDeleteAll(t *testing.T) {
     log.PanicIf(err)
 
     bt = builderTag{
+        ii: RootIi,
+        typeId: TypeByte,
         tagId: 0x33,
         value: NewIfdBuilderTagValueFromBytes([]byte("test string4")),
     }
@@ -1130,7 +1263,7 @@ func TestNewIfdBuilderFromExistingChain(t *testing.T) {
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(18) TAG=[0x9290]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(19) TAG=[0x9291]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(20) TAG=[0x9292]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(21) TAG=[0xa000]",
+-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(21) TAG=[0xa000]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(22) TAG=[0xa001]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(23) TAG=[0xa002]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(24) TAG=[0xa003]",
