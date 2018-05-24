@@ -431,7 +431,7 @@ func (ifd Ifd) DumpTags() []*IfdTagEntry {
     return ifd.dumpTags(nil)
 }
 
-func (ifd Ifd) printTagTree(level int, nextLink bool) {
+func (ifd Ifd) printTagTree(index, level int, nextLink bool) {
     indent := strings.Repeat(" ", level * 2)
 
     prefix := " "
@@ -439,7 +439,7 @@ func (ifd Ifd) printTagTree(level int, nextLink bool) {
         prefix = ">"
     }
 
-    fmt.Printf("%s%sIFD: %s\n", indent, prefix, ifd)
+    fmt.Printf("%s%sIFD: %s INDEX=(%d)\n", indent, prefix, ifd, index)
 
     // Quickly create an index of the child-IFDs.
 
@@ -475,7 +475,7 @@ func (ifd Ifd) printTagTree(level int, nextLink bool) {
                 log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
             }
 
-            childIfd.printTagTree(level + 1, false)
+            childIfd.printTagTree(0, level + 1, false)
         }
     }
 
@@ -484,13 +484,13 @@ func (ifd Ifd) printTagTree(level int, nextLink bool) {
     }
 
     if ifd.NextIfd != nil {
-        ifd.NextIfd.printTagTree(level, true)
+        ifd.NextIfd.printTagTree(index + 1, level, true)
     }
 }
 
 // PrintTagTree prints the IFD hierarchy.
 func (ifd Ifd) PrintTagTree() {
-    ifd.printTagTree(0, false)
+    ifd.printTagTree(0, 0, false)
 }
 
 func (ifd Ifd) printIfdTree(level int, nextLink bool) {

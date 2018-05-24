@@ -351,7 +351,7 @@ func (ib *IfdBuilder) printTagTree(levels int) {
         }
 
         if levels == 0 {
-            fmt.Printf("%s%sIFD: %s\n", indent, prefix, currentIb)
+            fmt.Printf("%s%sIFD: %s INDEX=(%d)\n", indent, prefix, currentIb, i)
         } else {
             fmt.Printf("%s%sChild IFD: %s\n", indent, prefix, currentIb)
         }
