@@ -234,10 +234,13 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
 
         len_ := len(valueBytes)
         unitCount := uint32(len_) / typeSize
-        remainder := uint32(len_) % typeSize
 
-        if remainder > 0 {
-            log.Panicf("tag value of (%d) bytes not evenly divisible by type-size (%d)", len_, typeSize)
+        if _, found := tagsWithoutAlignment[bt.tagId]; found == false {
+            remainder := uint32(len_) % typeSize
+
+            if remainder > 0 {
+                log.Panicf("tag (0x%02x) value of (%d) bytes not evenly divisible by type-size (%d)", bt.tagId, len_, typeSize)
+            }
         }
 
         err = bw.WriteUint32(unitCount)
@@ -337,6 +340,8 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
         log.PanicIf(err)
 
         if childIfdBlock != nil {
+            // We aren't allowed to have non-nil child IFDs if we're just
+            // sizing things up.
             if nextIfdOffsetToWrite == 0 {
                 log.Panicf("no IFD offset provided for child-IFDs; no new child-IFDs permitted")
             }
@@ -384,6 +389,23 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     _, err = b.Write(dataBytes)
     log.PanicIf(err)
 
+// TODO(dustin): !! Debugging.
+    // if thumbnailOffset != uint32(0) {
+    //     currentRelativeOffset := thumbnailOffset - ifdAddressableOffset
+    //     currentBuffer := b.Bytes()
+
+    //     len_ := len(thumbnailData)
+    //     extractedThumbnailData := currentBuffer[int(currentRelativeOffset):int(currentRelativeOffset) + len_]
+
+    //     // We didn't have enough data available, which would be queer.
+    //     if len(extractedThumbnailData) != len_ {
+    //         log.Panicf("extracted thumbnail data was truncated; not enough data")
+    //     }
+
+// // fmt.Printf("Re-extracted (%d) bytes of thumbnail data.\n", len(extractedThumbnailData))
+// // DumpBytes(extractedThumbnailData[:50])
+//     }
+
     // Append any child IFD blocks after our table and data blocks. These IFDs
     // were equipped with the appropriate offset information so it's expected
     // that all offsets referred to by these will be correct.
@@ -399,6 +421,13 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     }
 
     ibe.pushToJournal("encodeIfdToBytes", "<", "%s", ib)
+
+// if nextIfdOffsetToWrite > uint32(0) {
+//     fmt.Printf("Encoded IB: %s  ADDRESSABLE-OFFSET=(0x%08x; %d):\n", ib.ii, ifdAddressableOffset, ifdAddressableOffset)
+//     fmt.Printf("\n")
+//         DumpBytes(b.Bytes())
+//     fmt.Printf("\n")
+// }
 
     return b.Bytes(), tableSize, dataSize, childIfdSizes, nil
 }

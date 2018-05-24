@@ -1,5 +1,10 @@
 package exif
 
+// NOTES:
+//
+// The thumbnail offset and length tags shouldn't be set directly. Use the
+// (*IfdBuilder).SetThumbnail() method instead.
+
 import (
     "errors"
     "fmt"
@@ -246,6 +251,10 @@ type IfdBuilder struct {
 
     // nextIb represents the next link if we're chaining to another.
     nextIb *IfdBuilder
+
+    // thumbnailData is populated with thumbnail data if there was thumbnail
+    // data. Otherwise, it's nil.
+    thumbnailData []byte
 }
 
 func NewIfdBuilder(ii IfdIdentity, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
@@ -337,6 +346,66 @@ func (ib *IfdBuilder) String() string {
 
 func (ib *IfdBuilder) Tags() (tags []builderTag) {
     return ib.tags
+}
+
+// SetThumbnail sets thumbnail data.
+//
+// NOTES:
+//
+// - We don't manage any facet of the thumbnail data. This is the
+//   responsibility of the user/developer.
+// - This method will fail unless the thumbnail is set on a the root IFD.
+//   However, in order to be valid, it must be set on the second one, linked to
+//   by the first, as per the EXIF/TIFF specification.
+// - We set the offset to (0) now but will allocate the data and properly assign
+//   the offset when the IB is encoded (later).
+func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    if ib.ii != RootIi {
+        log.Panicf("thumbnails can only go into a root Ifd (and only the second one)")
+    }
+
+// TODO(dustin): !! Add a test for this.
+
+    if data == nil || len(data) == 0 {
+
+// TODO(dustin): !! Debugging.
+fmt.Printf("Thumbnail empty.\n")
+
+        log.Panic("thumbnail is empty")
+    }
+
+    ib.thumbnailData = data
+
+fmt.Printf("SETTING THUMBNAIL.\n")
+
+    ibtvfb := NewIfdBuilderTagValueFromBytes(ib.thumbnailData)
+    offsetBt := NewBuilderTag(ib.ii, ThumbnailOffsetTagId, TypeLong, ibtvfb)
+    // offsetBt := NewStandardBuilderTagFromConfig(ib.ii, ThumbnailOffsetTagId, ib.byteOrder, []uint32 { 0 })
+
+    err = ib.Set(offsetBt)
+    log.PanicIf(err)
+
+    sizeBt := NewStandardBuilderTagFromConfig(ib.ii, ThumbnailSizeTagId, ib.byteOrder, []uint32 { uint32(len(ib.thumbnailData)) })
+
+    err = ib.Set(sizeBt)
+    log.PanicIf(err)
+
+
+// TODO(dustin): !! Debugging.
+fmt.Printf("Set thumbnail into IB.\n")
+
+
+    return nil
+}
+
+func (ib *IfdBuilder) Thumbnail() []byte {
+    return ib.thumbnailData
 }
 
 func (ib *IfdBuilder) printTagTree(levels int) {
@@ -583,6 +652,27 @@ func (ib *IfdBuilder) Replace(tagId uint16, bt builderTag) (err error) {
     return nil
 }
 
+// Set will add a new entry or update an existing entry.
+func (ib *IfdBuilder) Set(bt builderTag) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    position, err := ib.Find(bt.tagId)
+    if err == nil {
+        ib.tags[position] = bt
+    } else if log.Is(err, ErrTagEntryNotFound) == true {
+        err = ib.Add(bt)
+        log.PanicIf(err)
+    } else {
+        log.Panic(err)
+    }
+
+    return nil
+}
+
 func (ib *IfdBuilder) FindN(tagId uint16, maxFound int) (found []int, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -689,10 +779,32 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
         }
     }()
 
+    thumbnailData, err := ifd.Thumbnail()
+    if err == nil {
+
+// TODO(dustin): !! Debugging.
+fmt.Printf("Importing thumbnail: %s\n", ifd.Identity())
+
+        err = ib.SetThumbnail(thumbnailData)
+        log.PanicIf(err)
+    } else if log.Is(err, ErrNoThumbnail) == false {
+        log.Panic(err)
+    } else {
+
+// TODO(dustin): !! Debugging.
+fmt.Printf("NO THUMBNAIL FOUND: %s\n", ifd.Identity())
+
+    }
+
     for _, ite := range ifd.Entries {
-        // If we want to add an IFD tag, we'll have to build it first and *then*
-        // add it via a different method.
         if ite.ChildIfdName != "" {
+            // If we want to add an IFD tag, we'll have to build it first and
+            // *then* add it via a different method.
+
+            continue
+        } else if ite.TagId == ThumbnailOffsetTagId || ite.TagId == ThumbnailSizeTagId {
+            // These will be added on-the-fly when we encode.
+
             continue
         }
 

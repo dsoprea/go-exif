@@ -79,6 +79,14 @@ var (
         GpsIi: 3,
         ExifIopIi: 4,
     }
+
+    // tagsWithoutAlignment is a tag-lookup for tags whose value size won't
+    // necessarily be a multiple of its tag-type.
+    tagsWithoutAlignment = map[uint16]struct{} {
+        // The thumbnail offset is stored as a long, but its data is a binary
+        // blob (not a slice of longs).
+        ThumbnailOffsetTagId: struct{}{},
+    }
 )
 
 var (

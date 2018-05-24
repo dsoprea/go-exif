@@ -176,7 +176,7 @@ type TagVisitor func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
+func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -188,11 +188,23 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumer
 
     ifdEnumerateLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
 
-    entries = make([]*IfdTagEntry, tagCount)
+    entries = make([]*IfdTagEntry, 0)
+
+    var iteThumbnailOffset *IfdTagEntry
+    var iteThumbnailSize *IfdTagEntry
 
     for i := 0; i < int(tagCount); i++ {
         tag, err := ie.parseTag(ii, i, ite)
         log.PanicIf(err)
+
+        if tag.TagId == ThumbnailOffsetTagId {
+            iteThumbnailOffset = tag
+
+            continue
+        } else if tag.TagId == ThumbnailSizeTagId {
+            iteThumbnailSize = tag
+            continue
+        }
 
         if visitor != nil {
             tt := NewTagType(tag.TagType, ie.byteOrder)
@@ -220,7 +232,12 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumer
             log.PanicIf(err)
         }
 
-        entries[i] = tag
+        entries = append(entries, tag)
+    }
+
+    if iteThumbnailOffset != nil && iteThumbnailSize != nil {
+        thumbnailData, err = ie.parseThumbnail(iteThumbnailOffset, iteThumbnailSize)
+        log.PanicIf(err)
     }
 
     nextIfdOffset, _, err = ite.getUint32()
@@ -228,7 +245,37 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumer
 
     ifdEnumerateLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
 
-    return nextIfdOffset, entries, nil
+    return nextIfdOffset, entries, thumbnailData, nil
+}
+
+func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumbnailData []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    addressableData := ie.exifData[ExifAddressableAreaStart:]
+
+
+    vRaw, err := lengthIte.Value(addressableData, ie.byteOrder)
+    log.PanicIf(err)
+
+    vList := vRaw.([]uint32)
+    if len(vList) != 1 {
+        log.Panicf("not exactly one long: (%d)", len(vList))
+    }
+
+    length := vList[0]
+
+    // The tag is official a LONG type, but it's actually an offset to a blob of bytes.
+    offsetIte.TagType = TypeByte
+    offsetIte.UnitCount = length
+
+    thumbnailData, err = offsetIte.ValueBytes(addressableData, ie.byteOrder)
+    log.PanicIf(err)
+
+    return thumbnailData, nil
 }
 
 // Scan enumerates the different EXIF's IFD blocks.
@@ -243,7 +290,7 @@ func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisito
         ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ii.IfdName, ifdIndex, ifdOffset)
         ite := ie.getTagEnumerator(ifdOffset)
 
-        nextIfdOffset, _, err := ie.ParseIfd(ii, ifdIndex, ite, visitor, true)
+        nextIfdOffset, _, _, err := ie.ParseIfd(ii, ifdIndex, ite, visitor, true)
         log.PanicIf(err)
 
         if nextIfdOffset == 0 {
@@ -383,64 +430,6 @@ func (ifd Ifd) String() string {
     }
 
     return fmt.Sprintf("Ifd<ID=(%d) PARENT-IFD=[%s] IFD=[%s] IDX=(%d) COUNT=(%d) OFF=(0x%04x) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)", ifd.Id, ifd.Ii.ParentIfdName, ifd.Ii.IfdName, ifd.Index, len(ifd.Entries), ifd.Offset, len(ifd.Children), parentOffset, ifd.NextIfdOffset)
-}
-
-func (ifd *Ifd) parseThumbnail() (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    results, err := ifd.FindTagWithId(ThumbnailOffsetTagId)
-    if err != nil {
-        if log.Is(err, ErrTagNotFound) == true {
-            return nil
-        } else {
-            log.Panic(err)
-        }
-    }
-
-    offsetIte := results[0]
-
-    vRaw, err := ifd.TagValue(offsetIte)
-    log.PanicIf(err)
-
-    vList := vRaw.([]uint32)
-    if len(vList) != 1 {
-        log.Panicf("not exactly one long: (%d)", len(vList))
-    }
-
-    offset := vList[0]
-
-    results, err = ifd.FindTagWithId(ThumbnailSizeTagId)
-    if err != nil {
-        if log.Is(err, ErrTagNotFound) == true {
-            log.Panic(ErrNoThumbnail)
-        } else {
-            log.Panic(err)
-        }
-    }
-
-    lengthIte := results[0]
-
-    vRaw, err = ifd.TagValue(lengthIte)
-    log.PanicIf(err)
-
-    vList = vRaw.([]uint32)
-    if len(vList) != 1 {
-        log.Panicf("not exactly one long: (%d)", len(vList))
-    }
-
-    length := vList[0]
-
-    if len(ifd.addressableData) < int(offset) + int(length) {
-        log.Panicf("thumbnail size not valid: (%d) > (%d)", length, len(ifd.addressableData) - int(offset))
-    }
-
-    ifd.thumbnailData = ifd.addressableData[offset:offset + length]
-
-    return nil
 }
 
 func (ifd *Ifd) Thumbnail() (data []byte, err error) {
@@ -737,7 +726,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
         ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ii.IfdName, index, offset)
         ite := ie.getTagEnumerator(offset)
 
-        nextIfdOffset, entries, err := ie.ParseIfd(ii, index, ite, nil, false)
+        nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(ii, index, ite, nil, false)
         log.PanicIf(err)
 
         id := len(ifds)
@@ -766,10 +755,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             EntriesByTagId: entriesByTagId,
             Children: make([]*Ifd, 0),
             NextIfdOffset: nextIfdOffset,
+            thumbnailData: thumbnailData,
         }
-
-        err = ifd.parseThumbnail()
-        log.PanicIf(err)
 
         // Add ourselves to a big list of IFDs.
         ifds = append(ifds, &ifd)
@@ -858,7 +845,7 @@ func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, vi
 
     ite := NewIfdTagEnumerator(ifdBlock, byteOrder, 0)
 
-    nextIfdOffset, entries, err = ie.ParseIfd(ii, 0, ite, visitor, true)
+    nextIfdOffset, entries, _, err = ie.ParseIfd(ii, 0, ite, visitor, true)
     log.PanicIf(err)
 
     return nextIfdOffset, entries, nil
