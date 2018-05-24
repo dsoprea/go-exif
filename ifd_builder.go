@@ -62,7 +62,7 @@ func (ibtv IfdBuilderTagValue) Ib() *IfdBuilder {
 
 
 type builderTag struct {
-    // ii is non-empty if represents a child-IFD.
+    // ii is the IfdIdentity of the IFD that hosts this tag.
     ii IfdIdentity
 
     tagId uint16
@@ -446,14 +446,15 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []s
     }
 
     for i, tag := range thisIb.tags {
-        line := fmt.Sprintf("<PARENTS=[%s] IFD-NAME=[%s]> IFD-TAG-ID=(0x%02x) CHILD-IFD=[%s] INDEX=(%d) TAG=[0x%02x]", prefix, thisIb.ii.IfdName, thisIb.ifdTagId, tag.ii.IfdName, i, tag.tagId)
+        childIfdName := ""
+        if tag.value.IsIb() == true {
+            childIfdName = tag.value.Ib().ii.IfdName
+        }
+
+        line := fmt.Sprintf("<PARENTS=[%s] IFD-NAME=[%s]> IFD-TAG-ID=(0x%02x) CHILD-IFD=[%s] INDEX=(%d) TAG=[0x%02x]", prefix, thisIb.ii.IfdName, thisIb.ifdTagId, childIfdName, i, tag.tagId)
         linesOutput = append(linesOutput, line)
 
-        if tag.ii.IfdName != "" {
-            if tag.value.IsIb() == false {
-                log.Panicf("tag has IFD tag-ID (0x%02x) and is acting like a child IB but does not *look* like a child IB: %v", tag.tagId, tag)
-            }
-
+        if tag.value.IsIb() == true {
             childPrefix := ""
             if prefix == "" {
                 childPrefix = fmt.Sprintf("%s", thisIb.ii.IfdName)
@@ -669,7 +670,7 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
     value := NewIfdBuilderTagValueFromIfdBuilder(childIb)
 
     bt := NewChildIfdBuilderTag(
-            childIb.ii,
+            ib.ii,
             childIb.ifdTagId,
             value)
 

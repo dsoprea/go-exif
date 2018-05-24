@@ -426,7 +426,7 @@ func (ifd Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
     return tags
 }
 
-// PrintTagTree prints the IFD hierarchy.
+// DumpTags prints the IFD hierarchy.
 func (ifd Ifd) DumpTags() []*IfdTagEntry {
     return ifd.dumpTags(nil)
 }
