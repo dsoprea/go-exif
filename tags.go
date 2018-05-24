@@ -19,6 +19,9 @@ const (
     IfdExifId = 0x8769
     IfdGpsId = 0x8825
     IfdIopId = 0xA005
+
+    ThumbnailOffsetTagId = 0x0201
+    ThumbnailSizeTagId = 0x0202
 )
 
 var (

@@ -6,6 +6,7 @@ import (
     "bytes"
 
     "encoding/binary"
+    "io/ioutil"
 
     "github.com/dsoprea/go-logging"
 )
@@ -275,5 +276,36 @@ func Test_Ifd_FindTagWithName_NonStandard(t *testing.T) {
         t.Fatalf("Expected error for not-found tag.")
     } else if log.Is(err, ErrTagNotStandard) == false {
         log.Panic(err)
+    }
+}
+
+func Test_Ifd_Thumbnail(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd := index.RootIfd
+
+    if ifd.NextIfd == nil {
+        t.Fatalf("There is no IFD1.")
+    }
+
+    // The thumbnail is in IFD1 (The second root IFD).
+    actual, err := ifd.NextIfd.Thumbnail()
+    log.PanicIf(err)
+
+    expectedFilepath := path.Join(assetsPath, "NDM_8901.jpg.thumbnail")
+
+    expected, err := ioutil.ReadFile(expectedFilepath)
+    log.PanicIf(err)
+
+    if bytes.Compare(actual, expected) != 0 {
+        t.Fatalf("thumbnail not correct")
     }
 }

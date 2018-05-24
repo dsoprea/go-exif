@@ -4,6 +4,7 @@ import (
     "bytes"
     "fmt"
     "strings"
+    "errors"
 
     "encoding/binary"
 
@@ -12,6 +13,8 @@ import (
 
 var (
     ifdEnumerateLogger = log.NewLogger("exifjpeg.ifd")
+
+    ErrNoThumbnail = errors.New("no thumbnail")
 )
 
 
@@ -293,6 +296,8 @@ type Ifd struct {
     Children []*Ifd
     NextIfdOffset uint32
     NextIfd *Ifd
+
+    thumbnailData []byte
 }
 
 func (ifd *Ifd) TagValue(ite *IfdTagEntry) (value interface{}, err error) {
@@ -323,7 +328,7 @@ func (ifd *Ifd) TagValueBytes(ite *IfdTagEntry) (value []byte, err error) {
 
 // FindTagWithId returns a list of tags (usually just zero or one) that match
 // the given tag ID. This is efficient.
-func (ifd Ifd) FindTagWithId(tagId uint16) (results []*IfdTagEntry, err error) {
+func (ifd *Ifd) FindTagWithId(tagId uint16) (results []*IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -340,7 +345,7 @@ func (ifd Ifd) FindTagWithId(tagId uint16) (results []*IfdTagEntry, err error) {
 
 // FindTagWithName returns a list of tags (usually just zero or one) that match
 // the given tag name. This is not efficient (though the labor is trivial).
-func (ifd Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err error) {
+func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -380,11 +385,83 @@ func (ifd Ifd) String() string {
     return fmt.Sprintf("Ifd<ID=(%d) PARENT-IFD=[%s] IFD=[%s] IDX=(%d) COUNT=(%d) OFF=(0x%04x) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)", ifd.Id, ifd.Ii.ParentIfdName, ifd.Ii.IfdName, ifd.Index, len(ifd.Entries), ifd.Offset, len(ifd.Children), parentOffset, ifd.NextIfdOffset)
 }
 
-func (ifd Ifd) Identity() IfdIdentity {
+func (ifd *Ifd) parseThumbnail() (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    results, err := ifd.FindTagWithId(ThumbnailOffsetTagId)
+    if err != nil {
+        if log.Is(err, ErrTagNotFound) == true {
+            return nil
+        } else {
+            log.Panic(err)
+        }
+    }
+
+    offsetIte := results[0]
+
+    vRaw, err := ifd.TagValue(offsetIte)
+    log.PanicIf(err)
+
+    vList := vRaw.([]uint32)
+    if len(vList) != 1 {
+        log.Panicf("not exactly one long: (%d)", len(vList))
+    }
+
+    offset := vList[0]
+
+    results, err = ifd.FindTagWithId(ThumbnailSizeTagId)
+    if err != nil {
+        if log.Is(err, ErrTagNotFound) == true {
+            log.Panic(ErrNoThumbnail)
+        } else {
+            log.Panic(err)
+        }
+    }
+
+    lengthIte := results[0]
+
+    vRaw, err = ifd.TagValue(lengthIte)
+    log.PanicIf(err)
+
+    vList = vRaw.([]uint32)
+    if len(vList) != 1 {
+        log.Panicf("not exactly one long: (%d)", len(vList))
+    }
+
+    length := vList[0]
+
+    if len(ifd.addressableData) < int(offset) + int(length) {
+        log.Panicf("thumbnail size not valid: (%d) > (%d)", length, len(ifd.addressableData) - int(offset))
+    }
+
+    ifd.thumbnailData = ifd.addressableData[offset:offset + length]
+
+    return nil
+}
+
+func (ifd *Ifd) Thumbnail() (data []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    if ifd.thumbnailData == nil {
+        log.Panic(ErrNoThumbnail)
+    }
+
+    return ifd.thumbnailData, nil
+}
+
+func (ifd *Ifd) Identity() IfdIdentity {
     return ifd.Ii
 }
 
-func (ifd Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
+func (ifd *Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
     if tags == nil {
         tags = make([]*IfdTagEntry, 0)
     }
@@ -427,11 +504,11 @@ func (ifd Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
 }
 
 // DumpTags prints the IFD hierarchy.
-func (ifd Ifd) DumpTags() []*IfdTagEntry {
+func (ifd *Ifd) DumpTags() []*IfdTagEntry {
     return ifd.dumpTags(nil)
 }
 
-func (ifd Ifd) printTagTree(index, level int, nextLink bool) {
+func (ifd *Ifd) printTagTree(index, level int, nextLink bool) {
     indent := strings.Repeat(" ", level * 2)
 
     prefix := " "
@@ -489,11 +566,11 @@ func (ifd Ifd) printTagTree(index, level int, nextLink bool) {
 }
 
 // PrintTagTree prints the IFD hierarchy.
-func (ifd Ifd) PrintTagTree() {
+func (ifd *Ifd) PrintTagTree() {
     ifd.printTagTree(0, 0, false)
 }
 
-func (ifd Ifd) printIfdTree(level int, nextLink bool) {
+func (ifd *Ifd) printIfdTree(level int, nextLink bool) {
     indent := strings.Repeat(" ", level * 2)
 
     prefix := " "
@@ -537,11 +614,11 @@ func (ifd Ifd) printIfdTree(level int, nextLink bool) {
 }
 
 // PrintIfdTree prints the IFD hierarchy.
-func (ifd Ifd) PrintIfdTree() {
+func (ifd *Ifd) PrintIfdTree() {
     ifd.printIfdTree(0, false)
 }
 
-func (ifd Ifd) dumpTree(tagsDump []string, level int) []string {
+func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
     if tagsDump == nil {
         tagsDump = make([]string, 0)
     }
@@ -599,7 +676,7 @@ func (ifd Ifd) dumpTree(tagsDump []string, level int) []string {
 }
 
 // DumpTree returns a list of strings describing the IFD hierarchy.
-func (ifd Ifd) DumpTree() []string {
+func (ifd *Ifd) DumpTree() []string {
     return ifd.dumpTree(nil, 0)
 }
 
@@ -690,6 +767,9 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             Children: make([]*Ifd, 0),
             NextIfdOffset: nextIfdOffset,
         }
+
+        err = ifd.parseThumbnail()
+        log.PanicIf(err)
 
         // Add ourselves to a big list of IFDs.
         ifds = append(ifds, &ifd)
