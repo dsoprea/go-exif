@@ -84,6 +84,7 @@ func (ve *ValueEncoder) encodeShorts(value []uint16) (ed EncodedData, err error)
     ed.Encoded = make([]byte, ed.UnitCount * 2)
 
     for i := uint32(0); i < ed.UnitCount; i++ {
+// TODO(dustin): We have a ton of duplication in how we handle the byte-orders and the inherent risk of accidentally doing something inconsistently. Move this to reusable code.
         if ve.byteOrder == binary.BigEndian {
             binary.BigEndian.PutUint16(ed.Encoded[i*2:(i+1)*2], value[i])
         } else {
