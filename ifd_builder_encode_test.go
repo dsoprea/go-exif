@@ -918,10 +918,10 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 
     // Output:
     //
-    // 0: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0b) TAG-TYPE=[ASCII] UNIT-COUNT=(11)> [asciivalue]
-    // 1: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x150) TAG-TYPE=[BYTE] UNIT-COUNT=(1)> [[17]]
-    // 2: IfdTagEntry<TAG-IFD=[] TAG-ID=(0xff) TAG-TYPE=[SHORT] UNIT-COUNT=(1)> [[8755]]
-    // 3: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x100) TAG-TYPE=[LONG] UNIT-COUNT=(1)> [[1146447479]]
-    // 4: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x13e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
+    // 0: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x000b) TAG-TYPE=[ASCII] UNIT-COUNT=(11)> [asciivalue]
+    // 1: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0150) TAG-TYPE=[BYTE] UNIT-COUNT=(1)> [[17]]
+    // 2: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x00ff) TAG-TYPE=[SHORT] UNIT-COUNT=(1)> [[8755]]
+    // 3: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0100) TAG-TYPE=[LONG] UNIT-COUNT=(1)> [[1146447479]]
+    // 4: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x013e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
     // 5: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x9201) TAG-TYPE=[SRATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
 }

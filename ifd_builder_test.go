@@ -6,7 +6,7 @@ import (
     "bytes"
     "path"
     "fmt"
-    "sort"
+    "strings"
 
     "github.com/dsoprea/go-logging"
 )
@@ -148,7 +148,7 @@ func TestAddChildIb(t *testing.T) {
     if ib.tags[0].tagId != 0x11 {
         t.Fatalf("first tag not correct")
     } else if ib.tags[1].tagId != ibChild.ifdTagId {
-        t.Fatalf("second tag ID does not match child-IFD tag-ID: (0x%02x) != (0x%02x)", ib.tags[1].tagId, ibChild.ifdTagId)
+        t.Fatalf("second tag ID does not match child-IFD tag-ID: (0x%04x) != (0x%04x)", ib.tags[1].tagId, ibChild.ifdTagId)
     } else if ib.tags[1].value.Ib() != ibChild {
         t.Fatalf("second tagvalue does not match child-IFD")
     } else if ib.tags[2].tagId != 0x22 {
@@ -169,6 +169,7 @@ func TestAddTagsFromExisting(t *testing.T) {
     entries := make([]*IfdTagEntry, 3)
 
     entries[0] = &IfdTagEntry{
+        Ii: ExifIi,
         TagId: 0x11,
         TagType: TypeByte,
         UnitCount: 4,
@@ -176,11 +177,14 @@ func TestAddTagsFromExisting(t *testing.T) {
     }
 
     entries[1] = &IfdTagEntry{
+        Ii: ExifIi,
         TagId: 0x22,
+        TagType: TypeLong,
         ChildIfdName: "some ifd",
     }
 
     entries[2] = &IfdTagEntry{
+        Ii: ExifIi,
         TagId: 0x33,
         TagType: TypeByte,
         UnitCount: 4,
@@ -197,9 +201,11 @@ func TestAddTagsFromExisting(t *testing.T) {
 
     if ib.tags[0].tagId != 0x11 {
         t.Fatalf("tag (0) not correct")
-    } else if ib.tags[1].tagId != 0x33 {
+    } else if ib.tags[1].tagId != 0x22 {
         t.Fatalf("tag (1) not correct")
-    } else if len(ib.tags) != 2 {
+    } else if ib.tags[2].tagId != 0x33 {
+        t.Fatalf("tag (2) not correct")
+    } else if len(ib.tags) != 3 {
         t.Fatalf("tag count not correct")
     }
 }
@@ -275,9 +281,9 @@ func TestAddTagsFromExisting__Excludes(t *testing.T) {
     err := ib.AddTagsFromExisting(ifd, nil, nil, []uint16 { 0x11 })
     log.PanicIf(err)
 
-    if ib.tags[0].tagId != 0x33 {
+    if ib.tags[0].tagId != 0x22 {
         t.Fatalf("tag not correct")
-    } else if len(ib.tags) != 1 {
+    } else if len(ib.tags) != 2 {
         t.Fatalf("tag count not correct")
     }
 }
@@ -328,7 +334,7 @@ func TestFindN_First_1(t *testing.T) {
     bt = tags[found[0]]
 
     if bt.tagId != 0x11 {
-        log.Panicf("Found entry is not correct: (0x%02x)", bt.tagId)
+        log.Panicf("Found entry is not correct: (0x%04x)", bt.tagId)
     }
 }
 
@@ -378,7 +384,7 @@ func TestFindN_First_2_1Returned(t *testing.T) {
     bt = tags[found[0]]
 
     if bt.tagId != 0x11 {
-        log.Panicf("Found entry is not correct: (0x%02x)", bt.tagId)
+        log.Panicf("Found entry is not correct: (0x%04x)", bt.tagId)
     }
 }
 
@@ -450,12 +456,12 @@ func TestFindN_First_2_2Returned(t *testing.T) {
 
     bt = tags[found[0]]
     if bt.tagId != 0x11 || bytes.Compare(bt.value.Bytes(), []byte("test string")) != 0 {
-        log.Panicf("Found entry 0 is not correct: (0x%02x) [%s]", bt.tagId, bt.value)
+        log.Panicf("Found entry 0 is not correct: (0x%04x) [%s]", bt.tagId, bt.value)
     }
 
     bt = tags[found[1]]
     if bt.tagId != 0x11 || bytes.Compare(bt.value.Bytes(), []byte("test string4")) != 0 {
-        log.Panicf("Found entry 1 is not correct: (0x%02x) [%s]", bt.tagId, bt.value)
+        log.Panicf("Found entry 1 is not correct: (0x%04x) [%s]", bt.tagId, bt.value)
     }
 }
 
@@ -535,7 +541,7 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
     bt = tags[found[0]]
 
     if bt.tagId != 0x33 {
-        log.Panicf("Found entry is not correct: (0x%02x)", bt.tagId)
+        log.Panicf("Found entry is not correct: (0x%04x)", bt.tagId)
     }
 }
 
@@ -595,7 +601,7 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
     bt = tags[found[0]]
 
     if bt.tagId != 0x33 {
-        log.Panicf("Found entry is not correct: (0x%02x)", bt.tagId)
+        log.Panicf("Found entry is not correct: (0x%04x)", bt.tagId)
     }
 }
 
@@ -664,7 +670,7 @@ func TestFind_Hit(t *testing.T) {
     bt = tags[position]
 
     if bt.tagId != 0x33 {
-        log.Panicf("Found entry is not correct: (0x%02x)", bt.tagId)
+        log.Panicf("Found entry is not correct: (0x%04x)", bt.tagId)
     }
 }
 
@@ -1232,20 +1238,20 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
     itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
     ib := NewIfdBuilderFromExistingChain(index.RootIfd, itevr)
 
-    lines := ib.DumpToStrings()
+    actual := ib.DumpToStrings()
 
     expected := []string {
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(0) TAG=[0x10f]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(1) TAG=[0x110]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(2) TAG=[0x112]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(3) TAG=[0x11a]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(4) TAG=[0x11b]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(5) TAG=[0x128]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(6) TAG=[0x132]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(7) TAG=[0x13b]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(8) TAG=[0x213]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[] INDEX=(9) TAG=[0x8298]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[Exif] INDEX=(10) TAG=[0x8769]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(0) TAG=[0x010f]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(1) TAG=[0x0110]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(2) TAG=[0x0112]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(3) TAG=[0x011a]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(4) TAG=[0x011b]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(5) TAG=[0x0128]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(6) TAG=[0x0132]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(7) TAG=[0x013b]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(8) TAG=[0x0213]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[] INDEX=(9) TAG=[0x8298]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[Exif] INDEX=(10) TAG=[0x8769]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(0) TAG=[0x829a]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(1) TAG=[0x829d]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(2) TAG=[0x8822]",
@@ -1271,27 +1277,28 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(22) TAG=[0xa001]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(23) TAG=[0xa002]",
         "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(24) TAG=[0xa003]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(25) TAG=[0xa20e]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(26) TAG=[0xa20f]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(27) TAG=[0xa210]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(28) TAG=[0xa401]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(29) TAG=[0xa402]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(30) TAG=[0xa403]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(31) TAG=[0xa406]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(32) TAG=[0xa430]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(33) TAG=[0xa431]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(34) TAG=[0xa432]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(35) TAG=[0xa434]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(36) TAG=[0xa435]",
-        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[Iop] INDEX=(37) TAG=[0xa005]",
-        "<PARENTS=[IFD->Exif] IFD-NAME=[Iop]> IFD-TAG-ID=(0xa005) CHILD-IFD=[] INDEX=(0) TAG=[0x01]",
-        "<PARENTS=[IFD->Exif] IFD-NAME=[Iop]> IFD-TAG-ID=(0xa005) CHILD-IFD=[] INDEX=(1) TAG=[0x02]",
-        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x00) CHILD-IFD=[GPSInfo] INDEX=(11) TAG=[0x8825]",
-        "<PARENTS=[IFD] IFD-NAME=[GPSInfo]> IFD-TAG-ID=(0x8825) CHILD-IFD=[] INDEX=(0) TAG=[0x00]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[Iop] INDEX=(25) TAG=[0xa005]",
+        "<PARENTS=[IFD->Exif] IFD-NAME=[Iop]> IFD-TAG-ID=(0xa005) CHILD-IFD=[] INDEX=(0) TAG=[0x0001]",
+        "<PARENTS=[IFD->Exif] IFD-NAME=[Iop]> IFD-TAG-ID=(0xa005) CHILD-IFD=[] INDEX=(1) TAG=[0x0002]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(26) TAG=[0xa20e]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(27) TAG=[0xa20f]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(28) TAG=[0xa210]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(29) TAG=[0xa401]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(30) TAG=[0xa402]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(31) TAG=[0xa403]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(32) TAG=[0xa406]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(33) TAG=[0xa430]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(34) TAG=[0xa431]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(35) TAG=[0xa432]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(36) TAG=[0xa434]",
+        "<PARENTS=[IFD] IFD-NAME=[Exif]> IFD-TAG-ID=(0x8769) CHILD-IFD=[] INDEX=(37) TAG=[0xa435]",
+        "<PARENTS=[] IFD-NAME=[IFD]> IFD-TAG-ID=(0x0000) CHILD-IFD=[GPSInfo] INDEX=(11) TAG=[0x8825]",
+        "<PARENTS=[IFD] IFD-NAME=[GPSInfo]> IFD-TAG-ID=(0x8825) CHILD-IFD=[] INDEX=(0) TAG=[0x0000]",
     }
 
-    if reflect.DeepEqual(lines, expected) == false {
-        t.Fatalf("IB did not [correctly] duplicate the IFD structure")
+    if reflect.DeepEqual(actual, expected) == false {
+        fmt.Printf("ACTUAL:\n%s\n\nEXPECTED:\n%s\n", strings.Join(actual, "\n"), strings.Join(expected, "\n"))
+        t.Fatalf("IB did not [correctly] duplicate the IFD structure.")
     }
 }
 
@@ -1308,32 +1315,44 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
     // Decode from binary.
 
-    _, index, err := e.Collect(rawExif)
+    _, originalIndex, err := e.Collect(rawExif)
     log.PanicIf(err)
 
-    originalTags := index.RootIfd.DumpTags()
-    index.RootIfd.PrintTagTree(true)
+    originalThumbnailData, err := originalIndex.RootIfd.NextIfd.Thumbnail()
+    log.PanicIf(err)
+
+    originalTags := originalIndex.RootIfd.DumpTags()
+
 
     // Encode back to binary.
 
     ibe := NewIfdByteEncoder()
 
-    itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
-    rootIb := NewIfdBuilderFromExistingChain(index.RootIfd, itevr)
+    itevr := NewIfdTagEntryValueResolver(rawExif, originalIndex.RootIfd.ByteOrder)
+    rootIb := NewIfdBuilderFromExistingChain(originalIndex.RootIfd, itevr)
 
     updatedExif, err := ibe.EncodeToExif(rootIb)
     log.PanicIf(err)
 
+
     // Parse again.
 
-    _, index, err = e.Collect(updatedExif)
+    _, recoveredIndex, err := e.Collect(updatedExif)
     log.PanicIf(err)
 
-    recoveredTags := index.RootIfd.DumpTags()
-    index.RootIfd.PrintTagTree(true)
+    recoveredTags := recoveredIndex.RootIfd.DumpTags()
 
 
-return
+    recoveredThumbnailData, err := recoveredIndex.RootIfd.NextIfd.Thumbnail()
+    log.PanicIf(err)
+
+
+    // Check the thumbnail.
+
+    if bytes.Compare(recoveredThumbnailData, originalThumbnailData) != 0 {
+        t.Fatalf("recovered thumbnail does not match original")
+    }
+
 
     // Validate that all of the same IFDs were presented.
 
@@ -1370,45 +1389,34 @@ return
     }
 
 
-    // Validate that all of the tags owned by the IFDs were presented. The tags
-    // might not be in the same order since the IFD tags are allocated after
-    // the non-IFD ones.
+    // Validate that all of the tags owned by the IFDs were presented. Note
+    // that the thumbnail tags are not kept but only produced on the fly, which
+    // is why we check it above.
 
-    originalNonIfdTags := make([]string, 0)
-    for _, ite := range originalTags {
-        if ite.ChildIfdName == "" {
-            originalNonIfdTags = append(originalNonIfdTags, fmt.Sprintf("%s 0x%02x", ite.Ii, ite.TagId))
-        }
-    }
-
-    sort.StringSlice(originalNonIfdTags).Sort()
-
-    recoveredNonIfdTags := make([]string, 0)
-    for _, ite := range recoveredTags {
-        if ite.ChildIfdName == "" {
-            recoveredNonIfdTags = append(recoveredNonIfdTags, fmt.Sprintf("%s 0x%02x", ite.Ii, ite.TagId))
-        }
-    }
-
-    sort.StringSlice(recoveredNonIfdTags).Sort()
-
-
-    if reflect.DeepEqual(recoveredNonIfdTags, originalNonIfdTags) != true {
-        fmt.Printf("Original non-IFD tags:\n\n")
-
-        for i, x := range originalNonIfdTags {
-            fmt.Printf("  %02d %v\n", i, x)
+    for i, recoveredIte := range recoveredTags {
+        if recoveredIte.ChildIfdName != "" {
+            continue
         }
 
-        fmt.Printf("\nRecovered non-IFD tags:\n\n")
+        originalIte := originalTags[i]
 
-        for i, x := range recoveredNonIfdTags {
-            fmt.Printf("  %02d %v\n", i, x)
+        if recoveredIte.Ii != originalIte.Ii {
+            t.Fatalf("IfdIdentify not as expected: %s != %s  ITE=%s", recoveredIte.Ii, originalIte.Ii, recoveredIte)
+        } else if recoveredIte.TagId != originalIte.TagId {
+            t.Fatalf("Tag-ID not as expected: %s != %s  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
+        } else if recoveredIte.TagType != originalIte.TagType {
+            t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
         }
 
-        fmt.Printf("\n")
+        originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
+        log.PanicIf(err)
 
-        t.Fatalf("Recovered non-IFD tags are not correct.")
+        recoveredValueBytes, err := recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
+        log.PanicIf(err)
+
+        if bytes.Compare(originalValueBytes, recoveredValueBytes) != 0 {
+            t.Fatalf("bytes of tag content not correct: %s != %s", originalIte, recoveredIte)
+        }
     }
 }
 
@@ -1496,7 +1504,7 @@ func TestAddFromConfigWithName(t *testing.T) {
     if bt.ii != RootIi {
         t.Fatalf("II not correct: %s", bt.ii)
     } else if bt.tagId != 0x000b {
-        t.Fatalf("Tag-ID not correct: (0x%02x)", bt.tagId)
+        t.Fatalf("Tag-ID not correct: (0x%04x)", bt.tagId)
     }
 
     s := string(bt.value.Bytes())

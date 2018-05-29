@@ -10,6 +10,7 @@ import (
 
     "os/exec"
     "encoding/json"
+    "io/ioutil"
 
     "github.com/dsoprea/go-logging"
 )
@@ -65,7 +66,7 @@ IFD=[Exif] ID=(0x9207) NAME=[MeteringMode] COUNT=(1) TYPE=[SHORT] VALUE=[5]
 IFD=[Exif] ID=(0x9209) NAME=[Flash] COUNT=(1) TYPE=[SHORT] VALUE=[16]
 IFD=[Exif] ID=(0x920a) NAME=[FocalLength] COUNT=(1) TYPE=[RATIONAL] VALUE=[16/1]
 IFD=[Exif] ID=(0x927c) NAME=[MakerNote] COUNT=(8152) TYPE=[UNDEFINED] VALUE=[MakerNote<TYPE-ID=[28 00 01 00 03 00 31 00 00 00 74 05 00 00 02 00 03 00 04 00]>]
-IFD=[Exif] ID=(0x9286) NAME=[UserComment] COUNT=(264) TYPE=[UNDEFINED] VALUE=[UserComment<SIZE=(0) ENCODING=[UNDEFINED] V=[]>]
+IFD=[Exif] ID=(0x9286) NAME=[UserComment] COUNT=(264) TYPE=[UNDEFINED] VALUE=[UserComment<SIZE=(256) ENCODING=[UNDEFINED] V=[0 0 0 0 0 0 0 0]... LEN=(256)>]
 IFD=[Exif] ID=(0x9290) NAME=[SubSecTime] COUNT=(3) TYPE=[ASCII] VALUE=[00]
 IFD=[Exif] ID=(0x9291) NAME=[SubSecTimeOriginal] COUNT=(3) TYPE=[ASCII] VALUE=[00]
 IFD=[Exif] ID=(0x9292) NAME=[SubSecTimeDigitized] COUNT=(3) TYPE=[ASCII] VALUE=[00]
@@ -94,12 +95,10 @@ IFD=[IFD] ID=(0x0103) NAME=[Compression] COUNT=(1) TYPE=[SHORT] VALUE=[6]
 IFD=[IFD] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]
 IFD=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]
 IFD=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]
-IFD=[IFD] ID=(0x0201) NAME=[JPEGInterchangeFormat] COUNT=(1) TYPE=[LONG] VALUE=[11444]
-IFD=[IFD] ID=(0x0202) NAME=[JPEGInterchangeFormatLength] COUNT=(1) TYPE=[LONG] VALUE=[21491]
 `
 
     if actual != expected {
-        t.Fatalf("Output not as expected:\n%s", actual)
+        t.Fatalf("Output not as expected:\nACTUAL:\n%s\nEXPECTED:\n%s", actual, expected)
     }
 }
 
@@ -134,20 +133,17 @@ func TestMainJson(t *testing.T) {
 
     jsonFilepath := path.Join(assetsPath, "exif_read.json")
 
-    f, err := os.Open(jsonFilepath)
+    expectedRaw, err := ioutil.ReadFile(jsonFilepath)
     log.PanicIf(err)
-
-    defer f.Close()
 
     expected := make([]map[string]interface{}, 0)
 
-    r := json.NewDecoder(f)
-    err = r.Decode(&expected)
+    err = json.Unmarshal(expectedRaw, &expected)
     log.PanicIf(err)
 
 
     if reflect.DeepEqual(actual, expected) == false {
-        t.Fatalf("Output not as expected:\n%s", actual)
+        t.Fatalf("Output not as expected:\nACTUAL:\n%s\nEXPECTED:\n%s", actualRaw, expectedRaw)
     }
 }
 

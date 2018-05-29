@@ -173,7 +173,7 @@ func Test_IfdTagEntry_String(t *testing.T) {
         Ii: RootIi,
     }
 
-    expected := "IfdTagEntry<TAG-IFD=[] TAG-ID=(0x01) TAG-TYPE=[BYTE] UNIT-COUNT=(6)>"
+    expected := "IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0001) TAG-TYPE=[BYTE] UNIT-COUNT=(6)>"
     if ite.String() != expected {
         t.Fatalf("string representation not expected: [%s] != [%s]", ite.String(), expected)
     }
