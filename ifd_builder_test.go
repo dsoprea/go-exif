@@ -1393,6 +1393,10 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
     // that the thumbnail tags are not kept but only produced on the fly, which
     // is why we check it above.
 
+    if len(recoveredTags) != len(originalTags) {
+        t.Fatalf("Recovered tag-count does not match original.")
+    }
+
     for i, recoveredIte := range recoveredTags {
         if recoveredIte.ChildIfdName != "" {
             continue
@@ -1420,136 +1424,222 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
     }
 }
 
-// func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
-//     filepath := path.Join(assetsPath, "NDM_8901.jpg")
+func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-//     e := NewExif()
-
-
-//     rawExif, err := e.SearchAndExtractExif(filepath)
-//     log.PanicIf(err)
-
-//     // Decode from binary.
-
-//     _, originalIndex, err := e.Collect(rawExif)
-//     log.PanicIf(err)
-
-//     originalThumbnailData, err := originalIndex.RootIfd.NextIfd.Thumbnail()
-//     log.PanicIf(err)
-
-//     originalTags := originalIndex.RootIfd.DumpTags()
+    e := NewExif()
 
 
-//     // Encode back to binary.
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
 
-//     ibe := NewIfdByteEncoder()
+    // Decode from binary.
 
-//     itevr := NewIfdTagEntryValueResolver(rawExif, originalIndex.RootIfd.ByteOrder)
-//     rootIb := NewIfdBuilderFromExistingChain(originalIndex.RootIfd, itevr)
+    _, originalIndex, err := e.Collect(rawExif)
+    log.PanicIf(err)
 
+    originalThumbnailData, err := originalIndex.RootIfd.NextIfd.Thumbnail()
+    log.PanicIf(err)
 
-//     // Update a tag,.
-
-//     exifBt, err := rootIb.FindWithName("ExifTag")
-//     log.PanicIf(err)
-
-//     ucBt, err := exifBt.value.Ib().FindWithName("UserComment")
-//     log.PanicIf(err)
-
-//     err = ucBt.SetValue(rootIb.ByteOrder, "TEST CHANGE")
-//     log.PanicIf(err)
+    originalTags := originalIndex.RootIfd.DumpTags()
 
 
-//     // Encode.
+    // Encode back to binary.
 
-//     updatedExif, err := ibe.EncodeToExif(rootIb)
-//     log.PanicIf(err)
+    ibe := NewIfdByteEncoder()
 
-
-//     // Parse again.
-
-//     _, recoveredIndex, err := e.Collect(updatedExif)
-//     log.PanicIf(err)
-
-//     recoveredTags := recoveredIndex.RootIfd.DumpTags()
+    itevr := NewIfdTagEntryValueResolver(rawExif, originalIndex.RootIfd.ByteOrder)
+    rootIb := NewIfdBuilderFromExistingChain(originalIndex.RootIfd, itevr)
 
 
-//     recoveredThumbnailData, err := recoveredIndex.RootIfd.NextIfd.Thumbnail()
-//     log.PanicIf(err)
+    // Update a tag,.
+
+    exifBt, err := rootIb.FindTagWithName("ExifTag")
+    log.PanicIf(err)
+
+    ucBt, err := exifBt.value.Ib().FindTagWithName("UserComment")
+    log.PanicIf(err)
+
+// TODO(dustin): !! Create an example for this.
+    uc := TagUnknownType_9298_UserComment{
+        EncodingType: TagUnknownType_9298_UserComment_Encoding_ASCII,
+        EncodingBytes: []byte("TEST COMMENT"),
+    }
+
+    err = ucBt.SetValue(rootIb.byteOrder, uc)
+    log.PanicIf(err)
 
 
-//     // Check the thumbnail.
+    // Encode.
 
-//     if bytes.Compare(recoveredThumbnailData, originalThumbnailData) != 0 {
-//         t.Fatalf("recovered thumbnail does not match original")
-//     }
-
-
-//     // Validate that all of the same IFDs were presented.
-
-//     originalIfdTags := make([][2]interface{}, 0)
-//     for _, ite := range originalTags {
-//         if ite.ChildIfdName != "" {
-//             originalIfdTags = append(originalIfdTags, [2]interface{} { ite.Ii, ite.TagId })
-//         }
-//     }
-
-//     recoveredIfdTags := make([][2]interface{}, 0)
-//     for _, ite := range recoveredTags {
-//         if ite.ChildIfdName != "" {
-//             recoveredIfdTags = append(recoveredIfdTags, [2]interface{} { ite.Ii, ite.TagId })
-//         }
-//     }
-
-//     if reflect.DeepEqual(recoveredIfdTags, originalIfdTags) != true {
-//         fmt.Printf("Original IFD tags:\n\n")
-
-//         for i, x := range originalIfdTags {
-//             fmt.Printf("  %02d %v\n", i, x)
-//         }
-
-//         fmt.Printf("\nRecovered IFD tags:\n\n")
-
-//         for i, x := range recoveredIfdTags {
-//             fmt.Printf("  %02d %v\n", i, x)
-//         }
-
-//         fmt.Printf("\n")
-
-//         t.Fatalf("Recovered IFD tags are not correct.")
-//     }
+    updatedExif, err := ibe.EncodeToExif(rootIb)
+    log.PanicIf(err)
 
 
-//     // Validate that all of the tags owned by the IFDs were presented. Note
-//     // that the thumbnail tags are not kept but only produced on the fly, which
-//     // is why we check it above.
+    // Parse again.
 
-//     for i, recoveredIte := range recoveredTags {
-//         if recoveredIte.ChildIfdName != "" {
-//             continue
-//         }
+    _, recoveredIndex, err := e.Collect(updatedExif)
+    log.PanicIf(err)
 
-//         originalIte := originalTags[i]
+    recoveredTags := recoveredIndex.RootIfd.DumpTags()
 
-//         if recoveredIte.Ii != originalIte.Ii {
-//             t.Fatalf("IfdIdentify not as expected: %s != %s  ITE=%s", recoveredIte.Ii, originalIte.Ii, recoveredIte)
-//         } else if recoveredIte.TagId != originalIte.TagId {
-//             t.Fatalf("Tag-ID not as expected: %s != %s  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
-//         } else if recoveredIte.TagType != originalIte.TagType {
-//             t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
-//         }
 
-//         originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
-//         log.PanicIf(err)
+    recoveredThumbnailData, err := recoveredIndex.RootIfd.NextIfd.Thumbnail()
+    log.PanicIf(err)
 
-//         recoveredValueBytes, err := recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
-//         log.PanicIf(err)
 
-//         if bytes.Compare(originalValueBytes, recoveredValueBytes) != 0 {
-//             t.Fatalf("bytes of tag content not correct: %s != %s", originalIte, recoveredIte)
-//         }
-//     }
-// }
+    // Check the thumbnail.
+
+    if bytes.Compare(recoveredThumbnailData, originalThumbnailData) != 0 {
+        t.Fatalf("recovered thumbnail does not match original")
+    }
+
+
+    // Validate that all of the same IFDs were presented.
+
+    originalIfdTags := make([][2]interface{}, 0)
+    for _, ite := range originalTags {
+        if ite.ChildIfdName != "" {
+            originalIfdTags = append(originalIfdTags, [2]interface{} { ite.Ii, ite.TagId })
+        }
+    }
+
+    recoveredIfdTags := make([][2]interface{}, 0)
+    for _, ite := range recoveredTags {
+        if ite.ChildIfdName != "" {
+            recoveredIfdTags = append(recoveredIfdTags, [2]interface{} { ite.Ii, ite.TagId })
+        }
+    }
+
+    if reflect.DeepEqual(recoveredIfdTags, originalIfdTags) != true {
+        fmt.Printf("Original IFD tags:\n\n")
+
+        for i, x := range originalIfdTags {
+            fmt.Printf("  %02d %v\n", i, x)
+        }
+
+        fmt.Printf("\nRecovered IFD tags:\n\n")
+
+        for i, x := range recoveredIfdTags {
+            fmt.Printf("  %02d %v\n", i, x)
+        }
+
+        fmt.Printf("\n")
+
+        t.Fatalf("Recovered IFD tags are not correct.")
+    }
+
+
+    // Validate that all of the tags owned by the IFDs were presented. Note
+    // that the thumbnail tags are not kept but only produced on the fly, which
+    // is why we check it above.
+
+    if len(recoveredTags) != len(originalTags) {
+        t.Fatalf("Recovered tag-count does not match original.")
+    }
+
+    for i, recoveredIte := range recoveredTags {
+        if recoveredIte.ChildIfdName != "" {
+            continue
+        }
+
+        originalIte := originalTags[i]
+
+        if recoveredIte.Ii != originalIte.Ii {
+            t.Fatalf("IfdIdentify not as expected: %s != %s  ITE=%s", recoveredIte.Ii, originalIte.Ii, recoveredIte)
+        } else if recoveredIte.TagId != originalIte.TagId {
+            t.Fatalf("Tag-ID not as expected: %s != %s  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
+        } else if recoveredIte.TagType != originalIte.TagType {
+            t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
+        }
+
+        originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
+        log.PanicIf(err)
+
+        recoveredValueBytes, err := recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
+        log.PanicIf(err)
+
+        if recoveredIte.TagId == 0x9286 {
+            expectedValueBytes := make([]byte, 0)
+
+            expectedValueBytes = append(expectedValueBytes, []byte{ 'A', 'S', 'C', 'I', 'I', 0, 0, 0 }...)
+            expectedValueBytes = append(expectedValueBytes, []byte("TEST COMMENT")...)
+
+            if bytes.Compare(recoveredValueBytes, expectedValueBytes) != 0 {
+                t.Fatalf("Recovered UserComment does not have the right value: %v != %v", recoveredValueBytes, expectedValueBytes)
+            }
+        } else if bytes.Compare(recoveredValueBytes, originalValueBytes) != 0 {
+            t.Fatalf("bytes of tag content not correct: %v != %v  ITE=%s", recoveredValueBytes, originalValueBytes, recoveredIte)
+        }
+    }
+}
+
+func ExampleReadThumbnail() {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+    thumbnailData, err := index.RootIfd.NextIfd.Thumbnail()
+    log.PanicIf(err)
+
+    thumbnailData = thumbnailData
+    // Output:
+}
+
+func ExampleUpdateUnknownTag() {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    e := NewExif()
+
+    rawExif, err := e.SearchAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := e.Collect(rawExif)
+    log.PanicIf(err)
+
+
+    // Create builder.
+
+    itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
+    rootIb := NewIfdBuilderFromExistingChain(index.RootIfd, itevr)
+
+
+    // Find tag to update.
+
+    exifBt, err := rootIb.FindTagWithName("ExifTag")
+    log.PanicIf(err)
+
+    ucBt, err := exifBt.value.Ib().FindTagWithName("UserComment")
+    log.PanicIf(err)
+
+
+    // Update the value. Since this is an "undefined"-type tag, we have to use
+    // its type-specific struct.
+
+    uc := TagUnknownType_9298_UserComment{
+        EncodingType: TagUnknownType_9298_UserComment_Encoding_ASCII,
+        EncodingBytes: []byte("TEST COMMENT"),
+    }
+
+    err = ucBt.SetValue(rootIb.byteOrder, uc)
+    log.PanicIf(err)
+
+
+    // Encode.
+
+    ibe := NewIfdByteEncoder()
+    updatedExif, err := ibe.EncodeToExif(rootIb)
+    log.PanicIf(err)
+
+    updatedExif = updatedExif
+    // Output:
+}
 
 func Test_IfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
     tagId := IfdTagIdWithIdentityOrFail(GpsIi)
