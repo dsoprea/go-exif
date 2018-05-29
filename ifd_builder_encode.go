@@ -448,12 +448,16 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
     b := new(bytes.Buffer)
 
-    nextIfdOffsetToWrite := uint32(0)
     i := 0
+
+// TODO(dustin): !! We suspect there's an issue with encoding sibling IFDs, here.
+
     for thisIb := ib; thisIb != nil; thisIb = thisIb.nextIb {
+
+
         // Do a dry-run in order to pre-determine its size requirement.
 
-        ibe.pushToJournal("encodeAndAttachIfd", ">", "Beginning encoding process: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.ii.IfdName, nextIfdOffsetToWrite)
+        ibe.pushToJournal("encodeAndAttachIfd", ">", "Beginning encoding process: (%d) [%s]", i, thisIb.ii.IfdName)
 
         ibe.pushToJournal("encodeAndAttachIfd", ">", "Calculating size: (%d) [%s]", i, thisIb.ii.IfdName)
 
@@ -463,7 +467,9 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
         ibe.pushToJournal("encodeAndAttachIfd", "<", "Finished calculating size: (%d) [%s]", i, thisIb.ii.IfdName)
 
         ifdAddressableOffset += tableSize
-        nextIfdOffsetToWrite = ifdAddressableOffset + allocatedDataSize
+        nextIfdOffsetToWrite := ifdAddressableOffset + allocatedDataSize
+
+        ibe.pushToJournal("encodeAndAttachIfd", ">", "Next IFD will be written at offset (0x%08x)", nextIfdOffsetToWrite)
 
         // Write our IFD as well as any child-IFDs (now that we know the offset
         // where new IFDs and their data will be allocated).
@@ -472,10 +478,16 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
         ibe.pushToJournal("encodeAndAttachIfd", ">", "Encoding starting: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.ii.IfdName, nextIfdOffsetToWrite)
 
-        tableAndAllocated, tableSize, allocatedDataSize, childIfdSizes, err :=
+        tableAndAllocated, effectiveTableSize, effectiveAllocatedDataSize, childIfdSizes, err :=
             ibe.encodeIfdToBytes(thisIb, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
 
         log.PanicIf(err)
+
+        if effectiveTableSize != tableSize {
+            log.Panicf("written table size does not match the pre-calculated table size: (%d) != (%d) %s", effectiveTableSize, tableSize, ib)
+        } else if effectiveAllocatedDataSize != allocatedDataSize {
+            log.Panicf("written allocated-data size does not match the pre-calculated allocated-data size: (%d) != (%d) %s", effectiveAllocatedDataSize, allocatedDataSize, ib)
+        }
 
         ibe.pushToJournal("encodeAndAttachIfd", "<", "Encoding done: (%d) [%s]", i, thisIb.ii.IfdName)
 
@@ -488,12 +500,15 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
             log.Panicf("IFD table and data is not a consistent size: (%d) != (%d)", len(tableAndAllocated), tableSize + allocatedDataSize + totalChildIfdSize)
         }
 
+// TODO(dustin): !! We might want to verify the original tableAndAllocated length, too.
+
         _, err = b.Write(tableAndAllocated)
         log.PanicIf(err)
 
-// TODO(dustin): !! The core problem is the offset being the same for two IFDs.
         // Advance past what we've allocated, thus far.
-        ifdAddressableOffset = nextIfdOffsetToWrite
+
+// TODO(dustin): !! If this doesn't work (or doesn't work easily), we may need to send a complex type for the addressable-offset instead of a simple integer.
+        ifdAddressableOffset += allocatedDataSize + totalChildIfdSize
 
         ibe.pushToJournal("encodeAndAttachIfd", "<", "Finishing encoding process: (%d) [%s] [FINAL:] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, ib.ii.IfdName, nextIfdOffsetToWrite)
 

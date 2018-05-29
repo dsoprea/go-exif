@@ -134,7 +134,7 @@ func (bt builderTag) Value() (value *IfdBuilderTagValue) {
 }
 
 func (bt builderTag) String() string {
-    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%04x) IFD=[%s] VALUE=[%s]>", bt.tagId, bt.ii, bt.value)
+    return fmt.Sprintf("BuilderTag<IFD=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ii, bt.tagId, TypeNames[bt.typeId], bt.value)
 }
 
 // NewStandardBuilderTagFromConfig constructs a `builderTag` instance. The type
