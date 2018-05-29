@@ -330,9 +330,17 @@ type Ifd struct {
     ByteOrder binary.ByteOrder
 
     Ii IfdIdentity
+    TagId uint16
 
     Id int
+
     ParentIfd *Ifd
+
+    // ParentTagIndex is our tag position in the parent IFD, if we had a parent
+    // (if `ParentIfd` is not nil and we weren't an IFD referenced as a sibling
+    // instead of as a child).
+    ParentTagIndex int
+
     Name string
     Index int
     Offset uint32
@@ -429,7 +437,7 @@ func (ifd Ifd) String() string {
         parentOffset = ifd.ParentIfd.Offset
     }
 
-    return fmt.Sprintf("Ifd<ID=(%d) PARENT-IFD=[%s] IFD=[%s] IDX=(%d) COUNT=(%d) OFF=(0x%04x) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)", ifd.Id, ifd.Ii.ParentIfdName, ifd.Ii.IfdName, ifd.Index, len(ifd.Entries), ifd.Offset, len(ifd.Children), parentOffset, ifd.NextIfdOffset)
+    return fmt.Sprintf("Ifd<ID=(%d) PARENT-IFD=[%s] IFD=[%s] INDEX=(%d) COUNT=(%d) OFF=(0x%04x) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)>", ifd.Id, ifd.Ii.ParentIfdName, ifd.Ii.IfdName, ifd.Index, len(ifd.Entries), ifd.Offset, len(ifd.Children), parentOffset, ifd.NextIfdOffset)
 }
 
 func (ifd *Ifd) Thumbnail() (data []byte, err error) {
@@ -497,7 +505,7 @@ func (ifd *Ifd) DumpTags() []*IfdTagEntry {
     return ifd.dumpTags(nil)
 }
 
-func (ifd *Ifd) printTagTree(index, level int, nextLink bool) {
+func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink bool) {
     indent := strings.Repeat(" ", level * 2)
 
     prefix := " "
@@ -505,7 +513,7 @@ func (ifd *Ifd) printTagTree(index, level int, nextLink bool) {
         prefix = ">"
     }
 
-    fmt.Printf("%s%sIFD: %s INDEX=(%d)\n", indent, prefix, ifd, index)
+    fmt.Printf("%s%sIFD: %s\n", indent, prefix, ifd)
 
     // Quickly create an index of the child-IFDs.
 
@@ -530,7 +538,15 @@ func (ifd *Ifd) printTagTree(index, level int, nextLink bool) {
                 tagName = it.Name
             }
 
-            fmt.Printf("%s - TAG: %s NAME=[%s]\n", indent, tag, tagName)
+            var value interface{}
+            if populateValues == true {
+                var err error
+
+                value, err = ifd.TagValue(tag)
+                log.PanicIf(err)
+            }
+
+            fmt.Printf("%s - TAG: %s NAME=[%s] VALUE=[%v]\n", indent, tag, tagName, value)
         }
 
         if tag.ChildIfdName != "" {
@@ -541,7 +557,7 @@ func (ifd *Ifd) printTagTree(index, level int, nextLink bool) {
                 log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
             }
 
-            childIfd.printTagTree(0, level + 1, false)
+            childIfd.printTagTree(populateValues, 0, level + 1, false)
         }
     }
 
@@ -550,13 +566,13 @@ func (ifd *Ifd) printTagTree(index, level int, nextLink bool) {
     }
 
     if ifd.NextIfd != nil {
-        ifd.NextIfd.printTagTree(index + 1, level, true)
+        ifd.NextIfd.printTagTree(populateValues, index + 1, level, true)
     }
 }
 
 // PrintTagTree prints the IFD hierarchy.
-func (ifd *Ifd) PrintTagTree() {
-    ifd.printTagTree(0, 0, false)
+func (ifd *Ifd) PrintTagTree(populateValues bool) {
+    ifd.printTagTree(populateValues, 0, 0, false)
 }
 
 func (ifd *Ifd) printIfdTree(level int, nextLink bool) {
@@ -671,9 +687,16 @@ func (ifd *Ifd) DumpTree() []string {
 
 type QueuedIfd struct {
     Ii IfdIdentity
+    TagId uint16
+
     Index int
     Offset uint32
     Parent *Ifd
+
+    // ParentTagIndex is our tag position in the parent IFD, if we had a parent
+    // (if `ParentIfd` is not nil and we weren't an IFD referenced as a sibling
+    // instead of as a child).
+    ParentTagIndex int
 }
 
 
@@ -700,6 +723,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
     queue := []QueuedIfd{
         {
             Ii: RootIi,
+            TagId: 0xffff,
+
             Index: 0,
             Offset: rootIfdOffset,
         },
@@ -712,14 +737,14 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             break
         }
 
-        ii := queue[0].Ii
+        qi := queue[0]
 
-
+        ii := qi.Ii
         name := ii.IfdName
-        index := queue[0].Index
-        offset := queue[0].Offset
 
-        parentIfd := queue[0].Parent
+        index := qi.Index
+        offset := qi.Offset
+        parentIfd := qi.Parent
 
         queue = queue[1:]
 
@@ -741,53 +766,62 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
             entriesByTagId[tag.TagId] = append(tags, tag)
         }
 
-        ifd := Ifd{
+        ifd := &Ifd{
             addressableData: ie.exifData[ExifAddressableAreaStart:],
 
             ByteOrder: ie.byteOrder,
+
             Ii: ii,
+            TagId: qi.TagId,
+
             Id: id,
+
             ParentIfd: parentIfd,
+            ParentTagIndex: qi.ParentTagIndex,
+
             Name: name,
             Index: index,
             Offset: offset,
             Entries: entries,
             EntriesByTagId: entriesByTagId,
+
+            // This is populated as each child is processed.
             Children: make([]*Ifd, 0),
+
             NextIfdOffset: nextIfdOffset,
             thumbnailData: thumbnailData,
         }
 
         // Add ourselves to a big list of IFDs.
-        ifds = append(ifds, &ifd)
+        ifds = append(ifds, ifd)
 
         // Install ourselves into a by-id lookup table (keys are unique).
-        tree[id] = &ifd
+        tree[id] = ifd
 
         // Install into by-name buckets.
 
         if list_, found := lookup[ii]; found == true {
-            lookup[ii] = append(list_, &ifd)
+            lookup[ii] = append(list_, ifd)
         } else {
             list_ = make([]*Ifd, 1)
-            list_[0] = &ifd
+            list_[0] = ifd
 
             lookup[ii] = list_
         }
 
         // Add a link from the previous IFD in the chain to us.
         if previousIfd, found := edges[offset]; found == true {
-            previousIfd.NextIfd = &ifd
+            previousIfd.NextIfd = ifd
         }
 
         // Attach as a child to our parent (where we appeared as a tag in
         // that IFD).
         if parentIfd != nil {
-            parentIfd.Children = append(parentIfd.Children, &ifd)
+            parentIfd.Children = append(parentIfd.Children, ifd)
         }
 
         // Determine if any of our entries is a child IFD and queue it.
-        for _, entry := range entries {
+        for i, entry := range entries {
             if entry.ChildIfdName == "" {
                 continue
             }
@@ -799,9 +833,12 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
             qi := QueuedIfd{
                 Ii: childIi,
+                TagId: entry.TagId,
+
                 Index: 0,
                 Offset: entry.ValueOffset,
-                Parent: &ifd,
+                Parent: ifd,
+                ParentTagIndex: i,
             }
 
             queue = append(queue, qi)
@@ -810,10 +847,11 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
         // If there's another IFD in the chain.
         if nextIfdOffset != 0 {
             // Allow the next link to know what the previous link was.
-            edges[nextIfdOffset] = &ifd
+            edges[nextIfdOffset] = ifd
 
             qi := QueuedIfd{
                 Ii: ii,
+                TagId: 0xffff,
                 Index: index + 1,
                 Offset: nextIfdOffset,
             }

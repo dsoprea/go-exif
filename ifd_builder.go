@@ -298,9 +298,7 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 
 // NewIfdBuilderFromExistingChain creates a chain of IB instances from an
 // IFD chain generated from real data.
-func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (firstIb *IfdBuilder) {
-    itevr := NewIfdTagEntryValueResolver(exifData, rootIfd.ByteOrder)
-
+func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolver) (firstIb *IfdBuilder) {
 // TODO(dustin): !! When we actually write the code to flatten the IB to bytes, make sure to skip the tags that have a nil value (which will happen when we add-from-exsting without a resolver instance).
 
     var lastIb *IfdBuilder
@@ -317,15 +315,6 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, exifData []byte) (firstIb *Ifd
 
         err := newIb.AddTagsFromExisting(thisExistingIfd, itevr, nil, nil)
         log.PanicIf(err)
-
-        // Any child IFDs will still not be copied. Do that now.
-
-        for _, childIfd := range thisExistingIfd.Children {
-            childIb := NewIfdBuilderFromExistingChain(childIfd, exifData)
-
-            err = newIb.AddChildIb(childIb)
-            log.PanicIf(err)
-        }
 
         lastIb = newIb
         i++
@@ -375,14 +364,14 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
     if data == nil || len(data) == 0 {
 
 // TODO(dustin): !! Debugging.
-fmt.Printf("Thumbnail empty.\n")
+// fmt.Printf("Thumbnail empty.\n")
 
         log.Panic("thumbnail is empty")
     }
 
     ib.thumbnailData = data
 
-fmt.Printf("SETTING THUMBNAIL.\n")
+// fmt.Printf("SETTING THUMBNAIL.\n")
 
     ibtvfb := NewIfdBuilderTagValueFromBytes(ib.thumbnailData)
     offsetBt := NewBuilderTag(ib.ii, ThumbnailOffsetTagId, TypeLong, ibtvfb)
@@ -398,7 +387,7 @@ fmt.Printf("SETTING THUMBNAIL.\n")
 
 
 // TODO(dustin): !! Debugging.
-fmt.Printf("Set thumbnail into IB.\n")
+// fmt.Printf("Set thumbnail into IB.\n")
 
 
     return nil
@@ -664,7 +653,7 @@ func (ib *IfdBuilder) Set(bt builderTag) (err error) {
     if err == nil {
         ib.tags[position] = bt
     } else if log.Is(err, ErrTagEntryNotFound) == true {
-        err = ib.Add(bt)
+        err = ib.add(bt)
         log.PanicIf(err)
     } else {
         log.Panic(err)
@@ -711,7 +700,7 @@ func (ib *IfdBuilder) Find(tagId uint16) (position int, err error) {
     return found[0], nil
 }
 
-func (ib *IfdBuilder) Add(bt builderTag) (err error) {
+func (ib *IfdBuilder) add(bt builderTag) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -726,11 +715,24 @@ func (ib *IfdBuilder) Add(bt builderTag) (err error) {
         log.Panicf("builderTag value is not set: %s", bt)
     }
 
+    ib.tags = append(ib.tags, bt)
+    return nil
+}
+
+func (ib *IfdBuilder) Add(bt builderTag) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
     if bt.value.IsIb() == true {
-        log.Panicf("child IfdBuilders must be added via AddChildIb() not Add()")
+        log.Panicf("child IfdBuilders must be added via AddChildIb() or AddTagsFromExisting(), not Add()")
     }
 
-    ib.tags = append(ib.tags, bt)
+    err = ib.add(bt)
+    log.PanicIf(err)
+
     return nil
 }
 
@@ -757,16 +759,28 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
         }
     }
 
+    bt := ib.NewBuilderTagFromBuilder(childIb)
+    ib.tags = append(ib.tags, bt)
+
+    return nil
+}
+
+func (ib *IfdBuilder) NewBuilderTagFromBuilder(childIb *IfdBuilder) (bt builderTag) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.Panic(err)
+        }
+    }()
+
     value := NewIfdBuilderTagValueFromIfdBuilder(childIb)
 
-    bt := NewChildIfdBuilderTag(
+    bt = NewChildIfdBuilderTag(
             ib.ii,
             childIb.ifdTagId,
             value)
 
-    ib.tags = append(ib.tags, bt)
-
-    return nil
+    return bt
 }
 
 // AddTagsFromExisting does a verbatim copy of the entries in `ifd` to this
@@ -782,8 +796,10 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
     thumbnailData, err := ifd.Thumbnail()
     if err == nil {
 
+// TODO(dustin): The thumbnail tags will be added out of order.
+
 // TODO(dustin): !! Debugging.
-fmt.Printf("Importing thumbnail: %s\n", ifd.Identity())
+// fmt.Printf("Importing thumbnail: %s\n", ifd.Identity())
 
         err = ib.SetThumbnail(thumbnailData)
         log.PanicIf(err)
@@ -792,17 +808,12 @@ fmt.Printf("Importing thumbnail: %s\n", ifd.Identity())
     } else {
 
 // TODO(dustin): !! Debugging.
-fmt.Printf("NO THUMBNAIL FOUND: %s\n", ifd.Identity())
+// fmt.Printf("NO THUMBNAIL FOUND: %s\n", ifd.Identity())
 
     }
 
-    for _, ite := range ifd.Entries {
-        if ite.ChildIfdName != "" {
-            // If we want to add an IFD tag, we'll have to build it first and
-            // *then* add it via a different method.
-
-            continue
-        } else if ite.TagId == ThumbnailOffsetTagId || ite.TagId == ThumbnailSizeTagId {
+    for i, ite := range ifd.Entries {
+        if ite.TagId == ThumbnailOffsetTagId || ite.TagId == ThumbnailSizeTagId {
             // These will be added on-the-fly when we encode.
 
             continue
@@ -838,34 +849,79 @@ fmt.Printf("NO THUMBNAIL FOUND: %s\n", ifd.Identity())
             }
         }
 
-        var value *IfdBuilderTagValue
+        var bt builderTag
 
-        if itevr == nil {
-            // rawValueOffsetCopy is our own private copy of the original data.
-            // It should always be four-bytes, but just copy whatever there is.
-            rawValueOffsetCopy := make([]byte, len(ite.RawValueOffset))
-            copy(rawValueOffsetCopy, ite.RawValueOffset)
+        if ite.ChildIfdName != "" {
+            // If we want to add an IFD tag, we'll have to build it first and
+            // *then* add it via a different method.
 
-            value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
-        } else {
-            var err error
+            if itevr == nil {
+                // We don't have any ability to resolve the structure of the
+                // child-IFD. Just install it as a normal tag rather than a
+                // fully-structured child-IFD. We're going to blank the value,
+                // though, since its original offset will no longer be valid
+                // (nor does it matter since this is just a temporary
+                // placeholder, in this situation).
+                value := NewIfdBuilderTagValueFromBytes([]byte { 0, 0, 0, 0 })
+                bt = NewBuilderTag(ite.Ii, ite.TagId, ite.TagType, value)
+            } else {
+                // Figure out which of the child-IFDs that are associated with
+                // this IFD represents this specific child IFD.
 
-            valueBytes, err := itevr.ValueBytes(ite)
-            if err != nil {
-                if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
-                    ifdBuilderLogger.Warningf(nil, "Unknown-type tag can't be parsed so it can't be copied to the new IFD.")
-                    continue
+                var childIfd *Ifd
+                for _, thisChildIfd := range ifd.Children {
+                    if thisChildIfd.ParentTagIndex != i {
+                        continue
+                    } else if thisChildIfd.TagId != 0xffff && thisChildIfd.TagId != ite.TagId {
+                        log.Panicf("child-IFD tag is not correct: TAG-POSITION=(%d) ITE=%s CHILD-IFD=%s", thisChildIfd.ParentTagIndex, ite, thisChildIfd)
+                    }
+
+                    childIfd = thisChildIfd
+                    break
                 }
 
-                log.Panic(err)
+                if childIfd == nil {
+                    childTagIds := make([]string, len(ifd.Children))
+                    for j, childIfd := range ifd.Children {
+                        childTagIds[j] = fmt.Sprintf("0x%02x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
+                    }
+
+                    log.Panicf("could not find child IFD for child ITE: II=[%s] TAG-ID=(0x%02x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.Ii, ite.TagId, i, childTagIds)
+                }
+
+                childIb := NewIfdBuilderFromExistingChain(childIfd, itevr)
+                bt = ib.NewBuilderTagFromBuilder(childIb)
+            }
+        } else {
+            var value *IfdBuilderTagValue
+
+            if itevr == nil {
+                // rawValueOffsetCopy is our own private copy of the original data.
+                // It should always be four-bytes, but just copy whatever there is.
+                rawValueOffsetCopy := make([]byte, len(ite.RawValueOffset))
+                copy(rawValueOffsetCopy, ite.RawValueOffset)
+
+                value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
+            } else {
+                var err error
+
+                valueBytes, err := itevr.ValueBytes(ite)
+                if err != nil {
+                    if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
+                        ifdBuilderLogger.Warningf(nil, "Unknown-type tag can't be parsed so it can't be copied to the new IFD.")
+                        continue
+                    }
+
+                    log.Panic(err)
+                }
+
+                value = NewIfdBuilderTagValueFromBytes(valueBytes)
             }
 
-            value = NewIfdBuilderTagValueFromBytes(valueBytes)
+            bt = NewBuilderTag(ifd.Ii, ite.TagId, ite.TagType, value)
         }
 
-        bt := NewBuilderTag(ifd.Ii, ite.TagId, ite.TagType, value)
-
-        err := ib.Add(bt)
+        err := ib.add(bt)
         log.PanicIf(err)
     }
 
@@ -883,7 +939,7 @@ func (ib *IfdBuilder) AddFromConfig(tagId uint16, value interface{}) (err error)
 
     bt := NewStandardBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
 
-    err = ib.Add(bt)
+    err = ib.add(bt)
     log.PanicIf(err)
 
     return nil
@@ -922,7 +978,7 @@ func (ib *IfdBuilder) AddFromConfigWithName(tagName string, value interface{}) (
 
     bt := NewStandardBuilderTagFromConfigWithName(ib.ii, tagName, ib.byteOrder, value)
 
-    err = ib.Add(bt)
+    err = ib.add(bt)
     log.PanicIf(err)
 
     return nil
