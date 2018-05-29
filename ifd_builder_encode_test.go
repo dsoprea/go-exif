@@ -200,7 +200,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -225,7 +225,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -250,7 +250,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
     bt := NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a) })
 
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -267,7 +267,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
     bt = NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34) })
 
-    childIfdBlock, err = ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
+    childIfdBlock, err = ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -303,7 +303,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T
     bt := NewChildIfdBuilderTag(RootIi, IfdExifId, tagValue)
 
     nextIfdOffsetToWrite := uint32(0)
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, nextIfdOffsetToWrite)
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, nextIfdOffsetToWrite)
     log.PanicIf(err)
 
     if childIfdBlock != nil {
@@ -358,7 +358,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
     // stream. Just used for arithmetic.
     nextIfdOffsetToWrite := uint32(2000)
 
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, nextIfdOffsetToWrite)
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, nextIfdOffsetToWrite)
     log.PanicIf(err)
 
     if ida.NextOffset() != addressableOffset {
@@ -450,7 +450,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-    childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
+    childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     if ida.NextOffset() == addressableOffset {

@@ -336,7 +336,7 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
     // we can't parse will not be present here (using AddTagsFromExisting(), at
     // least).
     for _, bt := range ib.tags {
-        childIfdBlock, err := ibe.encodeTagToBytes(ib, &bt, bw, ida, nextIfdOffsetToWrite)
+        childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, nextIfdOffsetToWrite)
         log.PanicIf(err)
 
         if childIfdBlock != nil {

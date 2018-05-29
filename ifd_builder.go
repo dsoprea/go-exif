@@ -97,8 +97,8 @@ type builderTag struct {
     value *IfdBuilderTagValue
 }
 
-func NewBuilderTag(ii IfdIdentity, tagId uint16, typeId uint16, value *IfdBuilderTagValue) builderTag {
-    return builderTag{
+func NewBuilderTag(ii IfdIdentity, tagId uint16, typeId uint16, value *IfdBuilderTagValue) *builderTag {
+    return &builderTag{
         ii: ii,
         tagId: tagId,
         typeId: typeId,
@@ -106,13 +106,13 @@ func NewBuilderTag(ii IfdIdentity, tagId uint16, typeId uint16, value *IfdBuilde
     }
 }
 
-func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
+func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) *builderTag {
     ti := NewTagIndex()
 
     it, err := ti.Get(ii, tagId)
     log.PanicIf(err)
 
-    return builderTag{
+    return &builderTag{
         ii: ii,
         tagId: tagId,
         typeId: it.Type,
@@ -120,8 +120,8 @@ func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagVal
     }
 }
 
-func NewChildIfdBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) builderTag {
-    return builderTag{
+func NewChildIfdBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) *builderTag {
+    return &builderTag{
         ii: ii,
         tagId: tagId,
         typeId: TypeLong,
@@ -129,17 +129,47 @@ func NewChildIfdBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagVal
     }
 }
 
-func (bt builderTag) Value() (value *IfdBuilderTagValue) {
+func (bt *builderTag) Value() (value *IfdBuilderTagValue) {
     return bt.value
 }
 
-func (bt builderTag) String() string {
+func (bt *builderTag) String() string {
     return fmt.Sprintf("BuilderTag<IFD=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ii, bt.tagId, TypeNames[bt.typeId], bt.value)
+}
+
+func (bt *builderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+// TODO(dustin): !! Add test.
+
+    tt := NewTagType(bt.typeId, byteOrder)
+    ve := NewValueEncoder(byteOrder)
+
+    var ed EncodedData
+    if bt.typeId == TypeUndefined {
+        var err error
+
+        ed, err = EncodeUndefined(bt.ii, bt.tagId, value)
+        log.PanicIf(err)
+    } else {
+        var err error
+
+        ed, err = ve.EncodeWithType(tt, value)
+        log.PanicIf(err)
+    }
+
+    bt.value = NewIfdBuilderTagValueFromBytes(ed.Encoded)
+
+    return nil
 }
 
 // NewStandardBuilderTagFromConfig constructs a `builderTag` instance. The type
 // is looked up. `ii` is the type of IFD that owns this tag.
-func NewStandardBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
+func NewStandardBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) *builderTag {
     ti := NewTagIndex()
 
     it, err := ti.Get(ii, tagId)
@@ -174,7 +204,7 @@ func NewStandardBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder bin
 
 // NewStandardBuilderTagFromConfig constructs a `builderTag` instance. The type is
 // explicitly provided. `ii` is the type of IFD that owns this tag.
-func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, typeId uint16, byteOrder binary.ByteOrder, value interface{}) builderTag {
+func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, typeId uint16, byteOrder binary.ByteOrder, value interface{}) *builderTag {
     tt := NewTagType(typeId, byteOrder)
 
     ve := NewValueEncoder(byteOrder)
@@ -204,7 +234,7 @@ func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, typeId uint16, byteOr
 // NewStandardBuilderTagFromConfigWithName allows us to easily generate solid, consistent tags
 // for testing with. `ii` is the type of IFD that owns this tag. This can not be
 // an IFD (IFDs are not associated with standardized, official names).
-func NewStandardBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) builderTag {
+func NewStandardBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) *builderTag {
     ti := NewTagIndex()
 
     it, err := ti.GetWithName(ii, tagName)
@@ -247,7 +277,7 @@ type IfdBuilder struct {
     byteOrder binary.ByteOrder
 
     // Includes both normal tags and IFD tags (which point to child IFDs).
-    tags []builderTag
+    tags []*builderTag
 
     // existingOffset will be the offset that this IFD is currently found at if
     // it represents an IFD that has previously been stored (or 0 if not).
@@ -272,7 +302,7 @@ func NewIfdBuilder(ii IfdIdentity, byteOrder binary.ByteOrder) (ib *IfdBuilder) 
         ifdTagId: ifdTagId,
 
         byteOrder: byteOrder,
-        tags: make([]builderTag, 0),
+        tags: make([]*builderTag, 0),
     }
 
     return ib
@@ -337,7 +367,7 @@ func (ib *IfdBuilder) String() string {
     return fmt.Sprintf("IfdBuilder<PARENT-IFD=[%s] IFD=[%s] TAG-ID=(0x%04x) COUNT=(%d) OFF=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii.ParentIfdName, ib.ii.IfdName, ib.ifdTagId, len(ib.tags), ib.existingOffset, nextIfdPhrase)
 }
 
-func (ib *IfdBuilder) Tags() (tags []builderTag) {
+func (ib *IfdBuilder) Tags() (tags []*builderTag) {
     return ib.tags
 }
 
@@ -612,7 +642,7 @@ func (ib *IfdBuilder) DeleteAll(tagId uint16) (n int, err error) {
     return n, nil
 }
 
-func (ib *IfdBuilder) ReplaceAt(position int, bt builderTag) (err error) {
+func (ib *IfdBuilder) ReplaceAt(position int, bt *builderTag) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -630,7 +660,7 @@ func (ib *IfdBuilder) ReplaceAt(position int, bt builderTag) (err error) {
     return nil
 }
 
-func (ib *IfdBuilder) Replace(tagId uint16, bt builderTag) (err error) {
+func (ib *IfdBuilder) Replace(tagId uint16, bt *builderTag) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -646,7 +676,7 @@ func (ib *IfdBuilder) Replace(tagId uint16, bt builderTag) (err error) {
 }
 
 // Set will add a new entry or update an existing entry.
-func (ib *IfdBuilder) Set(bt builderTag) (err error) {
+func (ib *IfdBuilder) Set(bt *builderTag) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -704,7 +734,50 @@ func (ib *IfdBuilder) Find(tagId uint16) (position int, err error) {
     return found[0], nil
 }
 
-func (ib *IfdBuilder) add(bt builderTag) (err error) {
+func (ib *IfdBuilder) FindTag(tagId uint16) (bt *builderTag, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    found, err := ib.FindN(tagId, 1)
+    log.PanicIf(err)
+
+    if len(found) == 0 {
+        log.Panic(ErrTagEntryNotFound)
+    }
+
+    position := found[0]
+
+    return ib.tags[position], nil
+}
+
+func (ib *IfdBuilder) FindTagWithName(tagName string) (bt *builderTag, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    ti := NewTagIndex()
+
+    it, err := ti.GetWithName(ib.ii, tagName)
+    log.PanicIf(err)
+
+    found, err := ib.FindN(it.Id, 1)
+    log.PanicIf(err)
+
+    if len(found) == 0 {
+        log.Panic(ErrTagEntryNotFound)
+    }
+
+    position := found[0]
+
+    return ib.tags[position], nil
+}
+
+func (ib *IfdBuilder) add(bt *builderTag) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -723,7 +796,7 @@ func (ib *IfdBuilder) add(bt builderTag) (err error) {
     return nil
 }
 
-func (ib *IfdBuilder) Add(bt builderTag) (err error) {
+func (ib *IfdBuilder) Add(bt *builderTag) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -769,7 +842,7 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
     return nil
 }
 
-func (ib *IfdBuilder) NewBuilderTagFromBuilder(childIb *IfdBuilder) (bt builderTag) {
+func (ib *IfdBuilder) NewBuilderTagFromBuilder(childIb *IfdBuilder) (bt *builderTag) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -799,27 +872,15 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
     thumbnailData, err := ifd.Thumbnail()
     if err == nil {
-
-// TODO(dustin): The thumbnail tags will be added out of order.
-
-// TODO(dustin): !! Debugging.
-// fmt.Printf("Importing thumbnail: %s\n", ifd.Identity())
-
         err = ib.SetThumbnail(thumbnailData)
         log.PanicIf(err)
     } else if log.Is(err, ErrNoThumbnail) == false {
         log.Panic(err)
-    } else {
-
-// TODO(dustin): !! Debugging.
-// fmt.Printf("NO THUMBNAIL FOUND: %s\n", ifd.Identity())
-
     }
 
     for i, ite := range ifd.Entries {
         if ite.TagId == ThumbnailOffsetTagId || ite.TagId == ThumbnailSizeTagId {
             // These will be added on-the-fly when we encode.
-
             continue
         }
 
@@ -853,7 +914,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
             }
         }
 
-        var bt builderTag
+        var bt *builderTag
 
         if ite.ChildIfdName != "" {
             // If we want to add an IFD tag, we'll have to build it first and

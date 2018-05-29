@@ -45,7 +45,7 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
 
     // Encode.
 
-    _, err = ibe.encodeTagToBytes(ib, &bt, bw, ida, uint32(0))
+    _, err = ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
 
     tagBytes := b.Bytes()
