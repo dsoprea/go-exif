@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/dsoprea/go-exif.svg?branch=master)](https://travis-ci.org/dsoprea/go-exif)
 [![Coverage Status](https://coveralls.io/repos/github/dsoprea/go-exif/badge.svg?branch=master)](https://coveralls.io/github/dsoprea/go-exif?branch=master)
+[![GoDoc](https://godoc.org/github.com/dsoprea/go-exif?status.svg)](https://godoc.org/github.com/dsoprea/go-exif)
 
 ## Overview
 
