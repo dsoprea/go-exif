@@ -1407,7 +1407,7 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
         if recoveredIte.Ii != originalIte.Ii {
             t.Fatalf("IfdIdentify not as expected: %s != %s  ITE=%s", recoveredIte.Ii, originalIte.Ii, recoveredIte)
         } else if recoveredIte.TagId != originalIte.TagId {
-            t.Fatalf("Tag-ID not as expected: %s != %s  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
+            t.Fatalf("Tag-ID not as expected: %d != %d  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
         } else if recoveredIte.TagType != originalIte.TagType {
             t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
         }
@@ -1548,7 +1548,7 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *te
         if recoveredIte.Ii != originalIte.Ii {
             t.Fatalf("IfdIdentify not as expected: %s != %s  ITE=%s", recoveredIte.Ii, originalIte.Ii, recoveredIte)
         } else if recoveredIte.TagId != originalIte.TagId {
-            t.Fatalf("Tag-ID not as expected: %s != %s  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
+            t.Fatalf("Tag-ID not as expected: %d != %d  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
         } else if recoveredIte.TagType != originalIte.TagType {
             t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
         }
