@@ -24,6 +24,8 @@ type IfdTagEntry struct {
     // ChildIfdName is a name if this tag represents a child IFD.
     ChildIfdName string
 
+// TODO(dustin): !! IB's host the child-IBs directly in the tag, but that's not the case here. Refactor to accomodate it for a consistent experience.
+
     // IfdName is the IFD that this tag belongs to.
     Ii IfdIdentity
 }

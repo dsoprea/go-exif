@@ -1412,6 +1412,7 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
             t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
         }
 
+// TODO(dustin): We're always accessing the addressable-data using the root-IFD. It shouldn't matter, but we'd rather access it from our specific IFD.
         originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
         log.PanicIf(err)
 
@@ -1460,7 +1461,6 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *te
     ucBt, err := exifBt.value.Ib().FindTagWithName("UserComment")
     log.PanicIf(err)
 
-// TODO(dustin): !! Create an example for this.
     uc := TagUnknownType_9298_UserComment{
         EncodingType: TagUnknownType_9298_UserComment_Encoding_ASCII,
         EncodingBytes: []byte("TEST COMMENT"),

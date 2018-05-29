@@ -355,6 +355,23 @@ type Ifd struct {
     thumbnailData []byte
 }
 
+func (ifd *Ifd) ChildWithIfdIdentity(ii IfdIdentity) (childIfd *Ifd, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    for _, childIfd := range ifd.Children {
+        if childIfd.Ii == ii {
+            return childIfd, nil
+        }
+    }
+
+    log.Panic(ErrTagNotFound)
+    return nil, nil
+}
+
 func (ifd *Ifd) TagValue(ite *IfdTagEntry) (value interface{}, err error) {
     defer func() {
         if state := recover(); state != nil {
