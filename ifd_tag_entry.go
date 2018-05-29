@@ -29,7 +29,7 @@ type IfdTagEntry struct {
 }
 
 func (ite IfdTagEntry) String() string {
-    return fmt.Sprintf("IfdTagEntry<TAG-IFD=[%s] TAG-ID=(0x%02x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.ChildIfdName, ite.TagId, TypeNames[ite.TagType], ite.UnitCount)
+    return fmt.Sprintf("IfdTagEntry<TAG-IFD=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.ChildIfdName, ite.TagId, TypeNames[ite.TagType], ite.UnitCount)
 }
 
 // ValueString renders a string from whatever the value in this tag is.
@@ -98,7 +98,7 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
             return valueBytes, nil
         default:
 // TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
-            log.Panicf("can not produce bytes for unknown-type tag (0x%02x): [%s]", ite.TagId, reflect.TypeOf(value))
+            log.Panicf("can not produce bytes for unknown-type tag (0x%04x): [%s]", ite.TagId, reflect.TypeOf(value))
         }
     }
 

@@ -93,7 +93,15 @@ type TagUnknownType_9298_UserComment struct {
 }
 
 func (uc TagUnknownType_9298_UserComment) String() string {
-    return fmt.Sprintf("UserComment<SIZE=(%d) ENCODING=[%s] V=%v>", len(uc.EncodingBytes), TagUnknownType_9298_UserComment_Encoding_Names[uc.EncodingType], uc.EncodingBytes)
+    var valuePhrase string
+
+    if len(uc.EncodingBytes) <= 8 {
+        valuePhrase = fmt.Sprintf("%v", uc.EncodingBytes)
+    } else {
+        valuePhrase = fmt.Sprintf("%v...", uc.EncodingBytes[:8])
+    }
+
+    return fmt.Sprintf("UserComment<SIZE=(%d) ENCODING=[%s] V=%v LEN=(%d)>", len(uc.EncodingBytes), TagUnknownType_9298_UserComment_Encoding_Names[uc.EncodingType], valuePhrase, len(uc.EncodingBytes))
 }
 
 func (uc TagUnknownType_9298_UserComment) ValueBytes() (value []byte, err error) {
@@ -103,9 +111,8 @@ func (uc TagUnknownType_9298_UserComment) ValueBytes() (value []byte, err error)
     }
 
     value = make([]byte, len(uc.EncodingBytes) + 8)
-    copy(value[:8], encodingTypeBytes)
 
-// TODO(dustin): !! With undefined-encoded comments, we always make this empty. However, it comes in with a set of zero bytes. Is there a problem if we send it out with just the encoding bytes?
+    copy(value[:8], encodingTypeBytes)
     copy(value[8:], uc.EncodingBytes)
 
     return value, nil
@@ -245,20 +252,12 @@ func UndefinedValue(ii IfdIdentity, tagId uint16, valueContext ValueContext, byt
             encoding := valueBytes[:8]
             for encodingIndex, encodingBytes := range TagUnknownType_9298_UserComment_Encodings {
                 if bytes.Compare(encoding, encodingBytes) == 0 {
-                    // If unknown, return the default rather than what we have
-                    // because there will be a big list of NULs (which aren't
-                    // functional) and this won't equal the default instance
-                    // (above).
-                    if encodingIndex == TagUnknownType_9298_UserComment_Encoding_UNDEFINED {
-                        return unknownUc, nil
-                    } else {
-                        uc := TagUnknownType_9298_UserComment{
-                            EncodingType: encodingIndex,
-                            EncodingBytes: valueBytes[8:],
-                        }
-
-                        return uc, nil
+                    uc := TagUnknownType_9298_UserComment{
+                        EncodingType: encodingIndex,
+                        EncodingBytes: valueBytes[8:],
                     }
+
+                    return uc, nil
                 }
             }
 

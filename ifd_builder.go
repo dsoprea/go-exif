@@ -29,6 +29,24 @@ type IfdBuilderTagValue struct {
     ib *IfdBuilder
 }
 
+func (ibtv IfdBuilderTagValue) String() string {
+    if ibtv.IsBytes() == true {
+        var valuePhrase string
+        if len(ibtv.valueBytes) <= 8 {
+            valuePhrase = fmt.Sprintf("%v", ibtv.valueBytes)
+        } else {
+            valuePhrase = fmt.Sprintf("%v...", ibtv.valueBytes[:8])
+        }
+
+        return fmt.Sprintf("IfdBuilderTagValue<BYTES=%v LEN=(%d)>", valuePhrase, len(ibtv.valueBytes))
+    } else if ibtv.IsIb() == true {
+        return fmt.Sprintf("IfdBuilderTagValue<IB=%s>", ibtv.ib)
+    } else {
+        log.Panicf("IBTV state undefined")
+        return ""
+    }
+}
+
 func NewIfdBuilderTagValueFromBytes(valueBytes []byte) *IfdBuilderTagValue {
     return &IfdBuilderTagValue{
         valueBytes: valueBytes,
@@ -116,21 +134,7 @@ func (bt builderTag) Value() (value *IfdBuilderTagValue) {
 }
 
 func (bt builderTag) String() string {
-    valuePhrase := ""
-
-    if bt.value.IsBytes() == true {
-        valueBytes := bt.value.Bytes()
-
-        if len(valueBytes) <= 8 {
-            valuePhrase = fmt.Sprintf("%v", valueBytes)
-        } else {
-            valuePhrase = fmt.Sprintf("%v...", valueBytes[:8])
-        }
-    } else {
-        valuePhrase = fmt.Sprintf("%v", bt.value.Ib())
-    }
-
-    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%02x) IFD=[%s] VALUE=[%v]>", bt.tagId, bt.ii, valuePhrase)
+    return fmt.Sprintf("BuilderTag<TAG-ID=(0x%04x) IFD=[%s] VALUE=[%s]>", bt.tagId, bt.ii, bt.value)
 }
 
 // NewStandardBuilderTagFromConfig constructs a `builderTag` instance. The type
@@ -330,7 +334,7 @@ func (ib *IfdBuilder) String() string {
         nextIfdPhrase = ib.nextIb.ii.IfdName
     }
 
-    return fmt.Sprintf("IfdBuilder<PARENT-IFD=[%s] IFD=[%s] TAG-ID=(0x%02x) COUNT=(%d) OFF=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii.ParentIfdName, ib.ii.IfdName, ib.ifdTagId, len(ib.tags), ib.existingOffset, nextIfdPhrase)
+    return fmt.Sprintf("IfdBuilder<PARENT-IFD=[%s] IFD=[%s] TAG-ID=(0x%04x) COUNT=(%d) OFF=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii.ParentIfdName, ib.ii.IfdName, ib.ifdTagId, len(ib.tags), ib.existingOffset, nextIfdPhrase)
 }
 
 func (ib *IfdBuilder) Tags() (tags []builderTag) {
@@ -440,7 +444,7 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 
                 if isChildIb == true {
                     if tag.value.IsIb() == false {
-                        log.Panicf("tag-ID (0x%02x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
+                        log.Panicf("tag-ID (0x%04x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
                     }
 
                     fmt.Printf("\n")
@@ -479,7 +483,7 @@ func (ib *IfdBuilder) printIfdTree(levels int) {
 
                 if isChildIb == true {
                     if tag.value.IsIb() == false {
-                        log.Panicf("tag-ID (0x%02x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
+                        log.Panicf("tag-ID (0x%04x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
                     }
 
                     childIb := tag.value.Ib()
@@ -509,7 +513,7 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []s
             childIfdName = tag.value.Ib().ii.IfdName
         }
 
-        line := fmt.Sprintf("<PARENTS=[%s] IFD-NAME=[%s]> IFD-TAG-ID=(0x%02x) CHILD-IFD=[%s] INDEX=(%d) TAG=[0x%02x]", prefix, thisIb.ii.IfdName, thisIb.ifdTagId, childIfdName, i, tag.tagId)
+        line := fmt.Sprintf("<PARENTS=[%s] IFD-NAME=[%s]> IFD-TAG-ID=(0x%04x) CHILD-IFD=[%s] INDEX=(%d) TAG=[0x%04x]", prefix, thisIb.ii.IfdName, thisIb.ifdTagId, childIfdName, i, tag.tagId)
         linesOutput = append(linesOutput, line)
 
         if tag.value.IsIb() == true {
@@ -883,10 +887,10 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
                 if childIfd == nil {
                     childTagIds := make([]string, len(ifd.Children))
                     for j, childIfd := range ifd.Children {
-                        childTagIds[j] = fmt.Sprintf("0x%02x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
+                        childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
                     }
 
-                    log.Panicf("could not find child IFD for child ITE: II=[%s] TAG-ID=(0x%02x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.Ii, ite.TagId, i, childTagIds)
+                    log.Panicf("could not find child IFD for child ITE: II=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.Ii, ite.TagId, i, childTagIds)
                 }
 
                 childIb := NewIfdBuilderFromExistingChain(childIfd, itevr)

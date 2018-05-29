@@ -239,7 +239,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *builderTag, bw *
             remainder := uint32(len_) % typeSize
 
             if remainder > 0 {
-                log.Panicf("tag (0x%02x) value of (%d) bytes not evenly divisible by type-size (%d)", bt.tagId, len_, typeSize)
+                log.Panicf("tag (0x%04x) value of (%d) bytes not evenly divisible by type-size (%d)", bt.tagId, len_, typeSize)
             }
         }
 
