@@ -45,7 +45,10 @@ var (
         binary.LittleEndian: LittleEndianBoBytes,
     }
 
-    ExifFixedBytes = [2]byte { 0x2a, 0x00 }
+    ExifFixedBytesLookup = map[binary.ByteOrder][2]byte {
+        binary.LittleEndian: [2]byte { 0x2a, 0x00 },
+        binary.BigEndian: [2]byte { 0x00, 0x2a },
+    }
 )
 
 var (
@@ -147,8 +150,9 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     }
 
     fixedBytes := [2]byte { data[2], data[3] }
-    if fixedBytes != ExifFixedBytes {
-        exifLogger.Warningf(nil, "EXIF header fixed-bytes should be 0x002a but are: [%v]", fixedBytes)
+    expectedFixedBytes := ExifFixedBytesLookup[byteOrder]
+    if fixedBytes != expectedFixedBytes {
+        exifLogger.Warningf(nil, "EXIF header fixed-bytes should be [%v] but are: [%v]", expectedFixedBytes, fixedBytes)
         log.Panic(ErrNotExif)
     }
 
@@ -215,7 +219,9 @@ func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerB
     _, err = b.WriteString(string(boBytes[:]))
     log.PanicIf(err)
 
-    _, err = b.Write(ExifFixedBytes[:])
+    fixedBytes := ExifFixedBytesLookup[byteOrder]
+
+    _, err = b.Write(fixedBytes[:])
     log.PanicIf(err)
 
     err = binary.Write(b, byteOrder, firstIfdOffset)
