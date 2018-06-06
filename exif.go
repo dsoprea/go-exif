@@ -17,10 +17,6 @@ const (
     // offsets are relative to.
     ExifAddressableAreaStart = uint32(0x6)
 
-    // RootIfdExifOffset is the relative offset of the first IFD in the block
-    // of EXIF data.
-    RootIfdExifOffset = uint32(0x0008)
-
     // ExifDefaultFirstIfdOffset is essentially the number of bytes in addition
     // to `ExifAddressableAreaStart` that you have to move in order to escape
     // the rest of the header and get to the earliest point where we can put

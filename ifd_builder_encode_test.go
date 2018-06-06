@@ -537,7 +537,7 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
         t.Fatalf("IFD name not correct.")
     } else if ifd.Index != 0 {
         t.Fatalf("IFD index not zero: (%d)", ifd.Index)
-    } else if ifd.Offset != RootIfdExifOffset {
+    } else if ifd.Offset != uint32(0x0008) {
         t.Fatalf("IFD offset not correct.")
     } else if len(ifd.Entries) != 4 {
         t.Fatalf("IFD number of entries not correct: (%d)", len(ifd.Entries))
