@@ -39,9 +39,17 @@ var (
     // EncodeDefaultByteOrder is the default byte-order for encoding operations.
     EncodeDefaultByteOrder = binary.BigEndian
 
+    BigEndianBoBytes = [2]byte { 'M', 'M' }
+    LittleEndianBoBytes = [2]byte { 'I', 'I' }
+
     ByteOrderLookup = map[[2]byte]binary.ByteOrder {
-        [2]byte { 'M', 'M' }: binary.BigEndian,
-        [2]byte { 'I', 'I' }: binary.LittleEndian,
+        BigEndianBoBytes: binary.BigEndian,
+        LittleEndianBoBytes: binary.LittleEndian,
+    }
+
+    ByteOrderLookupR = map[binary.ByteOrder][2]byte {
+        binary.BigEndian: BigEndianBoBytes,
+        binary.LittleEndian: LittleEndianBoBytes,
     }
 
     ExifFixedBytes = [2]byte { 0x2a, 0x00 }
@@ -221,17 +229,12 @@ func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerB
     _, err = b.Write(ExifHeaderPrefixBytes)
     log.PanicIf(err)
 
-    // NOTE: This is the point in the data that all offsets are relative to.
+// NOTE: This is the point in the data that all offsets are relative to.
+    boBytes := ByteOrderLookupR[byteOrder]
+    _, err = b.WriteString(string(boBytes[:]))
+    log.PanicIf(err)
 
-    if byteOrder == binary.BigEndian {
-        _, err := b.WriteString("MM")
-        log.PanicIf(err)
-    } else {
-        _, err := b.WriteString("II")
-        log.PanicIf(err)
-    }
-
-    _, err = b.Write([]byte { 0x2a, 0x00 })
+    _, err = b.Write(ExifFixedBytes[:])
     log.PanicIf(err)
 
     err = binary.Write(b, byteOrder, firstIfdOffset)
