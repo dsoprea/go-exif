@@ -13,14 +13,13 @@ import (
 )
 
 const (
-    // RootIfdExifOffset is the offset of the first IFD in the block of EXIF
-    // data.
-    RootIfdExifOffset = uint32(0x0008)
-
-    // ExifAddressableAreaStart is the position that all offsets are relative
-    // to. It's actually only about halfway through the header (technically
-    // unallocatable space).
+    // ExifAddressableAreaStart is the absolute offset in the file that all
+    // offsets are relative to.
     ExifAddressableAreaStart = uint32(0x6)
+
+    // RootIfdExifOffset is the relative offset of the first IFD in the block
+    // of EXIF data.
+    RootIfdExifOffset = uint32(0x0008)
 
     // ExifDefaultFirstIfdOffset is essentially the number of bytes in addition
     // to `ExifAddressableAreaStart` that you have to move in order to escape
