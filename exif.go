@@ -15,7 +15,7 @@ import (
 const (
     // ExifAddressableAreaStart is the absolute offset in the file that all
     // offsets are relative to.
-    ExifAddressableAreaStart = uint32(0x6)
+    ExifAddressableAreaStart = uint32(0x0)
 
     // ExifDefaultFirstIfdOffset is essentially the number of bytes in addition
     // to `ExifAddressableAreaStart` that you have to move in order to escape
@@ -28,8 +28,6 @@ const (
 
 var (
     exifLogger = log.NewLogger("exif.exif")
-
-    ExifHeaderPrefixBytes = []byte("Exif\000\000")
 
     // EncodeDefaultByteOrder is the default byte-order for encoding operations.
     EncodeDefaultByteOrder = binary.BigEndian
@@ -135,16 +133,12 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
         }
     }()
 
-    if bytes.Compare(data[:6], ExifHeaderPrefixBytes) != 0 {
-        log.Panic(ErrNotExif)
-    }
-
     // Good reference:
     //
     //      CIPA DC-008-2016; JEITA CP-3451D
     //      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
-    byteOrderBytes := [2]byte { data[6], data[7] }
+    byteOrderBytes := [2]byte { data[0], data[1] }
 
     byteOrder, found := ByteOrderLookup[byteOrderBytes]
     if found == false {
@@ -152,18 +146,13 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
         log.Panic(ErrNotExif)
     }
 
-    fixedBytes := [2]byte { data[8], data[9] }
+    fixedBytes := [2]byte { data[2], data[3] }
     if fixedBytes != ExifFixedBytes {
         exifLogger.Warningf(nil, "EXIF header fixed-bytes should be 0x002a but are: [%v]", fixedBytes)
         log.Panic(ErrNotExif)
     }
 
-    firstIfdOffset := uint32(0)
-    if byteOrder == binary.BigEndian {
-        firstIfdOffset = binary.BigEndian.Uint32(data[10:14])
-    } else {
-        firstIfdOffset = binary.LittleEndian.Uint32(data[10:14])
-    }
+    firstIfdOffset := byteOrder.Uint32(data[4:8])
 
     eh = ExifHeader{
         ByteOrder: byteOrder,
@@ -221,10 +210,7 @@ func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerB
 
     b := new(bytes.Buffer)
 
-    _, err = b.Write(ExifHeaderPrefixBytes)
-    log.PanicIf(err)
-
-// NOTE: This is the point in the data that all offsets are relative to.
+    // This is the point in the data that all offsets are relative to.
     boBytes := ByteOrderLookupR[byteOrder]
     _, err = b.WriteString(string(boBytes[:]))
     log.PanicIf(err)

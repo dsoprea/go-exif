@@ -30,11 +30,7 @@ func init() {
 
     filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
 
-    exifData, err := ioutil.ReadFile(filepath)
+    var err error
+    testExifData, err = ioutil.ReadFile(filepath)
     log.PanicIf(err)
-
-// TODO(dustin): !! We're currently built to expect the JPEG EXIF header-prefix, but our test-data doesn't have that.So, artificially prefix it, for now.
-    testExifData = make([]byte, len(exifData) + len(ExifHeaderPrefixBytes))
-    copy(testExifData[0:], ExifHeaderPrefixBytes)
-    copy(testExifData[len(ExifHeaderPrefixBytes):], exifData)
 }
