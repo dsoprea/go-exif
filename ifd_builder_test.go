@@ -1627,8 +1627,8 @@ func Test_IfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 	}
 }
 
-func TestNewStandardBuilderTagFromConfig_OneUnit(t *testing.T) {
-	bt := NewStandardBuilderTagFromConfig(ExifIi, uint16(0x8833), TestDefaultByteOrder, []uint32{uint32(0x1234)})
+func TestNewStandardBuilderTag_OneUnit(t *testing.T) {
+	bt := NewStandardBuilderTag(ExifIi, uint16(0x8833), TestDefaultByteOrder, []uint32{uint32(0x1234)})
 
 	if bt.ii != ExifIi {
 		t.Fatalf("II in BuilderTag not correct")
@@ -1639,8 +1639,8 @@ func TestNewStandardBuilderTagFromConfig_OneUnit(t *testing.T) {
 	}
 }
 
-func TestNewStandardBuilderTagFromConfig_TwoUnits(t *testing.T) {
-	bt := NewStandardBuilderTagFromConfig(ExifIi, uint16(0x8833), TestDefaultByteOrder, []uint32{uint32(0x1234), uint32(0x5678)})
+func TestNewStandardBuilderTag_TwoUnits(t *testing.T) {
+	bt := NewStandardBuilderTag(ExifIi, uint16(0x8833), TestDefaultByteOrder, []uint32{uint32(0x1234), uint32(0x5678)})
 
 	if bt.ii != ExifIi {
 		t.Fatalf("II in BuilderTag not correct")
@@ -1653,8 +1653,8 @@ func TestNewStandardBuilderTagFromConfig_TwoUnits(t *testing.T) {
 	}
 }
 
-func TestNewStandardBuilderTagFromConfigWithName(t *testing.T) {
-	bt := NewStandardBuilderTagFromConfigWithName(ExifIi, "ISOSpeed", TestDefaultByteOrder, []uint32{uint32(0x1234), uint32(0x5678)})
+func TestNewStandardBuilderTagWithName(t *testing.T) {
+	bt := NewStandardBuilderTagWithName(ExifIi, "ISOSpeed", TestDefaultByteOrder, []uint32{uint32(0x1234), uint32(0x5678)})
 
 	if bt.ii != ExifIi {
 		t.Fatalf("II in BuilderTag not correct")
@@ -1667,10 +1667,10 @@ func TestNewStandardBuilderTagFromConfigWithName(t *testing.T) {
 	}
 }
 
-func TestAddFromConfigWithName(t *testing.T) {
+func TestAddStandardWithName(t *testing.T) {
 	ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-	err := ib.AddFromConfigWithName("ProcessingSoftware", "some software")
+	err := ib.AddStandardWithName("ProcessingSoftware", "some software")
 	log.PanicIf(err)
 
 	if len(ib.tags) != 1 {

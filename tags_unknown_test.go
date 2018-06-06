@@ -28,7 +28,13 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
     // have the bytes.
 
     encodedValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
-    bt := NewStandardBuilderTag(ii, 0x9000, encodedValue)
+
+    bt := &BuilderTag{
+        ii: ii,
+        tagId: 0x9000,
+        typeId: TypeUndefined,
+        value: encodedValue,
+    }
 
 
     // Stage the build.

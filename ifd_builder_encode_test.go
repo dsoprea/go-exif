@@ -192,7 +192,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 
     ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
-    bt := NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12) })
+    bt := NewStandardBuilderTag(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12) })
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -217,7 +217,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 
     ib := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
-    bt := NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78) })
+    bt := NewStandardBuilderTag(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78) })
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -248,7 +248,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
     addressableOffset := uint32(0x1234)
     ida := newIfdDataAllocator(addressableOffset)
 
-    bt := NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a) })
+    bt := NewStandardBuilderTag(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a) })
 
     childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
@@ -265,7 +265,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
     // Test that another allocation encodes to the new offset.
 
-    bt = NewStandardBuilderTagFromConfig(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34) })
+    bt = NewStandardBuilderTag(GpsIi, uint16(0x0000), TestDefaultByteOrder, []uint8 { uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34) })
 
     childIfdBlock, err = ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
     log.PanicIf(err)
@@ -322,10 +322,12 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
     childIb := NewIfdBuilder(ExifIi, TestDefaultByteOrder)
 
-    childIbTestTag := NewStandardBuilderTag(
-            ExifIi,
-            0x8822,
-            NewIfdBuilderTagValueFromBytes([]byte { 0x12, 0x34 }))
+    childIbTestTag := &BuilderTag{
+        ii: ExifIi,
+        tagId: 0x8822,
+        typeId: TypeShort,
+        value: NewIfdBuilderTagValueFromBytes([]byte { 0x12, 0x34 }),
+    }
 
     childIb.Add(childIbTestTag)
 
@@ -437,7 +439,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
     valueString := "testvalue"
-    bt := NewStandardBuilderTagFromConfig(RootIi, uint16(0x000b), TestDefaultByteOrder, valueString)
+    bt := NewStandardBuilderTag(RootIi, uint16(0x000b), TestDefaultByteOrder, valueString)
 
     b := new(bytes.Buffer)
     bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -500,16 +502,16 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 func getExifSimpleTestIb() *IfdBuilder {
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-    err := ib.AddFromConfig(0x000b, "asciivalue")
+    err := ib.AddStandard(0x000b, "asciivalue")
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x00ff, []uint16 { 0x1122 })
+    err = ib.AddStandard(0x00ff, []uint16 { 0x1122 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x0100, []uint32 { 0x33445566 })
+    err = ib.AddStandard(0x0100, []uint32 { 0x33445566 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    err = ib.AddStandard(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
     log.PanicIf(err)
 
     return ib
@@ -751,10 +753,10 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-    err := ib.AddFromConfig(0x000b, "asciivalue")
+    err := ib.AddStandard(0x000b, "asciivalue")
     log.PanicIf(err)
 
-    err = ib.AddFromConfig(0x00ff, []uint16 { 0x1122 })
+    err = ib.AddStandard(0x00ff, []uint16 { 0x1122 })
     log.PanicIf(err)
 
 
@@ -762,17 +764,17 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
     childIb := NewIfdBuilder(ExifIi, TestDefaultByteOrder)
 
-    err = childIb.AddFromConfigWithName("ISOSpeedRatings", []uint16 { 0x1122 })
+    err = childIb.AddStandardWithName("ISOSpeedRatings", []uint16 { 0x1122 })
     log.PanicIf(err)
 
-    err = childIb.AddFromConfigWithName("ISOSpeed", []uint32 { 0x33445566 })
+    err = childIb.AddStandardWithName("ISOSpeed", []uint32 { 0x33445566 })
     log.PanicIf(err)
 
     err = ib.AddChildIb(childIb)
     log.PanicIf(err)
 
 
-    err = ib.AddFromConfig(0x0100, []uint32 { 0x33445566 })
+    err = ib.AddStandard(0x0100, []uint32 { 0x33445566 })
     log.PanicIf(err)
 
 
@@ -781,14 +783,14 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
     childIb2 := NewIfdBuilder(GpsIi, TestDefaultByteOrder)
 
-    err = childIb2.AddFromConfigWithName("GPSAltitudeRef", []uint8 { 0x11, 0x22 })
+    err = childIb2.AddStandardWithName("GPSAltitudeRef", []uint8 { 0x11, 0x22 })
     log.PanicIf(err)
 
     err = ib.AddChildIb(childIb2)
     log.PanicIf(err)
 
 
-    err = ib.AddFromConfig(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    err = ib.AddStandard(0x013e, []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
     log.PanicIf(err)
 
 
@@ -797,10 +799,10 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
     nextIb := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-    err = nextIb.AddFromConfig(0x0101, []uint32 { 0x11223344 })
+    err = nextIb.AddStandard(0x0101, []uint32 { 0x11223344 })
     log.PanicIf(err)
 
-    err = nextIb.AddFromConfig(0x0102, []uint16 { 0x5566 })
+    err = nextIb.AddStandard(0x0102, []uint16 { 0x5566 })
     log.PanicIf(err)
 
     ib.SetNextIb(nextIb)
@@ -867,22 +869,22 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 
     ib := NewIfdBuilder(RootIi, TestDefaultByteOrder)
 
-    err := ib.AddFromConfigWithName("ProcessingSoftware", "asciivalue")
+    err := ib.AddStandardWithName("ProcessingSoftware", "asciivalue")
     log.PanicIf(err)
 
-    err = ib.AddFromConfigWithName("DotRange", []uint8 { 0x11 })
+    err = ib.AddStandardWithName("DotRange", []uint8 { 0x11 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfigWithName("SubfileType", []uint16 { 0x2233 })
+    err = ib.AddStandardWithName("SubfileType", []uint16 { 0x2233 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfigWithName("ImageWidth", []uint32 { 0x44556677 })
+    err = ib.AddStandardWithName("ImageWidth", []uint32 { 0x44556677 })
     log.PanicIf(err)
 
-    err = ib.AddFromConfigWithName("WhitePoint", []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    err = ib.AddStandardWithName("WhitePoint", []Rational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
     log.PanicIf(err)
 
-    err = ib.AddFromConfigWithName("ShutterSpeedValue", []SignedRational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
+    err = ib.AddStandardWithName("ShutterSpeedValue", []SignedRational { { Numerator: 0x11112222, Denominator: 0x33334444 } })
     log.PanicIf(err)
 
 

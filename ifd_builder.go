@@ -104,20 +104,6 @@ func NewBuilderTag(ii IfdIdentity, tagId uint16, typeId uint16, value *IfdBuilde
 	}
 }
 
-func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) *BuilderTag {
-	ti := NewTagIndex()
-
-	it, err := ti.Get(ii, tagId)
-	log.PanicIf(err)
-
-	return &BuilderTag{
-		ii:     ii,
-		tagId:  tagId,
-		typeId: it.Type,
-		value:  value,
-	}
-}
-
 func NewChildIfdBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) *BuilderTag {
 	return &BuilderTag{
 		ii:     ii,
@@ -165,9 +151,9 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 	return nil
 }
 
-// NewStandardBuilderTagFromConfig constructs a `BuilderTag` instance. The type
-// is looked up. `ii` is the type of IFD that owns this tag.
-func NewStandardBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
+// NewStandardBuilderTag constructs a `BuilderTag` instance. The type is looked
+// up. `ii` is the type of IFD that owns this tag.
+func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
 	ti := NewTagIndex()
 
 	it, err := ti.Get(ii, tagId)
@@ -200,39 +186,10 @@ func NewStandardBuilderTagFromConfig(ii IfdIdentity, tagId uint16, byteOrder bin
 		tagValue)
 }
 
-// NewStandardBuilderTagFromConfig constructs a `BuilderTag` instance. The type is
-// explicitly provided. `ii` is the type of IFD that owns this tag.
-func NewBuilderTagFromConfig(ii IfdIdentity, tagId uint16, typeId uint16, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
-	tt := NewTagType(typeId, byteOrder)
-
-	ve := NewValueEncoder(byteOrder)
-
-	var ed EncodedData
-	if typeId == TypeUndefined {
-		var err error
-
-		ed, err = EncodeUndefined(ii, tagId, value)
-		log.PanicIf(err)
-	} else {
-		var err error
-
-		ed, err = ve.EncodeWithType(tt, value)
-		log.PanicIf(err)
-	}
-
-	tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
-
-	return NewBuilderTag(
-		ii,
-		tagId,
-		typeId,
-		tagValue)
-}
-
-// NewStandardBuilderTagFromConfigWithName allows us to easily generate solid, consistent tags
-// for testing with. `ii` is the type of IFD that owns this tag. This can not be
-// an IFD (IFDs are not associated with standardized, official names).
-func NewStandardBuilderTagFromConfigWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
+// NewStandardBuilderTagWithName allows us to easily generate solid, consistent
+// tags for testing with. `ii` is the type of IFD that owns this tag. This can
+// not be an IFD (IFDs are not associated with standardized, official names).
+func NewStandardBuilderTagWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
 	ti := NewTagIndex()
 
 	it, err := ti.GetWithName(ii, tagName)
@@ -390,34 +347,24 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 		log.Panicf("thumbnails can only go into a root Ifd (and only the second one)")
 	}
 
-	// TODO(dustin): !! Add a test for this.
+// TODO(dustin): !! Add a test for this function.
 
 	if data == nil || len(data) == 0 {
-
-		// TODO(dustin): !! Debugging.
-		// fmt.Printf("Thumbnail empty.\n")
-
 		log.Panic("thumbnail is empty")
 	}
 
 	ib.thumbnailData = data
 
-	// fmt.Printf("SETTING THUMBNAIL.\n")
-
 	ibtvfb := NewIfdBuilderTagValueFromBytes(ib.thumbnailData)
 	offsetBt := NewBuilderTag(ib.ii, ThumbnailOffsetTagId, TypeLong, ibtvfb)
-	// offsetBt := NewStandardBuilderTagFromConfig(ib.ii, ThumbnailOffsetTagId, ib.byteOrder, []uint32 { 0 })
 
 	err = ib.Set(offsetBt)
 	log.PanicIf(err)
 
-	sizeBt := NewStandardBuilderTagFromConfig(ib.ii, ThumbnailSizeTagId, ib.byteOrder, []uint32{uint32(len(ib.thumbnailData))})
+	sizeBt := NewStandardBuilderTag(ib.ii, ThumbnailSizeTagId, ib.byteOrder, []uint32{uint32(len(ib.thumbnailData))})
 
 	err = ib.Set(sizeBt)
 	log.PanicIf(err)
-
-	// TODO(dustin): !! Debugging.
-	// fmt.Printf("Set thumbnail into IB.\n")
 
 	return nil
 }
@@ -988,16 +935,16 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 	return nil
 }
 
-// AddFromConfig quickly and easily composes and adds the tag using the
+// AddStandard quickly and easily composes and adds the tag using the
 // information already known about a tag. Only works with standard tags.
-func (ib *IfdBuilder) AddFromConfig(tagId uint16, value interface{}) (err error) {
+func (ib *IfdBuilder) AddStandard(tagId uint16, value interface{}) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	bt := NewStandardBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
+	bt := NewStandardBuilderTag(ib.ii, tagId, ib.byteOrder, value)
 
 	err = ib.add(bt)
 	log.PanicIf(err)
@@ -1005,18 +952,18 @@ func (ib *IfdBuilder) AddFromConfig(tagId uint16, value interface{}) (err error)
 	return nil
 }
 
-// SetFromConfig quickly and easily composes and adds or replaces the tag using
+// SetStandard quickly and easily composes and adds or replaces the tag using
 // the information already known about a tag. Only works with standard tags.
-func (ib *IfdBuilder) SetFromConfig(tagId uint16, value interface{}) (err error) {
+func (ib *IfdBuilder) SetStandard(tagId uint16, value interface{}) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	// TODO(dustin): !! Add test.
+// TODO(dustin): !! Add test for this function.
 
-	bt := NewStandardBuilderTagFromConfig(ib.ii, tagId, ib.byteOrder, value)
+	bt := NewStandardBuilderTag(ib.ii, tagId, ib.byteOrder, value)
 
 	i, err := ib.Find(tagId)
 	log.PanicIf(err)
@@ -1026,17 +973,17 @@ func (ib *IfdBuilder) SetFromConfig(tagId uint16, value interface{}) (err error)
 	return nil
 }
 
-// AddFromConfigWithName quickly and easily composes and adds the tag using the
+// AddStandardWithName quickly and easily composes and adds the tag using the
 // information already known about a tag (using the name). Only works with
 // standard tags.
-func (ib *IfdBuilder) AddFromConfigWithName(tagName string, value interface{}) (err error) {
+func (ib *IfdBuilder) AddStandardWithName(tagName string, value interface{}) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	bt := NewStandardBuilderTagFromConfigWithName(ib.ii, tagName, ib.byteOrder, value)
+	bt := NewStandardBuilderTagWithName(ib.ii, tagName, ib.byteOrder, value)
 
 	err = ib.add(bt)
 	log.PanicIf(err)
@@ -1044,19 +991,19 @@ func (ib *IfdBuilder) AddFromConfigWithName(tagName string, value interface{}) (
 	return nil
 }
 
-// SetFromConfigWithName quickly and easily composes and adds or replaces the
+// SetStandardWithName quickly and easily composes and adds or replaces the
 // tag using the information already known about a tag (using the name). Only
 // works with standard tags.
-func (ib *IfdBuilder) SetFromConfigWithName(tagName string, value interface{}) (err error) {
+func (ib *IfdBuilder) SetStandardWithName(tagName string, value interface{}) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	// TODO(dustin): !! Add test.
+// TODO(dustin): !! Add test for this function.
 
-	bt := NewStandardBuilderTagFromConfigWithName(ib.ii, tagName, ib.byteOrder, value)
+	bt := NewStandardBuilderTagWithName(ib.ii, tagName, ib.byteOrder, value)
 
 	i, err := ib.Find(bt.tagId)
 	log.PanicIf(err)
