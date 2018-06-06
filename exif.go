@@ -38,6 +38,13 @@ var (
 
     // EncodeDefaultByteOrder is the default byte-order for encoding operations.
     EncodeDefaultByteOrder = binary.BigEndian
+
+    ByteOrderLookup = map[[2]byte]binary.ByteOrder {
+        [2]byte { 'M', 'M' }: binary.BigEndian,
+        [2]byte { 'I', 'I' }: binary.LittleEndian,
+    }
+
+    ExifFixedBytes = [2]byte { 0x2a, 0x00 }
 )
 
 var (
@@ -45,7 +52,7 @@ var (
     ErrExifHeaderError = errors.New("exif header error")
 )
 
-
+// TODO(dustin): !!  Remove all usage of this in favor of ParseExifHeader.
 func IsExif(data []byte) (ok bool) {
     if bytes.Compare(data[:6], ExifHeaderPrefixBytes) == 0 {
         return true
@@ -113,6 +120,9 @@ func (eh ExifHeader) String() string {
 }
 
 // ParseExifHeader parses the bytes at the very top of the header.
+//
+// This will panic with ErrNotExif on any data errors so that we can double as
+// an EXIF-detection routine.
 func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -120,7 +130,7 @@ func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
         }
     }()
 
-    if IsExif(data) == false {
+    if bytes.Compare(data[:6], ExifHeaderPrefixBytes) != 0 {
         log.Panic(ErrNotExif)
     }
 
@@ -129,19 +139,18 @@ func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     //      CIPA DC-008-2016; JEITA CP-3451D
     //      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
-    byteOrderSignature := data[6:8]
-    var byteOrder binary.ByteOrder
-    byteOrder = binary.BigEndian
-    if string(byteOrderSignature) == "II" {
-        byteOrder = binary.LittleEndian
-    } else if string(byteOrderSignature) != "MM" {
-        log.Panicf("byte-order not recognized: [%v]", byteOrderSignature)
+    byteOrderBytes := [2]byte { data[6], data[7] }
+
+    byteOrder, found := ByteOrderLookup[byteOrderBytes]
+    if found == false {
+        exifLogger.Warningf(nil, "EXIF byte-order not recognized: [%v]", byteOrderBytes)
+        log.Panic(ErrNotExif)
     }
 
-    fixedBytes := data[8:10]
-    if fixedBytes[0] != 0x2a || fixedBytes[1] != 0x00 {
+    fixedBytes := [2]byte { data[8], data[9] }
+    if fixedBytes != ExifFixedBytes {
         exifLogger.Warningf(nil, "EXIF header fixed-bytes should be 0x002a but are: [%v]", fixedBytes)
-        log.Panic(ErrExifHeaderError)
+        log.Panic(ErrNotExif)
     }
 
     firstIfdOffset := uint32(0)
