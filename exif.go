@@ -52,28 +52,42 @@ var (
     ErrExifHeaderError = errors.New("exif header error")
 )
 
-// TODO(dustin): !!  Remove all usage of this in favor of ParseExifHeader.
-func IsExif(data []byte) (ok bool) {
-    if bytes.Compare(data[:6], ExifHeaderPrefixBytes) == 0 {
-        return true
+
+// SearchAndExtractExif returns a slice from the beginning of the EXIF data the
+// end of the file (it's not practical to try and calculate where the data
+// actually ends).
+func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.Panic(err)
+        }
+    }()
+
+    // Search for the beginning of the EXIF information. The EXIF is near the
+    // beginning of our/most JPEGs, so this has a very low cost.
+
+    foundAt := -1
+    for i := 0; i < len(data); i++ {
+        if _, err := ParseExifHeader(data[i:]); err == nil {
+            foundAt = i
+            break
+        } else if log.Is(err, ErrNotExif) == false {
+            log.Panic(err)
+        }
     }
 
-    return false
+    if foundAt == -1 {
+        log.Panicf("EXIF start not found")
+    }
+
+    return data[foundAt:], nil
 }
 
-
-// TODO(dustin): Isolated this to its own packge breakout the methods as independent function. There's no use for a dedicated struct.
-
-
-type Exif struct {
-
-}
-
-func NewExif() *Exif {
-    return new(Exif)
-}
-
-func (e *Exif) SearchAndExtractExif(filepath string) (rawExif []byte, err error) {
+// SearchFileAndExtractExif returns a slice from the beginning of the EXIF data
+// to the end of the file (it's not practical to try and calculate where the
+// data actually ends).
+func SearchFileAndExtractExif(filepath string) (rawExif []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -91,22 +105,10 @@ func (e *Exif) SearchAndExtractExif(filepath string) (rawExif []byte, err error)
     data, err := ioutil.ReadAll(f)
     log.PanicIf(err)
 
-    // Search for the beginning of the EXIF information. The EXIF is near the
-    // beginning of our/most JPEGs, so this has a very low cost.
+    rawExif, err = SearchAndExtractExif(data)
+    log.PanicIf(err)
 
-    foundAt := -1
-    for i := 0; i < len(data); i++ {
-        if IsExif(data[i:i + 6]) == true {
-            foundAt = i
-            break
-        }
-    }
-
-    if foundAt == -1 {
-        log.Panicf("EXIF start not found")
-    }
-
-    return data[foundAt:], nil
+    return rawExif, nil
 }
 
 
@@ -123,7 +125,7 @@ func (eh ExifHeader) String() string {
 //
 // This will panic with ErrNotExif on any data errors so that we can double as
 // an EXIF-detection routine.
-func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
+func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -169,14 +171,14 @@ func (e *Exif) ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 }
 
 // Visit recursively invokes a callback for every tag.
-func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err error) {
+func Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    eh, err = e.ParseExifHeader(exifData)
+    eh, err = ParseExifHeader(exifData)
     log.PanicIf(err)
 
     ie := NewIfdEnumerate(exifData, eh.ByteOrder)
@@ -188,14 +190,14 @@ func (e *Exif) Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err er
 }
 
 // Collect recursively builds a static structure of all IFDs and tags.
-func (e *Exif) Collect(exifData []byte) (eh ExifHeader, index IfdIndex, err error) {
+func Collect(exifData []byte) (eh ExifHeader, index IfdIndex, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    eh, err = e.ParseExifHeader(exifData)
+    eh, err = ParseExifHeader(exifData)
     log.PanicIf(err)
 
     ie := NewIfdEnumerate(exifData, eh.ByteOrder)

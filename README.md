@@ -141,8 +141,6 @@ log.PanicIf(err)
 data, err := ioutil.ReadAll(f)
 log.PanicIf(err)
 
-e := exif.NewExif()
-
 foundAt := -1
 for i := 0; i < len(data); i++ {
     if e.IsExif(data[i:i + 6]) == true {
@@ -191,7 +189,7 @@ visitor := func(ii exif.IfdIdentity, ifdIndex int, tagId uint16, tagType exif.Ta
     return nil
 }
 
-err = e.Visit(data[foundAt:], visitor)
+err = Visit(data[foundAt:], visitor)
 log.PanicIf(err)
 ```
 

@@ -163,11 +163,6 @@ type IfdTagEntryValueResolver struct {
 }
 
 func NewIfdTagEntryValueResolver(exifData []byte, byteOrder binary.ByteOrder) (itevr *IfdTagEntryValueResolver) {
-    // Make it obvious what data we expect and when we don't get it.
-    if IsExif(exifData) == false {
-        log.Panicf("not exif data")
-    }
-
     return &IfdTagEntryValueResolver{
         addressableData: exifData[ExifAddressableAreaStart:],
         byteOrder: byteOrder,

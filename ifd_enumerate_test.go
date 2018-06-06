@@ -46,14 +46,12 @@ func TestIfdTagEntry_ValueBytes_RealData(t *testing.T) {
         }
     }()
 
-    e := NewExif()
-
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    eh, index, err := e.Collect(rawExif)
+    eh, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     var ite *IfdTagEntry
@@ -90,14 +88,12 @@ func TestIfdTagEntry_Resolver_ValueBytes(t *testing.T) {
         }
     }()
 
-    e := NewExif()
-
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    eh, index, err := e.Collect(rawExif)
+    eh, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     var ite *IfdTagEntry
@@ -135,14 +131,12 @@ func TestIfdTagEntry_Resolver_ValueBytes__Unknown_Field_And_Nonroot_Ifd(t *testi
         }
     }()
 
-    e := NewExif()
-
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    eh, index, err := e.Collect(rawExif)
+    eh, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     ii, _ := IfdIdOrFail(IfdStandard, IfdExif)
@@ -177,12 +171,10 @@ func TestIfdTagEntry_Resolver_ValueBytes__Unknown_Field_And_Nonroot_Ifd(t *testi
 func Test_Ifd_FindTagWithId_Hit(t *testing.T) {
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    e := NewExif()
-
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    _, index, err := e.Collect(rawExif)
+    _, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     ifd := index.RootIfd
@@ -198,12 +190,10 @@ func Test_Ifd_FindTagWithId_Hit(t *testing.T) {
 func Test_Ifd_FindTagWithId_Miss(t *testing.T) {
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    e := NewExif()
-
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    _, index, err := e.Collect(rawExif)
+    _, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     ifd := index.RootIfd
@@ -219,12 +209,10 @@ func Test_Ifd_FindTagWithId_Miss(t *testing.T) {
 func Test_Ifd_FindTagWithName_Hit(t *testing.T) {
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    e := NewExif()
-
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    _, index, err := e.Collect(rawExif)
+    _, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     ifd := index.RootIfd
@@ -240,12 +228,10 @@ func Test_Ifd_FindTagWithName_Hit(t *testing.T) {
 func Test_Ifd_FindTagWithName_Miss(t *testing.T) {
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    e := NewExif()
-
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    _, index, err := e.Collect(rawExif)
+    _, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     ifd := index.RootIfd
@@ -261,12 +247,10 @@ func Test_Ifd_FindTagWithName_Miss(t *testing.T) {
 func Test_Ifd_FindTagWithName_NonStandard(t *testing.T) {
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    e := NewExif()
-
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    _, index, err := e.Collect(rawExif)
+    _, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     ifd := index.RootIfd
@@ -282,12 +266,10 @@ func Test_Ifd_FindTagWithName_NonStandard(t *testing.T) {
 func Test_Ifd_Thumbnail(t *testing.T) {
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    e := NewExif()
-
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    _, index, err := e.Collect(rawExif)
+    _, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     ifd := index.RootIfd

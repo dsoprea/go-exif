@@ -99,11 +99,6 @@ type IfdEnumerate struct {
 }
 
 func NewIfdEnumerate(exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
-    // Make it obvious what data we expect and when we don't get it.
-    if IsExif(exifData) == false {
-        log.Panicf("not exif data")
-    }
-
     return &IfdEnumerate{
         exifData: exifData,
         buffer: bytes.NewBuffer(exifData),

@@ -68,20 +68,8 @@ func main() {
     data, err := ioutil.ReadAll(f)
     log.PanicIf(err)
 
-    e := exif.NewExif()
-
-    foundAt := -1
-    for i := 0; i < len(data); i++ {
-        if exif.IsExif(data[i:i + 6]) == true {
-            foundAt = i
-            break
-        }
-    }
-
-    if foundAt == -1 {
-        fmt.Printf("EXIF data not found.\n")
-        os.Exit(-1)
-    }
+    rawExif, err := exif.SearchAndExtractExif(data)
+    log.PanicIf(err)
 
     // Run the parse.
 
@@ -143,7 +131,7 @@ func main() {
         return nil
     }
 
-    _, err = e.Visit(data[foundAt:], visitor)
+    _, err = exif.Visit(rawExif, visitor)
     log.PanicIf(err)
 
     if printAsJsonArg == true {

@@ -1211,14 +1211,12 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 		}
 	}()
 
-	e := NewExif()
-
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-	rawExif, err := e.SearchAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	_, index, err := e.Collect(rawExif)
+	_, index, err := Collect(rawExif)
 	log.PanicIf(err)
 
 	itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
@@ -1293,14 +1291,12 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-	e := NewExif()
-
-	rawExif, err := e.SearchAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
 	// Decode from binary.
 
-	_, originalIndex, err := e.Collect(rawExif)
+	_, originalIndex, err := Collect(rawExif)
 	log.PanicIf(err)
 
 	originalThumbnailData, err := originalIndex.RootIfd.NextIfd.Thumbnail()
@@ -1320,7 +1316,7 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	// Parse again.
 
-	_, recoveredIndex, err := e.Collect(updatedExif)
+	_, recoveredIndex, err := Collect(updatedExif)
 	log.PanicIf(err)
 
 	recoveredTags := recoveredIndex.RootIfd.DumpTags()
@@ -1407,14 +1403,12 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-	e := NewExif()
-
-	rawExif, err := e.SearchAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
 	// Decode from binary.
 
-	_, originalIndex, err := e.Collect(rawExif)
+	_, originalIndex, err := Collect(rawExif)
 	log.PanicIf(err)
 
 	originalThumbnailData, err := originalIndex.RootIfd.NextIfd.Thumbnail()
@@ -1452,7 +1446,7 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *te
 
 	// Parse again.
 
-	_, recoveredIndex, err := e.Collect(updatedExif)
+	_, recoveredIndex, err := Collect(updatedExif)
 	log.PanicIf(err)
 
 	recoveredTags := recoveredIndex.RootIfd.DumpTags()
@@ -1547,12 +1541,10 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *te
 func ExampleIfd_Thumbnail() {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-	e := NewExif()
-
-	rawExif, err := e.SearchAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	_, index, err := e.Collect(rawExif)
+	_, index, err := Collect(rawExif)
 	log.PanicIf(err)
 
 	thumbnailData, err := index.RootIfd.NextIfd.Thumbnail()
@@ -1565,12 +1557,10 @@ func ExampleIfd_Thumbnail() {
 func ExampleBuilderTag_SetValue() {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-	e := NewExif()
-
-	rawExif, err := e.SearchAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	_, index, err := e.Collect(rawExif)
+	_, index, err := Collect(rawExif)
 	log.PanicIf(err)
 
 	// Create builder.

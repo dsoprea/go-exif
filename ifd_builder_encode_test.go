@@ -516,9 +516,7 @@ func getExifSimpleTestIb() *IfdBuilder {
 }
 
 func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
-    e := NewExif()
-
-    eh, index, err := e.Collect(exifData)
+    eh, index, err := Collect(exifData)
     log.PanicIf(err)
 
     if eh.ByteOrder != TestDefaultByteOrder {
@@ -818,9 +816,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
     // Parse.
 
-    e := NewExif()
-
-    _, index, err := e.Collect(exifData)
+    _, index, err := Collect(exifData)
     log.PanicIf(err)
 
     tagsDump := index.RootIfd.DumpTree()
@@ -900,9 +896,7 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 
     // Parse it so we can see it.
 
-    e := NewExif()
-
-    _, index, err := e.Collect(exifData)
+    _, index, err := Collect(exifData)
     log.PanicIf(err)
 
     // addressableData is the byte-slice where the allocated data can be

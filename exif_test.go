@@ -6,6 +6,7 @@ import (
     "path"
     "fmt"
     "reflect"
+    "bytes"
 
     "io/ioutil"
     "encoding/binary"
@@ -15,22 +16,11 @@ import (
 
 var (
     assetsPath = ""
+    testExifData = make([]byte, 0)
 )
 
 
-func TestIsExif_True(t *testing.T) {
-    if ok := IsExif([]byte("Exif\000\000")); ok != true {
-        t.Fatalf("expected true")
-    }
-}
-
-func TestIsExif_False(t *testing.T) {
-    if ok := IsExif([]byte("something unexpected")); ok != false {
-        t.Fatalf("expected false")
-    }
-}
-
-func TestExif_Visit(t *testing.T) {
+func TestVisit(t *testing.T) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -52,13 +42,13 @@ func TestExif_Visit(t *testing.T) {
     // Search for the beginning of the EXIF information. The EXIF is near the
     // very beginning of our/most JPEGs, so this has a very low cost.
 
-    e := NewExif()
-
     foundAt := -1
     for i := 0; i < len(data); i++ {
-        if IsExif(data[i:i + 6]) == true {
+        if _, err := ParseExifHeader(data[i:]); err == nil {
             foundAt = i
             break
+        } else if log.Is(err, ErrNotExif) == false {
+            log.Panic(err)
         }
     }
 
@@ -110,7 +100,7 @@ func TestExif_Visit(t *testing.T) {
         return nil
     }
 
-    _, err = e.Visit(data[foundAt:], visitor)
+    _, err = Visit(data[foundAt:], visitor)
     log.PanicIf(err)
 
     // for _, line := range tags {
@@ -200,7 +190,35 @@ func TestExif_Visit(t *testing.T) {
     }
 }
 
-func TestExif_Collect(t *testing.T) {
+func TestSearchFileAndExtractExif(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    // Returns a slice starting with the EXIF data and going to the end of the
+    // image.
+    rawExif, err := SearchFileAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
+        t.Fatalf("found EXIF data not correct")
+    }
+}
+
+func TestSearchAndExtractExif(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    imageData, err := ioutil.ReadFile(filepath)
+    log.PanicIf(err)
+
+
+    rawExif, err := SearchAndExtractExif(imageData)
+    log.PanicIf(err)
+
+    if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
+        t.Fatalf("found EXIF data not correct")
+    }
+}
+
+func TestCollect(t *testing.T) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -208,14 +226,12 @@ func TestExif_Collect(t *testing.T) {
         }
     }()
 
-    e := NewExif()
-
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
-    rawExif, err := e.SearchAndExtractExif(filepath)
+    rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
 
-    _, index, err := e.Collect(rawExif)
+    _, index, err := Collect(rawExif)
     log.PanicIf(err)
 
     rootIfd := index.RootIfd
@@ -336,20 +352,8 @@ func TestExif_Collect(t *testing.T) {
     }
 }
 
-func TestExif_ParseExifHeader(t *testing.T) {
-    filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
-
-    exifData, err := ioutil.ReadFile(filepath)
-    log.PanicIf(err)
-
-// TODO(dustin): !! We're currently built to expect the JPEG EXIF header-prefix, but our test-data doesn't have that.So, artificially prefix it, for now.
-    data := make([]byte, len(exifData) + len(ExifHeaderPrefixBytes))
-    copy(data[0:], ExifHeaderPrefixBytes)
-    copy(data[len(ExifHeaderPrefixBytes):], exifData)
-
-    e := NewExif()
-
-    eh, err := e.ParseExifHeader(data)
+func TestParseExifHeader(t *testing.T) {
+    eh, err := ParseExifHeader(testExifData)
     log.PanicIf(err)
 
     if eh.ByteOrder != binary.LittleEndian {
@@ -363,9 +367,7 @@ func TestExif_BuildAndParseExifHeader(t *testing.T) {
     headerBytes, err := BuildExifHeader(TestDefaultByteOrder, 0x11223344)
     log.PanicIf(err)
 
-    e := NewExif()
-
-    eh, err := e.ParseExifHeader(headerBytes)
+    eh, err := ParseExifHeader(headerBytes)
     log.PanicIf(err)
 
     if eh.ByteOrder != TestDefaultByteOrder {
@@ -379,9 +381,7 @@ func ExampleBuildExifHeader() {
     headerBytes, err := BuildExifHeader(TestDefaultByteOrder, 0x11223344)
     log.PanicIf(err)
 
-    e := NewExif()
-
-    eh, err := e.ParseExifHeader(headerBytes)
+    eh, err := ParseExifHeader(headerBytes)
     log.PanicIf(err)
 
     fmt.Printf("%v\n", eh)
@@ -395,4 +395,17 @@ func init() {
     }
 
     assetsPath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
+
+
+    // Load test EXIF data.
+
+    filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
+
+    exifData, err := ioutil.ReadFile(filepath)
+    log.PanicIf(err)
+
+// TODO(dustin): !! We're currently built to expect the JPEG EXIF header-prefix, but our test-data doesn't have that.So, artificially prefix it, for now.
+    testExifData = make([]byte, len(exifData) + len(ExifHeaderPrefixBytes))
+    copy(testExifData[0:], ExifHeaderPrefixBytes)
+    copy(testExifData[len(ExifHeaderPrefixBytes):], exifData)
 }
