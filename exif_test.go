@@ -8,6 +8,7 @@ import (
     "reflect"
 
     "io/ioutil"
+    "encoding/binary"
 
     "github.com/dsoprea/go-logging"
 )
@@ -29,7 +30,7 @@ func TestIsExif_False(t *testing.T) {
     }
 }
 
-func TestVisit(t *testing.T) {
+func TestExif_Visit(t *testing.T) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -199,7 +200,7 @@ func TestVisit(t *testing.T) {
     }
 }
 
-func TestCollect(t *testing.T) {
+func TestExif_Collect(t *testing.T) {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -335,7 +336,30 @@ func TestCollect(t *testing.T) {
     }
 }
 
-func TestBuildAndParseExifHeader(t *testing.T) {
+func TestExif_ParseExifHeader(t *testing.T) {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
+
+    exifData, err := ioutil.ReadFile(filepath)
+    log.PanicIf(err)
+
+// TODO(dustin): !! We're currently built to expect the JPEG EXIF header-prefix, but our test-data doesn't have that.So, artificially prefix it, for now.
+    data := make([]byte, len(exifData) + len(ExifHeaderPrefixBytes))
+    copy(data[0:], ExifHeaderPrefixBytes)
+    copy(data[len(ExifHeaderPrefixBytes):], exifData)
+
+    e := NewExif()
+
+    eh, err := e.ParseExifHeader(data)
+    log.PanicIf(err)
+
+    if eh.ByteOrder != binary.LittleEndian {
+        t.Fatalf("Byte-order of EXIF header not correct.")
+    } else if eh.FirstIfdOffset != 0x8 {
+        t.Fatalf("First IFD offset not correct.")
+    }
+}
+
+func TestExif_BuildAndParseExifHeader(t *testing.T) {
     headerBytes, err := BuildExifHeader(TestDefaultByteOrder, 0x11223344)
     log.PanicIf(err)
 
