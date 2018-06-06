@@ -180,21 +180,24 @@ func Test_IfdTagEntry_String(t *testing.T) {
 }
 
 func Test_IfdTagEntryValueResolver_ValueBytes(t *testing.T) {
+    allocatedData := []byte { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 }
+
     ite := IfdTagEntry{
         TagId: 0x1,
         TagIndex: 0,
         TagType: TypeByte,
-        UnitCount: 6,
-        ValueOffset: 0x0,
+        UnitCount: uint32(len(allocatedData)),
+        ValueOffset: 0x8,
         RawValueOffset: []byte { 0x0, 0x0, 0x0, 0x0 },
         Ii: RootIi,
     }
 
-    exifData := make([]byte, ExifAddressableAreaStart + 6)
-    copy(exifData, ExifHeaderPrefixBytes)
+    headerBytes, err := BuildExifHeader(TestDefaultByteOrder, uint32(0))
+    log.PanicIf(err)
 
-    allocatedData := []byte { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 }
-    copy(exifData[ExifAddressableAreaStart:], allocatedData)
+    exifData := make([]byte, len(headerBytes) + len(allocatedData))
+    copy(exifData[0:], headerBytes)
+    copy(exifData[len(headerBytes):], allocatedData)
 
     itevr := NewIfdTagEntryValueResolver(exifData, TestDefaultByteOrder)
 
