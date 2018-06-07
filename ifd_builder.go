@@ -154,9 +154,7 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 // NewStandardBuilderTag constructs a `BuilderTag` instance. The type is looked
 // up. `ii` is the type of IFD that owns this tag.
 func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
-	ti := NewTagIndex()
-
-	it, err := ti.Get(ii, tagId)
+	it, err := tagIndex.Get(ii, tagId)
 	log.PanicIf(err)
 
 	typeId := it.Type
@@ -190,9 +188,7 @@ func NewStandardBuilderTag(ii IfdIdentity, tagId uint16, byteOrder binary.ByteOr
 // tags for testing with. `ii` is the type of IFD that owns this tag. This can
 // not be an IFD (IFDs are not associated with standardized, official names).
 func NewStandardBuilderTagWithName(ii IfdIdentity, tagName string, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
-	ti := NewTagIndex()
-
-	it, err := ti.GetWithName(ii, tagName)
+	it, err := tagIndex.GetWithName(ii, tagName)
 	log.PanicIf(err)
 
 	tt := NewTagType(it.Type, byteOrder)
@@ -376,7 +372,6 @@ func (ib *IfdBuilder) Thumbnail() []byte {
 func (ib *IfdBuilder) printTagTree(levels int) {
 	indent := strings.Repeat(" ", levels*2)
 
-	ti := NewTagIndex()
 	i := 0
 	for currentIb := ib; currentIb != nil; currentIb = currentIb.nextIb {
 		prefix := " "
@@ -402,7 +397,7 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 				if isChildIb == true {
 					tagName = "<Child IFD>"
 				} else {
-					it, err := ti.Get(tag.ii, tag.tagId)
+					it, err := tagIndex.Get(tag.ii, tag.tagId)
 					if log.Is(err, ErrTagNotFound) == true {
 						tagName = "<UNKNOWN>"
 					} else if err != nil {
@@ -702,9 +697,7 @@ func (ib *IfdBuilder) FindTagWithName(tagName string) (bt *BuilderTag, err error
 		}
 	}()
 
-	ti := NewTagIndex()
-
-	it, err := ti.GetWithName(ib.ii, tagName)
+	it, err := tagIndex.GetWithName(ib.ii, tagName)
 	log.PanicIf(err)
 
 	found, err := ib.FindN(it.Id, 1)

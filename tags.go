@@ -87,6 +87,8 @@ var (
         // blob (not a slice of longs).
         ThumbnailOffsetTagId: struct{}{},
     }
+
+    tagIndex *TagIndex
 )
 
 var (
@@ -147,10 +149,6 @@ type TagIndex struct {
 
 func NewTagIndex() *TagIndex {
     ti := new(TagIndex)
-
-    err := ti.load()
-    log.PanicIf(err)
-
     return ti
 }
 
@@ -161,18 +159,17 @@ func (ti *TagIndex) load() (err error) {
         }
     }()
 
+    // Already loaded.
+    if ti.tagsByIfd != nil {
+        return nil
+    }
+
 
     // Read static data.
 
-// TODO(dustin): !! Load this from init() so we're not doing it every time.
-    f, err := os.Open(tagDataFilepath)
-    log.PanicIf(err)
-
-    d := yaml.NewDecoder(f)
-
     encodedIfds := make(map[string][]encodedTag)
 
-    err = d.Decode(encodedIfds)
+    err = yaml.Unmarshal([]byte(tagsYaml), encodedIfds)
     log.PanicIf(err)
 
 
@@ -256,6 +253,9 @@ func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
         }
     }()
 
+    err = ti.load()
+    log.PanicIf(err)
+
     family, found := ti.tagsByIfd[ii.IfdName]
     if found == false {
         log.Panic(ErrTagNotFound)
@@ -277,6 +277,9 @@ func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, er
         }
     }()
 
+    err = ti.load()
+    log.PanicIf(err)
+
     it, found := ti.tagsByIfdR[ii.IfdName][name]
     if found != true {
         log.Panic(ErrTagNotFound)
@@ -284,6 +287,7 @@ func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, er
 
     return it, nil
 }
+
 
 // IfdTagWithId returns true if the given tag points to a child IFD block.
 func IfdTagNameWithIdOrFail(parentIfdName string, tagId uint16) string {
@@ -392,4 +396,6 @@ func init() {
 
         IfdTagNames[ifdName] = tagsR
     }
+
+    tagIndex = NewTagIndex()
 }

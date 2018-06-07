@@ -419,10 +419,8 @@ func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err err
         }
     }()
 
-    ti := NewTagIndex()
-
     ii := ifd.Identity()
-    it, err := ti.GetWithName(ii, tagName)
+    it, err := tagIndex.GetWithName(ii, tagName)
     if log.Is(err, ErrTagNotFound) == true {
         log.Panic(ErrTagNotStandard)
     } else if err != nil {
@@ -538,12 +536,11 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 
     ifdsFoundCount := 0
 
-    ti := NewTagIndex()
     for _, tag := range ifd.Entries {
         if tag.ChildIfdName != "" {
             fmt.Printf("%s - TAG: %s\n", indent, tag)
         } else {
-            it, err := ti.Get(ifd.Identity(), tag.TagId)
+            it, err := tagIndex.Get(ifd.Identity(), tag.TagId)
 
             tagName := ""
             if err == nil {

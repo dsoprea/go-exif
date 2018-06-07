@@ -53,7 +53,6 @@ func TestVisit(t *testing.T) {
 
     // Run the parse.
 
-    ti := NewTagIndex()
     tags := make([]string, 0)
 
     visitor := func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error) {
@@ -64,7 +63,7 @@ func TestVisit(t *testing.T) {
             }
         }()
 
-        it, err := ti.Get(ii, tagId)
+        it, err := tagIndex.Get(ii, tagId)
         if err != nil {
             if log.Is(err, ErrTagNotFound) {
                 fmt.Printf("Unknown tag: [%v] (%04x)\n", ii, tagId)

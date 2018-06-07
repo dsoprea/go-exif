@@ -14,9 +14,7 @@ var (
 )
 
 func TestGet(t *testing.T) {
-    ti := NewTagIndex()
-
-    it, err := ti.Get(RootIi, 0x10f)
+    it, err := tagIndex.Get(RootIi, 0x10f)
     log.PanicIf(err)
 
     if it.Is("IFD", 0x10f) == false || it.IsName("IFD", "Make") == false {
@@ -25,9 +23,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetWithName(t *testing.T) {
-    ti := NewTagIndex()
-
-    it, err := ti.GetWithName(RootIi, "Make")
+    it, err := tagIndex.GetWithName(RootIi, "Make")
     log.PanicIf(err)
 
     if it.Is("IFD", 0x10f) == false || it.Is("IFD", 0x10f) == false {
