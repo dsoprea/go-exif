@@ -5,6 +5,7 @@ import (
     "fmt"
     "strings"
     "errors"
+    "reflect"
 
     "encoding/binary"
 
@@ -153,6 +154,12 @@ func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumer
         RawValueOffset: rawValueOffset,
     }
 
+    value, isUnhandledUnknown, err := ie.resolveTagValue(tag)
+    log.PanicIf(err)
+
+    tag.value = value
+    tag.isUnhandledUnknown = isUnhandledUnknown
+
     // If it's an IFD but not a standard one, it'll just be seen as a LONG
     // (the standard IFD tag type), later, unless we skip it because it's
     // [likely] not even in the standard list of known tags.
@@ -162,6 +169,72 @@ func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumer
     }
 
     return tag, nil
+}
+
+func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, isUnhandledUnknown bool, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    addressableData := ie.exifData[ExifAddressableAreaStart:]
+
+    // Return the exact bytes of the unknown-type value. Returning a string
+    // (`ValueString`) is easy because we can just pass everything to
+    // `Sprintf()`. Returning the raw, typed value (`Value`) is easy
+    // (obviously). However, here, in order to produce the list of bytes, we
+    // need to coerce whatever `UndefinedValue()` returns.
+    if ite.TagType == TypeUndefined {
+        valueContext := ValueContext{
+            UnitCount: ite.UnitCount,
+            ValueOffset: ite.ValueOffset,
+            RawValueOffset: ite.RawValueOffset,
+            AddressableData: addressableData,
+        }
+
+        value, err := UndefinedValue(ite.Ii, ite.TagId, valueContext, ie.byteOrder)
+        log.PanicIf(err)
+
+        switch value.(type) {
+        case []byte:
+            return value.([]byte), false, nil
+        case string:
+            return []byte(value.(string)), false, nil
+        case UnknownTagValue:
+            valueBytes, err := value.(UnknownTagValue).ValueBytes()
+
+// TODO(dustin): Is this always bytes? What about the tag-specific structures that are built? Handle unhandled unknown. Set isUnhandledUnknown.
+
+            log.PanicIf(err)
+
+            return valueBytes, false, nil
+        default:
+// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
+            log.Panicf("can not produce bytes for unknown-type tag (0x%04x): [%s]", ite.TagId, reflect.TypeOf(value))
+        }
+    }
+
+    originalType := NewTagType(ite.TagType, ie.byteOrder)
+    byteCount := uint32(originalType.Size()) * ite.UnitCount
+
+    tt := NewTagType(TypeByte, ie.byteOrder)
+
+    if tt.ValueIsEmbedded(byteCount) == true {
+        iteLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
+
+        // In this case, the bytes normally used for the offset are actually
+        // data.
+        valueBytes, err = tt.ParseBytes(ite.RawValueOffset, byteCount)
+        log.PanicIf(err)
+    } else {
+        iteLogger.Debugf(nil, "Reading BYTE value (ITE; at offset).")
+
+        valueBytes, err = tt.ParseBytes(addressableData[ite.ValueOffset:], byteCount)
+        log.PanicIf(err)
+    }
+
+    return valueBytes, false, nil
 }
 
 // TagVisitor is an optional callback that can get hit for every tag we parse

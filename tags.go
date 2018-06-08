@@ -24,6 +24,11 @@ const (
     ThumbnailSizeTagId = 0x0202
 )
 
+type IfdNameAndIndex struct {
+    Ii IfdIdentity
+    Index int
+}
+
 var (
     tagDataFilepath = ""
 
@@ -89,11 +94,29 @@ var (
     }
 
     tagIndex *TagIndex
+
+    IfdDesignations = map[string]IfdNameAndIndex {
+        "ifd0": { RootIi, 0 },
+        "ifd1": { RootIi, 1 },
+        "exif": { ExifIi, 0 },
+        "gps": { GpsIi, 0 },
+        "iop": { ExifIopIi, 0 },
+    }
+
+    IfdDesignationsR = make(map[IfdNameAndIndex]string)
 )
 
 var (
     tagsLogger = log.NewLogger("exif.tags")
 )
+
+func IfdDesignation(ii IfdIdentity, index int) string {
+    if ii == RootIi {
+        return fmt.Sprintf("%s%d", ii.IfdName, index)
+    } else {
+        return ii.IfdName
+    }
+}
 
 
 type IfdIdentity struct {
@@ -395,6 +418,10 @@ func init() {
         }
 
         IfdTagNames[ifdName] = tagsR
+    }
+
+    for designation, ni := range IfdDesignations {
+        IfdDesignationsR[ni] = designation
     }
 
     tagIndex = NewTagIndex()
