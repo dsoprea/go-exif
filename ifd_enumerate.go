@@ -194,44 +194,48 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
         }
 
         value, err := UndefinedValue(ite.Ii, ite.TagId, valueContext, ie.byteOrder)
-        log.PanicIf(err)
+        if err != nil {
+            if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
+                valueBytes = []byte(UnparseableUnknownTagValuePlaceholder)
+                return valueBytes, true, nil
+            } else {
+                log.Panic(err)
+            }
+        } else {
+            switch value.(type) {
+            case []byte:
+                return value.([]byte), false, nil
+            case string:
+                return []byte(value.(string)), false, nil
+            case UnknownTagValue:
+                valueBytes, err := value.(UnknownTagValue).ValueBytes()
+                log.PanicIf(err)
 
-        switch value.(type) {
-        case []byte:
-            return value.([]byte), false, nil
-        case string:
-            return []byte(value.(string)), false, nil
-        case UnknownTagValue:
-            valueBytes, err := value.(UnknownTagValue).ValueBytes()
-
-// TODO(dustin): Is this always bytes? What about the tag-specific structures that are built? Handle unhandled unknown. Set isUnhandledUnknown.
-
-            log.PanicIf(err)
-
-            return valueBytes, false, nil
-        default:
+                return valueBytes, false, nil
+            default:
 // TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
-            log.Panicf("can not produce bytes for unknown-type tag (0x%04x): [%s]", ite.TagId, reflect.TypeOf(value))
+                log.Panicf("can not produce bytes for unknown-type tag (0x%04x): [%s]", ite.TagId, reflect.TypeOf(value))
+            }
         }
-    }
-
-    originalType := NewTagType(ite.TagType, ie.byteOrder)
-    byteCount := uint32(originalType.Size()) * ite.UnitCount
-
-    tt := NewTagType(TypeByte, ie.byteOrder)
-
-    if tt.ValueIsEmbedded(byteCount) == true {
-        iteLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
-
-        // In this case, the bytes normally used for the offset are actually
-        // data.
-        valueBytes, err = tt.ParseBytes(ite.RawValueOffset, byteCount)
-        log.PanicIf(err)
     } else {
-        iteLogger.Debugf(nil, "Reading BYTE value (ITE; at offset).")
+        originalType := NewTagType(ite.TagType, ie.byteOrder)
+        byteCount := uint32(originalType.Size()) * ite.UnitCount
 
-        valueBytes, err = tt.ParseBytes(addressableData[ite.ValueOffset:], byteCount)
-        log.PanicIf(err)
+        tt := NewTagType(TypeByte, ie.byteOrder)
+
+        if tt.ValueIsEmbedded(byteCount) == true {
+            iteLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
+
+            // In this case, the bytes normally used for the offset are actually
+            // data.
+            valueBytes, err = tt.ParseBytes(ite.RawValueOffset, byteCount)
+            log.PanicIf(err)
+        } else {
+            iteLogger.Debugf(nil, "Reading BYTE value (ITE; at offset).")
+
+            valueBytes, err = tt.ParseBytes(addressableData[ite.ValueOffset:], byteCount)
+            log.PanicIf(err)
+        }
     }
 
     return valueBytes, false, nil
