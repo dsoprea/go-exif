@@ -125,7 +125,7 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerato
     return ite
 }
 
-func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumerator) (tag *IfdTagEntry, err error) {
+func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumerator, resolveValue bool) (tag *IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -154,11 +154,13 @@ func (ie *IfdEnumerate) parseTag(ii IfdIdentity, tagIndex int, ite *IfdTagEnumer
         RawValueOffset: rawValueOffset,
     }
 
-    value, isUnhandledUnknown, err := ie.resolveTagValue(tag)
-    log.PanicIf(err)
+    if resolveValue == true {
+        value, isUnhandledUnknown, err := ie.resolveTagValue(tag)
+        log.PanicIf(err)
 
-    tag.value = value
-    tag.isUnhandledUnknown = isUnhandledUnknown
+        tag.value = value
+        tag.isUnhandledUnknown = isUnhandledUnknown
+    }
 
     // If it's an IFD but not a standard one, it'll just be seen as a LONG
     // (the standard IFD tag type), later, unless we skip it because it's
@@ -248,7 +250,7 @@ type TagVisitor func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor TagVisitor, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor TagVisitor, doDescend bool, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -266,7 +268,7 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumer
     var iteThumbnailSize *IfdTagEntry
 
     for i := 0; i < int(tagCount); i++ {
-        tag, err := ie.parseTag(ii, i, ite)
+        tag, err := ie.parseTag(ii, i, ite, resolveValues)
         log.PanicIf(err)
 
         if tag.TagId == ThumbnailOffsetTagId {
@@ -300,7 +302,7 @@ func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumer
 
             childIi, _ := IfdIdOrFail(ii.IfdName, tag.ChildIfdName)
 
-            err := ie.scan(childIi, tag.ValueOffset, visitor)
+            err := ie.scan(childIi, tag.ValueOffset, visitor, resolveValues)
             log.PanicIf(err)
         }
 
@@ -351,7 +353,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 }
 
 // Scan enumerates the different EXIF's IFD blocks.
-func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisitor) (err error) {
+func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisitor, resolveValues bool) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -362,7 +364,7 @@ func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisito
         ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ii.IfdName, ifdIndex, ifdOffset)
         ite := ie.getTagEnumerator(ifdOffset)
 
-        nextIfdOffset, _, _, err := ie.ParseIfd(ii, ifdIndex, ite, visitor, true)
+        nextIfdOffset, _, _, err := ie.ParseIfd(ii, ifdIndex, ite, visitor, true, resolveValues)
         log.PanicIf(err)
 
         if nextIfdOffset == 0 {
@@ -376,7 +378,7 @@ func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisito
 }
 
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor) (err error) {
+func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor, resolveValue bool) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -385,7 +387,7 @@ func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor) (err error) {
 
     ii, _ := IfdIdOrFail("", IfdStandard)
 
-    err = ie.scan(ii, ifdOffset, visitor)
+    err = ie.scan(ii, ifdOffset, visitor, resolveValue)
     log.PanicIf(err)
 
     return nil
@@ -818,7 +820,7 @@ type IfdIndex struct {
 
 
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error) {
+func (ie *IfdEnumerate) Collect(rootIfdOffset uint32, resolveValues bool) (index IfdIndex, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -860,7 +862,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
         ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ii.IfdName, index, offset)
         ite := ie.getTagEnumerator(offset)
 
-        nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(ii, index, ite, nil, false)
+        nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(ii, index, ite, nil, false, resolveValues)
         log.PanicIf(err)
 
         id := len(ifds)
@@ -979,7 +981,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 // ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
 // testing.
-func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitor) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
+func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitor, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -992,14 +994,14 @@ func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, vi
 
     ite := NewIfdTagEnumerator(ifdBlock, byteOrder, 0)
 
-    nextIfdOffset, entries, _, err = ie.ParseIfd(ii, 0, ite, visitor, true)
+    nextIfdOffset, entries, _, err = ie.ParseIfd(ii, 0, ite, visitor, true, resolveValues)
     log.PanicIf(err)
 
     return nextIfdOffset, entries, nil
 }
 
 // ParseOneTag is a hack to use an IE to parse a raw tag block.
-func ParseOneTag(ii IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (tag *IfdTagEntry, err error) {
+func ParseOneTag(ii IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte, resolveValue bool) (tag *IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -1012,7 +1014,7 @@ func ParseOneTag(ii IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (t
 
     ite := NewIfdTagEnumerator(tagBlock, byteOrder, 0)
 
-    tag, err = ie.parseTag(ii, 0, ite)
+    tag, err = ie.parseTag(ii, 0, ite, resolveValue)
     log.PanicIf(err)
 
     return tag, nil

@@ -60,7 +60,7 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
         t.Fatalf("Tag not encoded to the right number of bytes: (%d)", len(tagBytes))
     }
 
-    ite, err := ParseOneTag(ii, byteOrder, tagBytes)
+    ite, err := ParseOneTag(ii, byteOrder, tagBytes, false)
     log.PanicIf(err)
 
     if ite.TagId != 0x9000 {

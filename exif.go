@@ -179,7 +179,7 @@ func Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err error) {
 
     ie := NewIfdEnumerate(exifData, eh.ByteOrder)
 
-    err = ie.Scan(eh.FirstIfdOffset, visitor)
+    err = ie.Scan(eh.FirstIfdOffset, visitor, true)
     log.PanicIf(err)
 
     return eh, nil
@@ -198,7 +198,7 @@ func Collect(exifData []byte) (eh ExifHeader, index IfdIndex, err error) {
 
     ie := NewIfdEnumerate(exifData, eh.ByteOrder)
 
-    index, err = ie.Collect(eh.FirstIfdOffset)
+    index, err = ie.Collect(eh.FirstIfdOffset, true)
     log.PanicIf(err)
 
     return eh, index, nil

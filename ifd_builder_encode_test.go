@@ -375,7 +375,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
         t.Fatalf("Child IFD is not the right size: (%d)", len(childIfdBlock))
     }
 
-    iteV, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes)
+    iteV, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes, false)
     log.PanicIf(err)
 
     if iteV.TagId != IfdExifId {
@@ -398,7 +398,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
     // Validate the child's raw IFD bytes.
 
-    childNextIfdOffset, childEntries, err := ParseOneIfd(ExifIi, TestDefaultByteOrder, childIfdBlock, nil)
+    childNextIfdOffset, childEntries, err := ParseOneIfd(ExifIi, TestDefaultByteOrder, childIfdBlock, nil, false)
     log.PanicIf(err)
 
     if childNextIfdOffset != uint32(0) {
@@ -429,6 +429,13 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 }
 
 func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.PrintErrorf(err, "Test failure.")
+        }
+    }()
+
     // Encode the tag. Since we've actually provided an offset at which we can
     // allocate data, the child-IFD will automatically be encoded, allocated,
     // and installed into the allocated-data block (which will follow the IFD
@@ -467,7 +474,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
         t.Fatalf("Child IFD not have been allocated.")
     }
 
-    ite, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes)
+
+    ite, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes, false)
     log.PanicIf(err)
 
     if ite.TagId != 0x000b {
