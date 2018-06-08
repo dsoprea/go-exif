@@ -11,6 +11,10 @@ import (
 )
 
 const (
+    UnparseableUnknownTagValuePlaceholder = "!UNPARSEABLE"
+)
+
+const (
     TagUnknownType_9298_UserComment_Encoding_ASCII = iota
     TagUnknownType_9298_UserComment_Encoding_JIS = iota
     TagUnknownType_9298_UserComment_Encoding_UNICODE = iota

@@ -367,6 +367,23 @@ func (ifd *Ifd) ChildWithIfdIdentity(ii IfdIdentity) (childIfd *Ifd, err error) 
     return nil, nil
 }
 
+func (ifd *Ifd) ChildWithName(ifdName string) (childIfd *Ifd, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    for _, childIfd := range ifd.Children {
+        if childIfd.Ii.IfdName == ifdName {
+            return childIfd, nil
+        }
+    }
+
+    log.Panic(ErrTagNotFound)
+    return nil, nil
+}
+
 func (ifd *Ifd) TagValue(ite *IfdTagEntry) (value interface{}, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -552,7 +569,13 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
                 var err error
 
                 value, err = ifd.TagValue(tag)
-                log.PanicIf(err)
+                if err != nil {
+                    if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
+                        value = UnparseableUnknownTagValuePlaceholder
+                    } else {
+                        log.Panic(err)
+                    }
+                }
             }
 
             fmt.Printf("%s - TAG: %s NAME=[%s] VALUE=[%v]\n", indent, tag, tagName, value)
