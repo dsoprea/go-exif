@@ -301,7 +301,7 @@ func TestIfd_GpsInfo(t *testing.T) {
         }
     }()
 
-    filepath := path.Join(assetsPath, "20180428_212312.jpg")
+    filepath := path.Join(assetsPath, "gps.jpg")
 
     rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)
@@ -330,7 +330,7 @@ func TestIfd_GpsInfo(t *testing.T) {
 
 
 func ExampleIfd_GpsInfo() {
-    filepath := path.Join(assetsPath, "20180428_212312.jpg")
+    filepath := path.Join(assetsPath, "gps.jpg")
 
     rawExif, err := SearchFileAndExtractExif(filepath)
     log.PanicIf(err)

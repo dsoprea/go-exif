@@ -810,6 +810,10 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
         }
     }()
 
+
+// TODO(dustin): !! Also add functionality to update the GPS info.
+
+
     gi = new(GpsInfo)
 
     if ifd.Ii != GpsIi {
