@@ -6,6 +6,8 @@ import (
     "strings"
     "errors"
     "reflect"
+    "time"
+    "strconv"
 
     "encoding/binary"
 
@@ -14,8 +16,11 @@ import (
 
 var (
     ifdEnumerateLogger = log.NewLogger("exifjpeg.ifd")
+)
 
+var (
     ErrNoThumbnail = errors.New("no thumbnail")
+    ErrNoGpsTags = errors.New("no gps tags")
 )
 
 
@@ -795,6 +800,137 @@ func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
 func (ifd *Ifd) DumpTree() []string {
     return ifd.dumpTree(nil, 0)
 }
+
+// GpsInfo parses and consolidates the GPS info. This can only be called on the
+// GPS IFD.
+func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    gi = new(GpsInfo)
+
+    if ifd.Ii != GpsIi {
+        log.Panicf("GPS can only be read on GPS IFD: [%s] != [%s]", ifd.Ii, GpsIi)
+    }
+
+    if tags, found := ifd.EntriesByTagId[TagVersionId]; found == false {
+        log.Panic(ErrNoGpsTags)
+    } else if bytes.Compare(tags[0].value, []byte { 2, 2, 0, 0}) != 0 {
+        log.Panic(ErrNoGpsTags)
+    }
+
+
+    tags, found := ifd.EntriesByTagId[TagLatitudeId]
+    if found == false {
+        log.Panicf("latitude not found")
+    }
+
+    latitudeValue, err := ifd.TagValue(tags[0])
+    log.PanicIf(err)
+
+    tags, found = ifd.EntriesByTagId[TagLatitudeRefId]
+    if found == false {
+        log.Panicf("latitude-ref not found")
+    }
+
+    latitudeRefValue, err := ifd.TagValue(tags[0])
+    log.PanicIf(err)
+
+    tags, found = ifd.EntriesByTagId[TagLongitudeId]
+    if found == false {
+        log.Panicf("longitude not found")
+    }
+
+    longitudeValue, err := ifd.TagValue(tags[0])
+    log.PanicIf(err)
+
+    tags, found = ifd.EntriesByTagId[TagLongitudeRefId]
+    if found == false {
+        log.Panicf("longitude-ref not found")
+    }
+
+    longitudeRefValue, err := ifd.TagValue(tags[0])
+    log.PanicIf(err)
+
+
+    // Parse location.
+
+    latitudeRaw := latitudeValue.([]Rational)
+
+    gi.Latitude = GpsDegrees{
+        Orientation: latitudeRefValue.(string)[0],
+        Degrees: int(float64(latitudeRaw[0].Numerator) / float64(latitudeRaw[0].Denominator)),
+        Minutes: int(float64(latitudeRaw[1].Numerator) / float64(latitudeRaw[1].Denominator)),
+        Seconds: int(float64(latitudeRaw[2].Numerator) / float64(latitudeRaw[2].Denominator)),
+    }
+
+    longitudeRaw := longitudeValue.([]Rational)
+
+    gi.Longitude = GpsDegrees{
+        Orientation: longitudeRefValue.(string)[0],
+        Degrees: int(float64(longitudeRaw[0].Numerator) / float64(longitudeRaw[0].Denominator)),
+        Minutes: int(float64(longitudeRaw[1].Numerator) / float64(longitudeRaw[1].Denominator)),
+        Seconds: int(float64(longitudeRaw[2].Numerator) / float64(longitudeRaw[2].Denominator)),
+    }
+
+
+    // Parse altitude.
+
+    altitudeTags, foundAltitude := ifd.EntriesByTagId[TagAltitudeId]
+    altitudeRefTags, foundAltitudeRef := ifd.EntriesByTagId[TagAltitudeRefId]
+
+    if foundAltitude == true && foundAltitudeRef == true {
+        altitudeValue, err := ifd.TagValue(altitudeTags[0])
+        log.PanicIf(err)
+
+        altitudeRefValue, err := ifd.TagValue(altitudeRefTags[0])
+        log.PanicIf(err)
+
+        altitudeRaw := altitudeValue.([]Rational)
+        altitude := int(altitudeRaw[0].Numerator / altitudeRaw[0].Denominator)
+        if altitudeRefValue.([]byte)[0] == 1 {
+            altitude *= -1
+        }
+
+        gi.Altitude = altitude
+    }
+
+
+    // Parse time.
+
+    timestampTags, foundTimestamp := ifd.EntriesByTagId[TagTimestampId]
+    datestampTags, foundDatestamp := ifd.EntriesByTagId[TagDatestampId]
+
+    if foundTimestamp == true && foundDatestamp == true {
+        datestampValue, err := ifd.TagValue(datestampTags[0])
+        log.PanicIf(err)
+
+        dateParts := strings.Split(datestampValue.(string), ":")
+
+        year, err1 := strconv.ParseUint(dateParts[0], 10, 16)
+        month, err2 := strconv.ParseUint(dateParts[1], 10, 8)
+        day, err3 := strconv.ParseUint(dateParts[2], 10, 8)
+
+        if err1 == nil && err2 == nil && err3 == nil {
+            timestampValue, err := ifd.TagValue(timestampTags[0])
+            log.PanicIf(err)
+
+            timestampRaw := timestampValue.([]Rational)
+
+            hour := int(timestampRaw[0].Numerator / timestampRaw[0].Denominator)
+            minute := int(timestampRaw[1].Numerator / timestampRaw[1].Denominator)
+            second := int(timestampRaw[2].Numerator / timestampRaw[2].Denominator)
+
+            gi.Timestamp = time.Date(int(year), time.Month(month), int(day), hour, minute, second, 0, time.UTC)
+        }
+    }
+
+    return gi, nil
+}
+
 
 type QueuedIfd struct {
     Ii IfdIdentity

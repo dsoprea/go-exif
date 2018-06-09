@@ -4,6 +4,7 @@ import (
     "path"
     "testing"
     "bytes"
+    "fmt"
 
     "encoding/binary"
     "io/ioutil"
@@ -291,3 +292,62 @@ func Test_Ifd_Thumbnail(t *testing.T) {
         t.Fatalf("thumbnail not correct")
     }
 }
+
+func TestIfd_GpsInfo(t *testing.T) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.PrintErrorf(err, "Test failure.")
+        }
+    }()
+
+    filepath := path.Join(assetsPath, "20180428_212312.jpg")
+
+    rawExif, err := SearchFileAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd, err := index.RootIfd.ChildWithIfdIdentity(GpsIi)
+    log.PanicIf(err)
+
+    gi, err := ifd.GpsInfo()
+    log.PanicIf(err)
+
+    if gi.Latitude.Orientation != 'N' || gi.Latitude.Degrees != 26 || gi.Latitude.Minutes != 35 || gi.Latitude.Seconds != 12 {
+        t.Fatalf("latitude not correct")
+    } else if gi.Longitude.Orientation != 'W' || gi.Longitude.Degrees != 80 || gi.Longitude.Minutes != 3 || gi.Longitude.Seconds != 13 {
+        t.Fatalf("longitude not correct")
+    } else if gi.Altitude != 0 {
+        t.Fatalf("altitude not correct")
+    } else if gi.Timestamp.Unix() != 1524964977 {
+        t.Fatalf("timestamp not correct")
+    } else if gi.Altitude != 0 {
+        t.Fatalf("altitude not correct")
+    }
+}
+
+
+func ExampleIfd_GpsInfo() {
+    filepath := path.Join(assetsPath, "20180428_212312.jpg")
+
+    rawExif, err := SearchFileAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := Collect(rawExif)
+    log.PanicIf(err)
+
+    ifd, err := index.RootIfd.ChildWithIfdIdentity(GpsIi)
+    log.PanicIf(err)
+
+    gi, err := ifd.GpsInfo()
+    log.PanicIf(err)
+
+    fmt.Printf("%s\n", gi)
+
+    // Output:
+    // GpsInfo<LAT=(26.58667) LON=(-80.05361) ALT=(0) TIME=[2018-04-29 01:22:57 +0000 UTC]>
+}
+
+

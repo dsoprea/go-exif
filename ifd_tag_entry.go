@@ -29,7 +29,8 @@ type IfdTagEntry struct {
     // IfdName is the IFD that this tag belongs to.
     Ii IfdIdentity
 
-// TODO(dustin): !! We now parse and read the value immediately. Update the rest of the logic to use this and get rid of all ofthe staggered and different resolution mechanisms.
+
+// TODO(dustin): !! We now parse and read the value immediately. Update the rest of the logic to use this and get rid of all of the staggered and different resolution mechanisms.
     value []byte
     isUnhandledUnknown bool
 }
