@@ -3,6 +3,9 @@ package exif
 import (
     "fmt"
     "time"
+
+    "github.com/golang/geo/s1"
+    "github.com/golang/geo/s2"
 )
 
 
@@ -32,6 +35,20 @@ type GpsInfo struct {
     Timestamp time.Time
 }
 
-func (gi GpsInfo) String() string {
+func (gi *GpsInfo) String() string {
     return fmt.Sprintf("GpsInfo<LAT=(%.05f) LON=(%.05f) ALT=(%d) TIME=[%s]>", gi.Latitude.Decimal(), gi.Longitude.Decimal(), gi.Altitude, gi.Timestamp)
+}
+
+func (gi *GpsInfo) S2CellId() s2.CellID {
+    latitude := gi.Latitude.Decimal()
+    longitude := gi.Longitude.Decimal()
+
+    ll := s2.LatLng{
+        s1.Angle(latitude),
+        s1.Angle(longitude),
+    }
+
+    ll.Normalized()
+
+    return s2.CellIDFromLatLng(ll)
 }
