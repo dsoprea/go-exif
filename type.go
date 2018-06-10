@@ -4,6 +4,8 @@ import (
     "errors"
     "bytes"
     "fmt"
+    "strconv"
+    "strings"
 
     "encoding/binary"
 
@@ -738,4 +740,69 @@ func (tt TagType) Encode(value interface{}) (encoded []byte, err error) {
     log.PanicIf(err)
 
     return ed.Encoded, err
+}
+
+func (tt TagType) FromString(valueString string) (value interface{}, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    if tt.tagType == TypeUndefined {
+// TODO(dustin): Circle back to this.
+        log.Panicf("undefined-type values are not supported")
+    }
+
+    if tt.tagType == TypeByte {
+        return []byte(valueString), nil
+    } else if tt.tagType == TypeAscii {
+        return fmt.Sprintf("%s\n", valueString), nil
+    } else if tt.tagType == TypeShort {
+        n, err := strconv.ParseUint(valueString, 10, 16)
+        log.PanicIf(err)
+
+        return uint16(n), nil
+    } else if tt.tagType == TypeLong {
+        n, err := strconv.ParseUint(valueString, 10, 32)
+        log.PanicIf(err)
+
+        return uint32(n), nil
+    } else if tt.tagType == TypeRational {
+        parts := strings.SplitN(valueString, "/", 2)
+
+        numerator, err := strconv.ParseUint(parts[0], 10, 32)
+        log.PanicIf(err)
+
+        denominator, err := strconv.ParseUint(parts[1], 10, 32)
+        log.PanicIf(err)
+
+        return Rational{
+            Numerator: uint32(numerator),
+            Denominator: uint32(denominator),
+        }, nil
+    } else if tt.tagType == TypeSignedLong {
+        n, err := strconv.ParseInt(valueString, 10, 32)
+        log.PanicIf(err)
+
+        return int32(n), nil
+    } else if tt.tagType == TypeSignedRational {
+        parts := strings.SplitN(valueString, "/", 2)
+
+        numerator, err := strconv.ParseInt(parts[0], 10, 32)
+        log.PanicIf(err)
+
+        denominator, err := strconv.ParseInt(parts[1], 10, 32)
+        log.PanicIf(err)
+
+        return SignedRational{
+            Numerator: int32(numerator),
+            Denominator: int32(denominator),
+        }, nil
+    } else if tt.tagType == TypeAsciiNoNul {
+        return valueString, nil
+    }
+
+    log.Panicf("from-string encoding for type not supported; this shouldn't happen: (%d)", tt.Type)
+    return nil, nil
 }

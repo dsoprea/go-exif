@@ -9,7 +9,7 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
-func Test_TagType_EncodeDecode_Byte(t *testing.T) {
+func TestTagType_EncodeDecode_Byte(t *testing.T) {
     tt := NewTagType(TypeByte, TestDefaultByteOrder)
 
     data := []byte { 0x11, 0x22, 0x33, 0x44, 0x55 }
@@ -29,7 +29,7 @@ func Test_TagType_EncodeDecode_Byte(t *testing.T) {
     }
 }
 
-func Test_TagType_EncodeDecode_Ascii(t *testing.T) {
+func TestTagType_EncodeDecode_Ascii(t *testing.T) {
     tt := NewTagType(TypeAscii, TestDefaultByteOrder)
 
     data := "hello"
@@ -49,7 +49,7 @@ func Test_TagType_EncodeDecode_Ascii(t *testing.T) {
     }
 }
 
-func Test_TagType_EncodeDecode_Shorts(t *testing.T) {
+func TestTagType_EncodeDecode_Shorts(t *testing.T) {
     tt := NewTagType(TypeShort, TestDefaultByteOrder)
 
     data := []uint16 { 0x11, 0x22, 0x33 }
@@ -69,7 +69,7 @@ func Test_TagType_EncodeDecode_Shorts(t *testing.T) {
     }
 }
 
-func Test_TagType_EncodeDecode_Long(t *testing.T) {
+func TestTagType_EncodeDecode_Long(t *testing.T) {
     tt := NewTagType(TypeLong, TestDefaultByteOrder)
 
     data := []uint32 { 0x11, 0x22, 0x33 }
@@ -89,7 +89,7 @@ func Test_TagType_EncodeDecode_Long(t *testing.T) {
     }
 }
 
-func Test_TagType_EncodeDecode_Rational(t *testing.T) {
+func TestTagType_EncodeDecode_Rational(t *testing.T) {
     tt := NewTagType(TypeRational, TestDefaultByteOrder)
 
     data := []Rational {
@@ -112,7 +112,7 @@ func Test_TagType_EncodeDecode_Rational(t *testing.T) {
     }
 }
 
-func Test_TagType_EncodeDecode_SignedLong(t *testing.T) {
+func TestTagType_EncodeDecode_SignedLong(t *testing.T) {
     tt := NewTagType(TypeSignedLong, TestDefaultByteOrder)
 
     data := []int32 { 0x11, 0x22, 0x33 }
@@ -132,7 +132,7 @@ func Test_TagType_EncodeDecode_SignedLong(t *testing.T) {
     }
 }
 
-func Test_TagType_EncodeDecode_SignedRational(t *testing.T) {
+func TestTagType_EncodeDecode_SignedRational(t *testing.T) {
     tt := NewTagType(TypeSignedRational, TestDefaultByteOrder)
 
     data := []SignedRational {
@@ -155,7 +155,7 @@ func Test_TagType_EncodeDecode_SignedRational(t *testing.T) {
     }
 }
 
-func Test_TagType_EncodeDecode_AsciiNoNul(t *testing.T) {
+func TestTagType_EncodeDecode_AsciiNoNul(t *testing.T) {
     tt := NewTagType(TypeAsciiNoNul, TestDefaultByteOrder)
 
     data := "hello"
@@ -176,3 +176,122 @@ func Test_TagType_EncodeDecode_AsciiNoNul(t *testing.T) {
 }
 
 // TODO(dustin): Add tests for TypeUndefined.
+
+func TestTagType_FromString_Undefined(t *testing.T) {
+    defer func() {
+        if state := recover(); state != nil {
+            err := log.Wrap(state.(error))
+            log.PrintErrorf(err, "Test failure.")
+
+            log.Panic(err)
+        }
+    }()
+
+    tt := NewTagType(TypeUndefined, TestDefaultByteOrder)
+
+    _, err := tt.FromString("")
+    if err == nil {
+        t.Fatalf("no error for undefined-type")
+    } else if err.Error() != "undefined-type values are not supported" {
+        fmt.Printf("[%s]\n", err.Error())
+        log.Panic(err)
+    }
+}
+
+func TestTagType_FromString_Byte(t *testing.T) {
+    tt := NewTagType(TypeByte, TestDefaultByteOrder)
+
+    value, err := tt.FromString("abc")
+    log.PanicIf(err)
+
+    if reflect.DeepEqual(value, []byte { 'a', 'b', 'c' }) != true {
+        t.Fatalf("byte value not correct")
+    }
+}
+
+func TestTagType_FromString_Ascii(t *testing.T) {
+    tt := NewTagType(TypeAscii, TestDefaultByteOrder)
+
+    value, err := tt.FromString("abc")
+    log.PanicIf(err)
+
+    if reflect.DeepEqual(value, "abc\n") != true {
+        t.Fatalf("ASCII value not correct: [%s]", value)
+    }
+}
+
+func TestTagType_FromString_Short(t *testing.T) {
+    tt := NewTagType(TypeShort, TestDefaultByteOrder)
+
+    value, err := tt.FromString("55")
+    log.PanicIf(err)
+
+    if reflect.DeepEqual(value, uint16(55)) != true {
+        t.Fatalf("short value not correct")
+    }
+}
+
+func TestTagType_FromString_Long(t *testing.T) {
+    tt := NewTagType(TypeLong, TestDefaultByteOrder)
+
+    value, err := tt.FromString("66000")
+    log.PanicIf(err)
+
+    if reflect.DeepEqual(value, uint32(66000)) != true {
+        t.Fatalf("long value not correct")
+    }
+}
+
+func TestTagType_FromString_Rational(t *testing.T) {
+    tt := NewTagType(TypeRational, TestDefaultByteOrder)
+
+    value, err := tt.FromString("12/34")
+    log.PanicIf(err)
+
+    expected := Rational{
+        Numerator: 12,
+        Denominator: 34,
+    }
+
+    if reflect.DeepEqual(value, expected) != true {
+        t.Fatalf("rational value not correct")
+    }
+}
+
+func TestTagType_FromString_SignedLong(t *testing.T) {
+    tt := NewTagType(TypeSignedLong, TestDefaultByteOrder)
+
+    value, err := tt.FromString("-66000")
+    log.PanicIf(err)
+
+    if reflect.DeepEqual(value, int32(-66000)) != true {
+        t.Fatalf("signed-long value not correct")
+    }
+}
+
+func TestTagType_FromString_SignedRational(t *testing.T) {
+    tt := NewTagType(TypeSignedRational, TestDefaultByteOrder)
+
+    value, err := tt.FromString("-12/34")
+    log.PanicIf(err)
+
+    expected := SignedRational{
+        Numerator: -12,
+        Denominator: 34,
+    }
+
+    if reflect.DeepEqual(value, expected) != true {
+        t.Fatalf("signd-rational value not correct")
+    }
+}
+
+func TestTagType_FromString_AsciiNoNul(t *testing.T) {
+    tt := NewTagType(TypeAsciiNoNul, TestDefaultByteOrder)
+
+    value, err := tt.FromString("abc")
+    log.PanicIf(err)
+
+    if reflect.DeepEqual(value, "abc") != true {
+        t.Fatalf("ASCII-no-nul value not correct")
+    }
+}
