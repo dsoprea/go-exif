@@ -21,6 +21,7 @@ var (
 
 var (
     ErrTagEntryNotFound = errors.New("tag entry not found")
+    ErrChildIbNotFound = errors.New("child IB not found")
 )
 
 type IfdBuilderTagValue struct {
@@ -227,6 +228,8 @@ type IfdBuilder struct {
     byteOrder binary.ByteOrder
 
     // Includes both normal tags and IFD tags (which point to child IFDs).
+// TODO(dustin): Keep a separate list of children like with IFd.
+// TODO(dustin): Either rename this or `Entries` in Ifd to be the same thing.
     tags []*BuilderTag
 
     // existingOffset will be the offset that this IFD is currently found at if
@@ -305,6 +308,123 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolve
     }
 
     return firstIb
+}
+
+func (ib *IfdBuilder) ChildWithIfdIdentity(ii IfdIdentity) (childIb *IfdBuilder, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    for _, bt := range ib.tags {
+        if bt.value.IsIb() {
+            childIbThis := bt.value.Ib()
+
+            if childIbThis.ii == ii {
+                return childIbThis, nil
+            }
+        }
+    }
+
+    log.Panic(ErrChildIbNotFound)
+
+    // Never reached.
+    return nil, nil
+}
+
+func GetOrCreateIbFromRootIb(rootIb *IfdBuilder, ifdDesignation string) (ib *IfdBuilder, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+// TODO(dustin): !! Add test.
+
+    ib = rootIb
+
+    switch ifdDesignation {
+    case "ifd0":
+        // We're already on it.
+
+    case "ifd1":
+        if ib.nextIb == nil {
+            ib.nextIb = NewIfdBuilder(RootIi, ib.byteOrder)
+        }
+
+        return ib.nextIb, nil
+
+    case "exif":
+        exifIb, err := ib.ChildWithIfdIdentity(ExifIi)
+        if err != nil {
+            if log.Is(err, ErrChildIbNotFound) == true {
+                exifIb = NewIfdBuilder(ExifIi, ib.byteOrder)
+
+                err := ib.AddChildIb(exifIb)
+                log.PanicIf(err)
+            } else {
+                log.Panic(err)
+            }
+        }
+
+        return exifIb, nil
+
+    case "iop":
+        exifIb, err := ib.ChildWithIfdIdentity(ExifIi)
+        if err != nil {
+            if log.Is(err, ErrChildIbNotFound) == true {
+                exifIb = NewIfdBuilder(ExifIi, ib.byteOrder)
+
+                err := ib.AddChildIb(exifIb)
+                log.PanicIf(err)
+
+                // It would be more efficient to just create the IOP IFD here,
+                // since we know it won't exist, but we'd have to duplicate
+                // stuff it makes the code more complicatedto read and harder to
+                // maintain, all for a nominal speed optimization.
+            } else {
+                log.Panic(err)
+            }
+        }
+
+        iopIb, err := exifIb.ChildWithIfdIdentity(ExifIopIi)
+        if err != nil {
+            if log.Is(err, ErrChildIbNotFound) == true {
+                iopIb = NewIfdBuilder(ExifIopIi, ib.byteOrder)
+
+                err := exifIb.AddChildIb(iopIb)
+                log.PanicIf(err)
+            } else {
+                log.Panic(err)
+            }
+        }
+
+        return iopIb, nil
+
+    case "gps":
+        gpsIb, err := ib.ChildWithIfdIdentity(GpsIi)
+        if err != nil {
+            if log.Is(err, ErrChildIbNotFound) == true {
+                gpsIb = NewIfdBuilder(GpsIi, ib.byteOrder)
+
+                err := ib.AddChildIb(gpsIb)
+                log.PanicIf(err)
+            } else {
+                log.Panic(err)
+            }
+        }
+
+        return gpsIb, nil
+    }
+
+    candidates := make([]string, len(IfdDesignations))
+    for key, _ := range IfdDesignations {
+        candidates = append(candidates, key)
+    }
+
+    log.Panicf("IFD designation not valid. Use: %s\n", strings.Join(candidates, ", "))
+    return nil, nil
 }
 
 func (ib *IfdBuilder) String() string {
@@ -948,6 +1068,24 @@ func (ib *IfdBuilder) AddStandard(tagId uint16, value interface{}) (err error) {
     return nil
 }
 
+// AddStandardWithName quickly and easily composes and adds the tag using the
+// information already known about a tag (using the name). Only works with
+// standard tags.
+func (ib *IfdBuilder) AddStandardWithName(tagName string, value interface{}) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    bt := NewStandardBuilderTagWithName(ib.ii, tagName, ib.byteOrder, value)
+
+    err = ib.add(bt)
+    log.PanicIf(err)
+
+    return nil
+}
+
 // SetStandard quickly and easily composes and adds or replaces the tag using
 // the information already known about a tag. Only works with standard tags.
 func (ib *IfdBuilder) SetStandard(tagId uint16, value interface{}) (err error) {
@@ -965,24 +1103,6 @@ func (ib *IfdBuilder) SetStandard(tagId uint16, value interface{}) (err error) {
     log.PanicIf(err)
 
     ib.tags[i] = bt
-
-    return nil
-}
-
-// AddStandardWithName quickly and easily composes and adds the tag using the
-// information already known about a tag (using the name). Only works with
-// standard tags.
-func (ib *IfdBuilder) AddStandardWithName(tagName string, value interface{}) (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    bt := NewStandardBuilderTagWithName(ib.ii, tagName, ib.byteOrder, value)
-
-    err = ib.add(bt)
-    log.PanicIf(err)
 
     return nil
 }

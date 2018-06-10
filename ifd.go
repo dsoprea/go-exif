@@ -7,12 +7,15 @@ import (
 )
 
 const (
+    // The root IFD types (ifd0, ifd1).
     IfdStandard = "IFD"
 
+    // Child IFD types.
     IfdExif = "Exif"
     IfdGps = "GPSInfo"
     IfdIop = "Iop"
 
+    // Tag IDs for child IFDs.
     IfdExifId = 0x8769
     IfdGpsId = 0x8825
     IfdIopId = 0xA005

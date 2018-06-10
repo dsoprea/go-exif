@@ -1160,12 +1160,18 @@ func ParseOneTag(ii IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte, re
     return tag, nil
 }
 
-func FindIfdFromRootIfd(rootIfd *Ifd, ifdName string) (ifd *Ifd, err error) {
-    ifdName = strings.ToLower(ifdName)
+func FindIfdFromRootIfd(rootIfd *Ifd, ifdDesignation string) (ifd *Ifd, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    ifd = rootIfd
 
 // TODO(dustin): !! Add test.
 
-    switch ifdName {
+    switch ifdDesignation {
     case "ifd0":
         // We're already on it.
 
@@ -1203,6 +1209,6 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdName string) (ifd *Ifd, err error) {
         candidates = append(candidates, key)
     }
 
-    log.Panicf("IFD name not valid. Use: %s\n", strings.Join(candidates, ", "))
+    log.Panicf("IFD designation not valid. Use: %s\n", strings.Join(candidates, ", "))
     return nil, nil
 }
