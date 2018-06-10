@@ -757,7 +757,7 @@ func (tt TagType) FromString(valueString string) (value interface{}, err error) 
     if tt.tagType == TypeByte {
         return []byte(valueString), nil
     } else if tt.tagType == TypeAscii {
-        return fmt.Sprintf("%s\n", valueString), nil
+        return fmt.Sprintf("%s\000", valueString), nil
     } else if tt.tagType == TypeShort {
         n, err := strconv.ParseUint(valueString, 10, 16)
         log.PanicIf(err)

@@ -215,7 +215,7 @@ func TestTagType_FromString_Ascii(t *testing.T) {
     value, err := tt.FromString("abc")
     log.PanicIf(err)
 
-    if reflect.DeepEqual(value, "abc\n") != true {
+    if reflect.DeepEqual(value, "abc\000") != true {
         t.Fatalf("ASCII value not correct: [%s]", value)
     }
 }
