@@ -114,7 +114,6 @@ func (ii IfdIdentity) Id() int {
     return IfdIdWithIdentityOrFail(ii)
 }
 
-
 func init() {
     for ifdName, tags := range IfdTagIds {
         tagsR := make(map[uint16]string)

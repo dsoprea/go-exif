@@ -1159,3 +1159,50 @@ func ParseOneTag(ii IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte, re
 
     return tag, nil
 }
+
+func FindIfdFromRootIfd(rootIfd *Ifd, ifdName string) (ifd *Ifd, err error) {
+    ifdName = strings.ToLower(ifdName)
+
+// TODO(dustin): !! Add test.
+
+    switch ifdName {
+    case "ifd0":
+        // We're already on it.
+
+    case "ifd1":
+        if ifd.NextIfd == nil {
+            log.Panicf("IFD1 not found")
+        }
+
+        return ifd.NextIfd, nil
+
+    case "exif":
+        ifd, err = ifd.ChildWithIfdIdentity(ExifIi)
+        log.PanicIf(err)
+
+        return ifd, nil
+
+    case "iop":
+        exifIfd, err := ifd.ChildWithIfdIdentity(ExifIi)
+        log.PanicIf(err)
+
+        ifd, err = exifIfd.ChildWithIfdIdentity(ExifIopIi)
+        log.PanicIf(err)
+
+        return ifd, nil
+
+    case "gps":
+        ifd, err = ifd.ChildWithIfdIdentity(GpsIi)
+        log.PanicIf(err)
+
+        return ifd, nil
+    }
+
+    candidates := make([]string, len(IfdDesignations))
+    for key, _ := range IfdDesignations {
+        candidates = append(candidates, key)
+    }
+
+    log.Panicf("IFD name not valid. Use: %s\n", strings.Join(candidates, ", "))
+    return nil, nil
+}
