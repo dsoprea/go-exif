@@ -1100,9 +1100,15 @@ func (ib *IfdBuilder) SetStandard(tagId uint16, value interface{}) (err error) {
     bt := NewStandardBuilderTag(ib.ii, tagId, ib.byteOrder, value)
 
     i, err := ib.Find(tagId)
-    log.PanicIf(err)
+    if err != nil {
+        if log.Is(err, ErrTagEntryNotFound) == false {
+            log.Panic(err)
+        }
 
-    ib.tags[i] = bt
+        ib.tags = append(ib.tags, bt)
+    } else {
+        ib.tags[i] = bt
+    }
 
     return nil
 }
@@ -1122,9 +1128,15 @@ func (ib *IfdBuilder) SetStandardWithName(tagName string, value interface{}) (er
     bt := NewStandardBuilderTagWithName(ib.ii, tagName, ib.byteOrder, value)
 
     i, err := ib.Find(bt.tagId)
-    log.PanicIf(err)
+    if err != nil {
+        if log.Is(err, ErrTagEntryNotFound) == false {
+            log.Panic(err)
+        }
 
-    ib.tags[i] = bt
+        ib.tags = append(ib.tags, bt)
+    } else {
+        ib.tags[i] = bt
+    }
 
     return nil
 }
