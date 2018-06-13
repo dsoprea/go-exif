@@ -440,10 +440,6 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
 	ibe.pushToJournal("encodeAndAttachIfd", ">", "%s", ib)
 
-	if len(ib.tags) == 0 {
-		log.Panicf("trying to encode an IfdBuilder that doesn't have any tags")
-	}
-
 	b := new(bytes.Buffer)
 
 	i := 0
