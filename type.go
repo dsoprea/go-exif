@@ -189,9 +189,14 @@ func (tt TagType) ParseAscii(data []byte, unitCount uint32) (value string, err e
     }
 
     if len(data) == 0 || data[count - 1] != 0 {
-        typeLogger.Warningf(nil, "ascii not terminated with nul")
-        return string(data[:count]), nil
+        s := string(data[:count])
+        typeLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
+
+        return s, nil
     } else {
+        // Auto-strip the NUL from the end. It serves no purpose outside of
+        // encoding semantics.
+
         return string(data[:count - 1]), nil
     }
 }
@@ -411,12 +416,12 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
     }()
 
     if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
-        typeLogger.Debugf(nil, "Reading ASCII value (no-nul; embedded).")
+        typeLogger.Debugf(nil, "Reading ASCII value (embedded).")
 
         value, err = tt.ParseAscii(valueContext.RawValueOffset, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
-        typeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
+        typeLogger.Debugf(nil, "Reading ASCII value (at offset).")
 
         value, err = tt.ParseAscii(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
         log.PanicIf(err)
@@ -756,8 +761,12 @@ func (tt TagType) FromString(valueString string) (value interface{}, err error) 
 
     if tt.tagType == TypeByte {
         return []byte(valueString), nil
-    } else if tt.tagType == TypeAscii {
-        return fmt.Sprintf("%s\000", valueString), nil
+    } else if tt.tagType == TypeAscii || tt.tagType == TypeAsciiNoNul {
+        // Whether or not we're putting an NUL on the end is only relevant for
+        // byte-level encoding. This function really just supports a user
+        // interface.
+
+        return valueString, nil
     } else if tt.tagType == TypeShort {
         n, err := strconv.ParseUint(valueString, 10, 16)
         log.PanicIf(err)
@@ -799,8 +808,6 @@ func (tt TagType) FromString(valueString string) (value interface{}, err error) 
             Numerator: int32(numerator),
             Denominator: int32(denominator),
         }, nil
-    } else if tt.tagType == TypeAsciiNoNul {
-        return valueString, nil
     }
 
     log.Panicf("from-string encoding for type not supported; this shouldn't happen: (%d)", tt.Type)
