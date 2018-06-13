@@ -1,11 +1,11 @@
 language: go
 go:
   - master
-  - 1.10
-  - 1.9
-  - 1.8
-  - 1.7
-  - 1.6
+  - "1.10"
+  - "1.9"
+  - "1.8"
+  - "1.7"
+  - "1.6"
 install:
   - go get -t ./...
   - go get github.com/mattn/goveralls
