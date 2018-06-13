@@ -52,7 +52,7 @@ var (
 )
 
 var (
-    ErrNotExif = errors.New("not exif data")
+    ErrNoExif = errors.New("no exif data")
     ErrExifHeaderError = errors.New("exif header error")
 )
 
@@ -76,13 +76,13 @@ func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
         if _, err := ParseExifHeader(data[i:]); err == nil {
             foundAt = i
             break
-        } else if log.Is(err, ErrNotExif) == false {
+        } else if log.Is(err, ErrNoExif) == false {
             log.Panic(err)
         }
     }
 
     if foundAt == -1 {
-        log.Panicf("EXIF start not found")
+        log.Panic(ErrNoExif)
     }
 
     return data[foundAt:], nil
@@ -127,7 +127,7 @@ func (eh ExifHeader) String() string {
 
 // ParseExifHeader parses the bytes at the very top of the header.
 //
-// This will panic with ErrNotExif on any data errors so that we can double as
+// This will panic with ErrNoExif on any data errors so that we can double as
 // an EXIF-detection routine.
 func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     defer func() {
@@ -146,14 +146,14 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
     byteOrder, found := ByteOrderLookup[byteOrderBytes]
     if found == false {
         exifLogger.Warningf(nil, "EXIF byte-order not recognized: [%v]", byteOrderBytes)
-        log.Panic(ErrNotExif)
+        log.Panic(ErrNoExif)
     }
 
     fixedBytes := [2]byte { data[2], data[3] }
     expectedFixedBytes := ExifFixedBytesLookup[byteOrder]
     if fixedBytes != expectedFixedBytes {
         exifLogger.Warningf(nil, "EXIF header fixed-bytes should be [%v] but are: [%v]", expectedFixedBytes, fixedBytes)
-        log.Panic(ErrNotExif)
+        log.Panic(ErrNoExif)
     }
 
     firstIfdOffset := byteOrder.Uint32(data[4:8])

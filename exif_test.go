@@ -42,7 +42,7 @@ func TestVisit(t *testing.T) {
         if _, err := ParseExifHeader(data[i:]); err == nil {
             foundAt = i
             break
-        } else if log.Is(err, ErrNotExif) == false {
+        } else if log.Is(err, ErrNoExif) == false {
             log.Panic(err)
         }
     }

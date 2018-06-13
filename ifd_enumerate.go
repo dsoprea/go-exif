@@ -1175,6 +1175,8 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdDesignation string) (ifd *Ifd, err erro
     case "ifd0":
         // We're already on it.
 
+        return ifd, nil
+
     case "ifd1":
         if ifd.NextIfd == nil {
             log.Panicf("IFD1 not found")
@@ -1205,10 +1207,12 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdDesignation string) (ifd *Ifd, err erro
     }
 
     candidates := make([]string, len(IfdDesignations))
+    i := 0
     for key, _ := range IfdDesignations {
-        candidates = append(candidates, key)
+        candidates[i] = key
+        i++
     }
 
-    log.Panicf("IFD designation not valid. Use: %s\n", strings.Join(candidates, ", "))
+    log.Panicf("IFD designation [%s] not valid. Use: %s\n", ifdDesignation, strings.Join(candidates, ", "))
     return nil, nil
 }
