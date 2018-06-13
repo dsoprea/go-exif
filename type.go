@@ -810,6 +810,6 @@ func (tt TagType) FromString(valueString string) (value interface{}, err error) 
         }, nil
     }
 
-    log.Panicf("from-string encoding for type not supported; this shouldn't happen: (%d)", tt.Type)
+    log.Panicf("from-string encoding for type not supported; this shouldn't happen: (%d)", tt.Type())
     return nil, nil
 }
