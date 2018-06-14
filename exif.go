@@ -167,7 +167,7 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 }
 
 // Visit recursively invokes a callback for every tag.
-func Visit(exifData []byte, visitor TagVisitor) (eh ExifHeader, err error) {
+func Visit(exifData []byte, visitor RawTagVisitor) (eh ExifHeader, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))

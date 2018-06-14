@@ -5,6 +5,7 @@ import (
     "testing"
     "bytes"
     "fmt"
+    "reflect"
 
     "encoding/binary"
     "io/ioutil"
@@ -328,6 +329,160 @@ func TestIfd_GpsInfo(t *testing.T) {
     }
 }
 
+func TestIfdEnumerate_EnumerateTagsRecursively(t *testing.T) {
+
+
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    rawExif, err := SearchFileAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := Collect(rawExif)
+    log.PanicIf(err)
+
+
+    collected := make([][2]interface{}, 0)
+
+    cb := func(ifd *Ifd, ite *IfdTagEntry) error {
+        item := [2]interface{} {
+            ifd.Ii.IfdName,
+            int(ite.TagId),
+        }
+
+        collected = append(collected, item)
+
+        return nil
+    }
+
+    err = index.RootIfd.EnumerateTagsRecursively(cb)
+    log.PanicIf(err)
+
+    expected := [][2]interface{} {
+        [2]interface{} { "IFD", 0x010f },
+        [2]interface{} { "IFD", 0x0110 },
+        [2]interface{} { "IFD", 0x0112 },
+        [2]interface{} { "IFD", 0x011a },
+        [2]interface{} { "IFD", 0x011b },
+        [2]interface{} { "IFD", 0x0128 },
+        [2]interface{} { "IFD", 0x0132 },
+        [2]interface{} { "IFD", 0x013b },
+        [2]interface{} { "IFD", 0x0213 },
+        [2]interface{} { "IFD", 0x8298 },
+        [2]interface{} { "Exif", 0x829a },
+        [2]interface{} { "Exif", 0x829d },
+        [2]interface{} { "Exif", 0x8822 },
+        [2]interface{} { "Exif", 0x8827 },
+        [2]interface{} { "Exif", 0x8830 },
+        [2]interface{} { "Exif", 0x8832 },
+        [2]interface{} { "Exif", 0x9000 },
+        [2]interface{} { "Exif", 0x9003 },
+        [2]interface{} { "Exif", 0x9004 },
+        [2]interface{} { "Exif", 0x9101 },
+        [2]interface{} { "Exif", 0x9201 },
+        [2]interface{} { "Exif", 0x9202 },
+        [2]interface{} { "Exif", 0x9204 },
+        [2]interface{} { "Exif", 0x9207 },
+        [2]interface{} { "Exif", 0x9209 },
+        [2]interface{} { "Exif", 0x920a },
+        [2]interface{} { "Exif", 0x927c },
+        [2]interface{} { "Exif", 0x9286 },
+        [2]interface{} { "Exif", 0x9290 },
+        [2]interface{} { "Exif", 0x9291 },
+        [2]interface{} { "Exif", 0x9292 },
+        [2]interface{} { "Exif", 0xa000 },
+        [2]interface{} { "Exif", 0xa001 },
+        [2]interface{} { "Exif", 0xa002 },
+        [2]interface{} { "Exif", 0xa003 },
+        [2]interface{} { "Iop", 0x0001 },
+        [2]interface{} { "Iop", 0x0002 },
+        [2]interface{} { "Exif", 0xa20e },
+        [2]interface{} { "Exif", 0xa20f },
+        [2]interface{} { "Exif", 0xa210 },
+        [2]interface{} { "Exif", 0xa401 },
+        [2]interface{} { "Exif", 0xa402 },
+        [2]interface{} { "Exif", 0xa403 },
+        [2]interface{} { "Exif", 0xa406 },
+        [2]interface{} { "Exif", 0xa430 },
+        [2]interface{} { "Exif", 0xa431 },
+        [2]interface{} { "Exif", 0xa432 },
+        [2]interface{} { "Exif", 0xa434 },
+        [2]interface{} { "Exif", 0xa435 },
+        [2]interface{} { "GPSInfo", 0x0000 },
+        [2]interface{} { "IFD", 0x010f },
+        [2]interface{} { "IFD", 0x0110 },
+        [2]interface{} { "IFD", 0x0112 },
+        [2]interface{} { "IFD", 0x011a },
+        [2]interface{} { "IFD", 0x011b },
+        [2]interface{} { "IFD", 0x0128 },
+        [2]interface{} { "IFD", 0x0132 },
+        [2]interface{} { "IFD", 0x013b },
+        [2]interface{} { "IFD", 0x0213 },
+        [2]interface{} { "IFD", 0x8298 },
+        [2]interface{} { "Exif", 0x829a },
+        [2]interface{} { "Exif", 0x829d },
+        [2]interface{} { "Exif", 0x8822 },
+        [2]interface{} { "Exif", 0x8827 },
+        [2]interface{} { "Exif", 0x8830 },
+        [2]interface{} { "Exif", 0x8832 },
+        [2]interface{} { "Exif", 0x9000 },
+        [2]interface{} { "Exif", 0x9003 },
+        [2]interface{} { "Exif", 0x9004 },
+        [2]interface{} { "Exif", 0x9101 },
+        [2]interface{} { "Exif", 0x9201 },
+        [2]interface{} { "Exif", 0x9202 },
+        [2]interface{} { "Exif", 0x9204 },
+        [2]interface{} { "Exif", 0x9207 },
+        [2]interface{} { "Exif", 0x9209 },
+        [2]interface{} { "Exif", 0x920a },
+        [2]interface{} { "Exif", 0x927c },
+        [2]interface{} { "Exif", 0x9286 },
+        [2]interface{} { "Exif", 0x9290 },
+        [2]interface{} { "Exif", 0x9291 },
+        [2]interface{} { "Exif", 0x9292 },
+        [2]interface{} { "Exif", 0xa000 },
+        [2]interface{} { "Exif", 0xa001 },
+        [2]interface{} { "Exif", 0xa002 },
+        [2]interface{} { "Exif", 0xa003 },
+        [2]interface{} { "Iop", 0x0001 },
+        [2]interface{} { "Iop", 0x0002 },
+        [2]interface{} { "Exif", 0xa20e },
+        [2]interface{} { "Exif", 0xa20f },
+        [2]interface{} { "Exif", 0xa210 },
+        [2]interface{} { "Exif", 0xa401 },
+        [2]interface{} { "Exif", 0xa402 },
+        [2]interface{} { "Exif", 0xa403 },
+        [2]interface{} { "Exif", 0xa406 },
+        [2]interface{} { "Exif", 0xa430 },
+        [2]interface{} { "Exif", 0xa431 },
+        [2]interface{} { "Exif", 0xa432 },
+        [2]interface{} { "Exif", 0xa434 },
+        [2]interface{} { "Exif", 0xa435 },
+        [2]interface{} { "GPSInfo", 0x0000 },
+    }
+
+    if reflect.DeepEqual(collected, expected) != true {
+        fmt.Printf("ACTUAL:\n")
+        fmt.Printf("\n")
+
+        for _, item := range collected {
+            fmt.Printf("[2]interface{} { \"%s\", 0x%04x },\n", item[0], item[1])
+        }
+
+        fmt.Printf("\n")
+
+        fmt.Printf("EXPECTED:\n")
+        fmt.Printf("\n")
+
+        for _, item := range expected {
+            fmt.Printf("[2]interface{} { \"%s\", 0x%04x },\n", item[0], item[1])
+        }
+
+        fmt.Printf("\n")
+
+        t.Fatalf("tags not visited correctly: (%d) != (%d)", len(collected), len(expected))
+    }
+}
+
 
 func ExampleIfd_GpsInfo() {
     filepath := path.Join(assetsPath, "gps.jpg")
@@ -349,5 +504,3 @@ func ExampleIfd_GpsInfo() {
     // Output:
     // GpsInfo<LAT=(26.58667) LON=(-80.05361) ALT=(0) TIME=[2018-04-29 01:22:57 +0000 UTC]>
 }
-
-

@@ -248,14 +248,14 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
     return valueBytes, false, nil
 }
 
-// TagVisitor is an optional callback that can get hit for every tag we parse
+// RawTagVisitor is an optional callback that can get hit for every tag we parse
 // through. `addressableData` is the byte array startign after the EXIF header
 // (where the offsets of all IFDs and values are calculated from).
-type TagVisitor func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
+type RawTagVisitor func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor TagVisitor, doDescend bool, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) ParseIfd(ii IfdIdentity, ifdIndex int, ite *IfdTagEnumerator, visitor RawTagVisitor, doDescend bool, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -358,7 +358,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 }
 
 // Scan enumerates the different EXIF's IFD blocks.
-func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisitor, resolveValues bool) (err error) {
+func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor RawTagVisitor, resolveValues bool) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -383,7 +383,7 @@ func (ie *IfdEnumerate) scan(ii IfdIdentity, ifdOffset uint32, visitor TagVisito
 }
 
 // Scan enumerates the different EXIF blocks (called IFDs).
-func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor TagVisitor, resolveValue bool) (err error) {
+func (ie *IfdEnumerate) Scan(ifdOffset uint32, visitor RawTagVisitor, resolveValue bool) (err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -428,6 +428,9 @@ type Ifd struct {
     EntriesByTagId map[uint16][]*IfdTagEntry
 
     Children []*Ifd
+
+    ChildIfdIndex map[string]*Ifd
+
     NextIfdOffset uint32
     NextIfd *Ifd
 
@@ -574,13 +577,6 @@ func (ifd *Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
         tags = make([]*IfdTagEntry, 0)
     }
 
-    // Quickly create an index of the child-IFDs.
-
-    childIfdIndex := make(map[string]*Ifd)
-    for _, childIfd := range ifd.Children {
-        childIfdIndex[childIfd.Ii.IfdName] = childIfd
-    }
-
     // Now, print the tags while also descending to child-IFDS as we encounter them.
 
     ifdsFoundCount := 0
@@ -591,7 +587,7 @@ func (ifd *Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
         if tag.ChildIfdName != "" {
             ifdsFoundCount++
 
-            childIfd, found := childIfdIndex[tag.ChildIfdName]
+            childIfd, found := ifd.ChildIfdIndex[tag.ChildIfdName]
             if found != true {
                 log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
             }
@@ -625,13 +621,6 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
     }
 
     fmt.Printf("%s%sIFD: %s\n", indent, prefix, ifd)
-
-    // Quickly create an index of the child-IFDs.
-
-    childIfdIndex := make(map[string]*Ifd)
-    for _, childIfd := range ifd.Children {
-        childIfdIndex[childIfd.Ii.IfdName] = childIfd
-    }
 
     // Now, print the tags while also descending to child-IFDS as we encounter them.
 
@@ -668,7 +657,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
         if tag.ChildIfdName != "" {
             ifdsFoundCount++
 
-            childIfd, found := childIfdIndex[tag.ChildIfdName]
+            childIfd, found := ifd.ChildIfdIndex[tag.ChildIfdName]
             if found != true {
                 log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
             }
@@ -701,13 +690,6 @@ func (ifd *Ifd) printIfdTree(level int, nextLink bool) {
 
     fmt.Printf("%s%s%s\n", indent, prefix, ifd)
 
-    // Quickly create an index of the child-IFDs.
-
-    childIfdIndex := make(map[string]*Ifd)
-    for _, childIfd := range ifd.Children {
-        childIfdIndex[childIfd.Ii.IfdName] = childIfd
-    }
-
     // Now, print the tags while also descending to child-IFDS as we encounter them.
 
     ifdsFoundCount := 0
@@ -716,7 +698,7 @@ func (ifd *Ifd) printIfdTree(level int, nextLink bool) {
         if tag.ChildIfdName != "" {
             ifdsFoundCount++
 
-            childIfd, found := childIfdIndex[tag.ChildIfdName]
+            childIfd, found := ifd.ChildIfdIndex[tag.ChildIfdName]
             if found != true {
                 log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
             }
@@ -746,13 +728,6 @@ func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
 
     indent := strings.Repeat(" ", level * 2)
 
-    // Quickly create an index of the child-IFDs.
-
-    childIfdIndex := make(map[string]*Ifd)
-    for _, childIfd := range ifd.Children {
-        childIfdIndex[childIfd.Ii.IfdName] = childIfd
-    }
-
     var ifdPhrase string
     if ifd.ParentIfd != nil {
         ifdPhrase = fmt.Sprintf("[%s]->[%s]:(%d)", ifd.ParentIfd.Ii.IfdName, ifd.Ii.IfdName, ifd.Index)
@@ -770,7 +745,7 @@ func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
         if tag.ChildIfdName != "" {
             ifdsFoundCount++
 
-            childIfd, found := childIfdIndex[tag.ChildIfdName]
+            childIfd, found := ifd.ChildIfdIndex[tag.ChildIfdName]
             if found != true {
                 log.Panicf("alien child IFD referenced by a tag: [%s]", tag.ChildIfdName)
             }
@@ -933,6 +908,33 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
     }
 
     return gi, nil
+}
+
+
+type ParsedTagVisitor func(*Ifd, *IfdTagEntry) error
+
+func (ifd *Ifd) EnumerateTagsRecursively(visitor ParsedTagVisitor) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    for ptr := ifd; ptr != nil; ptr = ptr.NextIfd {
+        for _, ite := range ifd.Entries {
+            if ite.ChildIfdName != "" {
+                childIfd := ifd.ChildIfdIndex[ite.ChildIfdName]
+
+                err := childIfd.EnumerateTagsRecursively(visitor)
+                log.PanicIf(err)
+            } else {
+                err := visitor(ifd, ite)
+                log.PanicIf(err)
+            }
+        }
+    }
+
+    return nil
 }
 
 
@@ -1116,12 +1118,38 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32, resolveValues bool) (index
     index.Tree = tree
     index.Lookup = lookup
 
+    err = ie.setChildrenIndex(index.RootIfd)
+    log.PanicIf(err)
+
     return index, nil
 }
 
+func (ie *IfdEnumerate) setChildrenIndex(ifd *Ifd) (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    childIfdIndex := make(map[string]*Ifd)
+    for _, childIfd := range ifd.Children {
+        childIfdIndex[childIfd.Ii.IfdName] = childIfd
+    }
+
+    ifd.ChildIfdIndex = childIfdIndex
+
+    for _, childIfd := range ifd.Children {
+        err := ie.setChildrenIndex(childIfd)
+        log.PanicIf(err)
+    }
+
+    return nil
+}
+
+
 // ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
 // testing.
-func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitor, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
+func ParseOneIfd(ii IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor RawTagVisitor, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
