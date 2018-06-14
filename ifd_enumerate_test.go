@@ -329,9 +329,7 @@ func TestIfd_GpsInfo(t *testing.T) {
     }
 }
 
-func TestIfdEnumerate_EnumerateTagsRecursively(t *testing.T) {
-
-
+func TestIfd_EnumerateTagsRecursively(t *testing.T) {
     filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
     rawExif, err := SearchFileAndExtractExif(filepath)
@@ -481,6 +479,28 @@ func TestIfdEnumerate_EnumerateTagsRecursively(t *testing.T) {
 
         t.Fatalf("tags not visited correctly: (%d) != (%d)", len(collected), len(expected))
     }
+}
+
+func ExampleIfd_EnumerateTagsRecursively() {
+    filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+    rawExif, err := SearchFileAndExtractExif(filepath)
+    log.PanicIf(err)
+
+    _, index, err := Collect(rawExif)
+    log.PanicIf(err)
+
+    cb := func(ifd *Ifd, ite *IfdTagEntry) error {
+
+        // Something useful.
+
+        return nil
+    }
+
+    err = index.RootIfd.EnumerateTagsRecursively(cb)
+    log.PanicIf(err)
+
+    // Output:
 }
 
 
