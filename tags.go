@@ -1,242 +1,231 @@
 package exif
 
 import (
-    "os"
-    "path"
-    "fmt"
+	"fmt"
 
-    "gopkg.in/yaml.v2"
-    "github.com/dsoprea/go-logging"
+	"github.com/dsoprea/go-logging"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-    // IFD1
+	// IFD1
 
-    ThumbnailOffsetTagId = 0x0201
-    ThumbnailSizeTagId = 0x0202
+	ThumbnailOffsetTagId = 0x0201
+	ThumbnailSizeTagId   = 0x0202
 
-    // Exif
+	// Exif
 
-    TagVersionId = 0x0000
+	TagVersionId = 0x0000
 
-    TagLatitudeId = 0x0002
-    TagLatitudeRefId = 0x0001
-    TagLongitudeId = 0x0004
-    TagLongitudeRefId = 0x0003
+	TagLatitudeId     = 0x0002
+	TagLatitudeRefId  = 0x0001
+	TagLongitudeId    = 0x0004
+	TagLongitudeRefId = 0x0003
 
-    TagTimestampId = 0x0007
-    TagDatestampId = 0x001d
+	TagTimestampId = 0x0007
+	TagDatestampId = 0x001d
 
-    TagAltitudeId = 0x0006
-    TagAltitudeRefId = 0x0005
+	TagAltitudeId    = 0x0006
+	TagAltitudeRefId = 0x0005
 )
 
 var (
-    tagDataFilepath = ""
+	// tagsWithoutAlignment is a tag-lookup for tags whose value size won't
+	// necessarily be a multiple of its tag-type.
+	tagsWithoutAlignment = map[uint16]struct{}{
+		// The thumbnail offset is stored as a long, but its data is a binary
+		// blob (not a slice of longs).
+		ThumbnailOffsetTagId: struct{}{},
+	}
 
-    // tagsWithoutAlignment is a tag-lookup for tags whose value size won't
-    // necessarily be a multiple of its tag-type.
-    tagsWithoutAlignment = map[uint16]struct{} {
-        // The thumbnail offset is stored as a long, but its data is a binary
-        // blob (not a slice of longs).
-        ThumbnailOffsetTagId: struct{}{},
-    }
-
-    tagIndex *TagIndex
+	tagIndex *TagIndex
 )
 
 var (
-    tagsLogger = log.NewLogger("exif.tags")
+	tagsLogger = log.NewLogger("exif.tags")
 )
-
 
 // File structures.
 
 type encodedTag struct {
-    // id is signed, here, because YAML doesn't have enough information to
-    // support unsigned.
-    Id int `yaml:"id"`
-    Name string `yaml:"name"`
-    TypeName string `yaml:"type_name"`
+	// id is signed, here, because YAML doesn't have enough information to
+	// support unsigned.
+	Id       int    `yaml:"id"`
+	Name     string `yaml:"name"`
+	TypeName string `yaml:"type_name"`
 }
-
 
 // Indexing structures.
 
 type IndexedTag struct {
-    Id uint16
-    Name string
-    Ifd string
-    Type uint16
+	Id   uint16
+	Name string
+	Ifd  string
+	Type uint16
 }
 
 func (it IndexedTag) String() string {
-    return fmt.Sprintf("TAG<ID=(0x%04x) NAME=[%s] IFD=[%s]>", it.Id, it.Name, it.Ifd)
+	return fmt.Sprintf("TAG<ID=(0x%04x) NAME=[%s] IFD=[%s]>", it.Id, it.Name, it.Ifd)
 }
 
 func (it IndexedTag) IsName(ifd, name string) bool {
-    return it.Name == name && it.Ifd == ifd
+	return it.Name == name && it.Ifd == ifd
 }
 
 func (it IndexedTag) Is(ifd string, id uint16) bool {
-    return it.Id == id && it.Ifd == ifd
+	return it.Id == id && it.Ifd == ifd
 }
 
 type TagIndex struct {
-    tagsByIfd map[string]map[uint16]*IndexedTag
-    tagsByIfdR map[string]map[string]*IndexedTag
+	tagsByIfd  map[string]map[uint16]*IndexedTag
+	tagsByIfdR map[string]map[string]*IndexedTag
 }
 
 func NewTagIndex() *TagIndex {
-    ti := new(TagIndex)
-    return ti
+	ti := new(TagIndex)
+	return ti
 }
 
 func (ti *TagIndex) load() (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
 
-    // Already loaded.
-    if ti.tagsByIfd != nil {
-        return nil
-    }
+	// Already loaded.
+	if ti.tagsByIfd != nil {
+		return nil
+	}
 
+	// Read static data.
 
-    // Read static data.
+	encodedIfds := make(map[string][]encodedTag)
 
-    encodedIfds := make(map[string][]encodedTag)
+	err = yaml.Unmarshal([]byte(tagsYaml), encodedIfds)
+	log.PanicIf(err)
 
-    err = yaml.Unmarshal([]byte(tagsYaml), encodedIfds)
-    log.PanicIf(err)
+	// Load structure.
 
+	tagsByIfd := make(map[string]map[uint16]*IndexedTag)
+	tagsByIfdR := make(map[string]map[string]*IndexedTag)
 
-    // Load structure.
+	count := 0
+	for ifdName, tags := range encodedIfds {
+		for _, tagInfo := range tags {
+			tagId := uint16(tagInfo.Id)
+			tagName := tagInfo.Name
+			tagTypeName := tagInfo.TypeName
 
-    tagsByIfd := make(map[string]map[uint16]*IndexedTag)
-    tagsByIfdR := make(map[string]map[string]*IndexedTag)
+			// TODO(dustin): !! Non-standard types, but found in real data. Ignore for right now.
+			if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" {
+				continue
+			}
 
-    count := 0
-    for ifdName, tags := range encodedIfds {
-        for _, tagInfo := range tags {
-            tagId := uint16(tagInfo.Id)
-            tagName := tagInfo.Name
-            tagTypeName := tagInfo.TypeName
+			tagTypeId, found := TypeNamesR[tagTypeName]
+			if found == false {
+				log.Panicf("type [%s] for [%s] not valid", tagTypeName, tagName)
+				continue
+			}
 
-// TODO(dustin): !! Non-standard types, but found in real data. Ignore for right now.
-if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" {
-    continue
-}
+			tag := &IndexedTag{
+				Ifd:  ifdName,
+				Id:   tagId,
+				Name: tagName,
+				Type: tagTypeId,
+			}
 
-            tagTypeId, found := TypeNamesR[tagTypeName]
-            if found == false {
-                log.Panicf("type [%s] for [%s] not valid", tagTypeName, tagName)
-                continue
-            }
+			// Store by ID.
 
-            tag := &IndexedTag{
-                Ifd: ifdName,
-                Id: tagId,
-                Name: tagName,
-                Type: tagTypeId,
-            }
+			family, found := tagsByIfd[ifdName]
+			if found == false {
+				family = make(map[uint16]*IndexedTag)
+				tagsByIfd[ifdName] = family
+			}
 
+			if _, found := family[tagId]; found == true {
+				log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", ifdName, tagId)
+			}
 
-            // Store by ID.
+			family[tagId] = tag
 
-            family, found := tagsByIfd[ifdName]
-            if found == false {
-                family = make(map[uint16]*IndexedTag)
-                tagsByIfd[ifdName] = family
-            }
+			// Store by name.
 
-            if _, found := family[tagId]; found == true {
-                log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", ifdName, tagId)
-            }
+			familyR, found := tagsByIfdR[ifdName]
+			if found == false {
+				familyR = make(map[string]*IndexedTag)
+				tagsByIfdR[ifdName] = familyR
+			}
 
-            family[tagId] = tag
+			if _, found := familyR[tagName]; found == true {
+				log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", ifdName, tagName)
+			}
 
+			familyR[tagName] = tag
 
-            // Store by name.
+			count++
+		}
+	}
 
-            familyR, found := tagsByIfdR[ifdName]
-            if found == false {
-                familyR = make(map[string]*IndexedTag)
-                tagsByIfdR[ifdName] = familyR
-            }
+	ti.tagsByIfd = tagsByIfd
+	ti.tagsByIfdR = tagsByIfdR
 
-            if _, found := familyR[tagName]; found == true {
-                log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", ifdName, tagName)
-            }
+	tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
 
-            familyR[tagName] = tag
-
-            count++
-        }
-    }
-
-    ti.tagsByIfd = tagsByIfd
-    ti.tagsByIfdR = tagsByIfdR
-
-    tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
-
-    return nil
+	return nil
 }
 
 // Get returns information about the non-IFD tag.
 func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
 
-    err = ti.load()
-    log.PanicIf(err)
+	err = ti.load()
+	log.PanicIf(err)
 
-    family, found := ti.tagsByIfd[ii.IfdName]
-    if found == false {
-        log.Panic(ErrTagNotFound)
-    }
+	family, found := ti.tagsByIfd[ii.IfdName]
+	if found == false {
+		log.Panic(ErrTagNotFound)
+	}
 
-    it, found = family[id]
-    if found == false {
-        log.Panic(ErrTagNotFound)
-    }
+	it, found = family[id]
+	if found == false {
+		log.Panic(ErrTagNotFound)
+	}
 
-    return it, nil
+	return it, nil
 }
 
 // Get returns information about the non-IFD tag.
 func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
 
-    err = ti.load()
-    log.PanicIf(err)
+	err = ti.load()
+	log.PanicIf(err)
 
-    it, found := ti.tagsByIfdR[ii.IfdName][name]
-    if found != true {
-        log.Panic(ErrTagNotFound)
-    }
+	it, found := ti.tagsByIfdR[ii.IfdName][name]
+	if found != true {
+		log.Panic(ErrTagNotFound)
+	}
 
-    return it, nil
+	return it, nil
 }
-
 
 // IfdTagWithId returns true if the given tag points to a child IFD block.
 func IfdTagNameWithIdOrFail(parentIfdName string, tagId uint16) string {
-    name, found := IfdTagNameWithId(parentIfdName, tagId)
-    if found == false {
-        log.Panicf("tag-ID (0x%02x) under parent IFD [%s] not associated with a child IFD", tagId, parentIfdName)
-    }
+	name, found := IfdTagNameWithId(parentIfdName, tagId)
+	if found == false {
+		log.Panicf("tag-ID (0x%02x) under parent IFD [%s] not associated with a child IFD", tagId, parentIfdName)
+	}
 
-    return name
+	return name
 }
 
 // IfdTagWithId returns true if the given tag points to a child IFD block.
@@ -244,88 +233,80 @@ func IfdTagNameWithIdOrFail(parentIfdName string, tagId uint16) string {
 // TODO(dustin): !! Rewrite to take an IfdIdentity, instead. We shouldn't expect that IFD names are globally unique.
 
 func IfdTagNameWithId(parentIfdName string, tagId uint16) (name string, found bool) {
-    if tags, found := IfdTagNames[parentIfdName]; found == true {
-        if name, found = tags[tagId]; found == true {
-            return name, true
-        }
-    }
+	if tags, found := IfdTagNames[parentIfdName]; found == true {
+		if name, found = tags[tagId]; found == true {
+			return name, true
+		}
+	}
 
-    return "", false
+	return "", false
 }
 
 // IfdTagIdWithIdentity returns true if the given tag points to a child IFD
 // block.
 func IfdTagIdWithIdentity(ii IfdIdentity) (tagId uint16, found bool) {
-    if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
-        if tagId, found = tags[ii.IfdName]; found == true {
-            return tagId, true
-        }
-    }
+	if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
+		if tagId, found = tags[ii.IfdName]; found == true {
+			return tagId, true
+		}
+	}
 
-    return 0, false
+	return 0, false
 }
 
 func IfdTagIdWithIdentityOrFail(ii IfdIdentity) (tagId uint16) {
-    if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
-        if tagId, found = tags[ii.IfdName]; found == true {
-            if tagId == 0 {
-                // This IFD is not the type that can be linked to from a tag.
-                log.Panicf("not a child IFD: [%s]", ii.IfdName)
-            }
+	if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
+		if tagId, found = tags[ii.IfdName]; found == true {
+			if tagId == 0 {
+				// This IFD is not the type that can be linked to from a tag.
+				log.Panicf("not a child IFD: [%s]", ii.IfdName)
+			}
 
-            return tagId
-        }
-    }
+			return tagId
+		}
+	}
 
-    log.Panicf("no tag for invalid IFD identity: %v", ii)
-    return 0
+	log.Panicf("no tag for invalid IFD identity: %v", ii)
+	return 0
 }
 
 func IfdIdWithIdentity(ii IfdIdentity) int {
-    id, _ := IfdIds[ii]
-    return id
+	id, _ := IfdIds[ii]
+	return id
 }
 
 func IfdIdWithIdentityOrFail(ii IfdIdentity) int {
-    id, _ := IfdIds[ii]
-    if id == 0 {
-        log.Panicf("IFD not valid: %v", ii)
-    }
+	id, _ := IfdIds[ii]
+	if id == 0 {
+		log.Panicf("IFD not valid: %v", ii)
+	}
 
-    return id
+	return id
 }
 
 func IfdIdOrFail(parentIfdName, ifdName string) (ii IfdIdentity, id int) {
-    ii, id = IfdId(parentIfdName, ifdName)
-    if id == 0 {
-        log.Panicf("IFD is not valid: [%s] [%s]", parentIfdName, ifdName)
-    }
+	ii, id = IfdId(parentIfdName, ifdName)
+	if id == 0 {
+		log.Panicf("IFD is not valid: [%s] [%s]", parentIfdName, ifdName)
+	}
 
-    return ii, id
+	return ii, id
 }
 
 func IfdId(parentIfdName, ifdName string) (ii IfdIdentity, id int) {
-    ii = IfdIdentity{
-        ParentIfdName: parentIfdName,
-        IfdName: ifdName,
-    }
+	ii = IfdIdentity{
+		ParentIfdName: parentIfdName,
+		IfdName:       ifdName,
+	}
 
-    id, found := IfdIds[ii]
-    if found != true {
-        return IfdIdentity{}, 0
-    }
+	id, found := IfdIds[ii]
+	if found != true {
+		return IfdIdentity{}, 0
+	}
 
-    return ii, id
+	return ii, id
 }
 
 func init() {
-    goPath := os.Getenv("GOPATH")
-    if goPath == "" {
-        log.Panicf("GOPATH is empty")
-    }
-
-    assetsPath := path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
-    tagDataFilepath = path.Join(assetsPath, "tags.yaml")
-
-    tagIndex = NewTagIndex()
+	tagIndex = NewTagIndex()
 }
