@@ -83,94 +83,47 @@ type TagIndex struct {
 
 func NewTagIndex() *TagIndex {
 	ti := new(TagIndex)
+
+	ti.tagsByIfd = make(map[string]map[uint16]*IndexedTag)
+	ti.tagsByIfdR = make(map[string]map[string]*IndexedTag)
+
 	return ti
 }
 
-func (ti *TagIndex) load() (err error) {
+func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	// Already loaded.
-	if ti.tagsByIfd != nil {
-		return nil
+	// Store by ID.
+
+	family, found := ti.tagsByIfd[it.Ifd]
+	if found == false {
+		family = make(map[uint16]*IndexedTag)
+		ti.tagsByIfd[it.Ifd] = family
 	}
 
-	// Read static data.
-
-	encodedIfds := make(map[string][]encodedTag)
-
-	err = yaml.Unmarshal([]byte(tagsYaml), encodedIfds)
-	log.PanicIf(err)
-
-	// Load structure.
-
-	tagsByIfd := make(map[string]map[uint16]*IndexedTag)
-	tagsByIfdR := make(map[string]map[string]*IndexedTag)
-
-	count := 0
-	for ifdName, tags := range encodedIfds {
-		for _, tagInfo := range tags {
-			tagId := uint16(tagInfo.Id)
-			tagName := tagInfo.Name
-			tagTypeName := tagInfo.TypeName
-
-			// TODO(dustin): !! Non-standard types, but found in real data. Ignore for right now.
-			if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" {
-				continue
-			}
-
-			tagTypeId, found := TypeNamesR[tagTypeName]
-			if found == false {
-				log.Panicf("type [%s] for [%s] not valid", tagTypeName, tagName)
-				continue
-			}
-
-			tag := &IndexedTag{
-				Ifd:  ifdName,
-				Id:   tagId,
-				Name: tagName,
-				Type: tagTypeId,
-			}
-
-			// Store by ID.
-
-			family, found := tagsByIfd[ifdName]
-			if found == false {
-				family = make(map[uint16]*IndexedTag)
-				tagsByIfd[ifdName] = family
-			}
-
-			if _, found := family[tagId]; found == true {
-				log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", ifdName, tagId)
-			}
-
-			family[tagId] = tag
-
-			// Store by name.
-
-			familyR, found := tagsByIfdR[ifdName]
-			if found == false {
-				familyR = make(map[string]*IndexedTag)
-				tagsByIfdR[ifdName] = familyR
-			}
-
-			if _, found := familyR[tagName]; found == true {
-				log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", ifdName, tagName)
-			}
-
-			familyR[tagName] = tag
-
-			count++
-		}
+	if _, found := family[it.Id]; found == true {
+		log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", it.Ifd, it.Id)
 	}
 
-	ti.tagsByIfd = tagsByIfd
-	ti.tagsByIfdR = tagsByIfdR
+	family[it.Id] = it
 
-	tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
+	// Store by name.
+
+	familyR, found := ti.tagsByIfdR[it.Ifd]
+	if found == false {
+		familyR = make(map[string]*IndexedTag)
+		ti.tagsByIfdR[it.Ifd] = familyR
+	}
+
+	if _, found := familyR[it.Name]; found == true {
+		log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", it.Ifd, it.Name)
+	}
+
+	familyR[it.Name] = it
 
 	return nil
 }
@@ -183,8 +136,10 @@ func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
 		}
 	}()
 
-	err = ti.load()
-	log.PanicIf(err)
+	if len(ti.tagsByIfd) == 0 {
+		err := LoadStandardTags(ti)
+		log.PanicIf(err)
+	}
 
 	family, found := ti.tagsByIfd[ii.IfdName]
 	if found == false {
@@ -207,8 +162,10 @@ func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, er
 		}
 	}()
 
-	err = ti.load()
-	log.PanicIf(err)
+	if len(ti.tagsByIfdR) == 0 {
+		err := LoadStandardTags(ti)
+		log.PanicIf(err)
+	}
 
 	it, found := ti.tagsByIfdR[ii.IfdName][name]
 	if found != true {
@@ -216,6 +173,61 @@ func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, er
 	}
 
 	return it, nil
+}
+
+// LoadStandardTags registers the tags that all devices/applications should
+// support.
+func LoadStandardTags(ti *TagIndex) (err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	// Read static data.
+
+	encodedIfds := make(map[string][]encodedTag)
+
+	err = yaml.Unmarshal([]byte(tagsYaml), encodedIfds)
+	log.PanicIf(err)
+
+	// Load structure.
+
+	count := 0
+	for ifdName, tags := range encodedIfds {
+		for _, tagInfo := range tags {
+			tagId := uint16(tagInfo.Id)
+			tagName := tagInfo.Name
+			tagTypeName := tagInfo.TypeName
+
+			// TODO(dustin): !! Non-standard types, but found in real data. Ignore for right now.
+			if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" {
+				continue
+			}
+
+			tagTypeId, found := TypeNamesR[tagTypeName]
+			if found == false {
+				log.Panicf("type [%s] for [%s] not valid", tagTypeName, tagName)
+				continue
+			}
+
+			it := &IndexedTag{
+				Ifd:  ifdName,
+				Id:   tagId,
+				Name: tagName,
+				Type: tagTypeId,
+			}
+
+			err = ti.Add(it)
+			log.PanicIf(err)
+
+			count++
+		}
+	}
+
+	tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
+
+	return nil
 }
 
 // IfdTagWithId returns true if the given tag points to a child IFD block.
