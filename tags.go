@@ -37,8 +37,6 @@ var (
 		// blob (not a slice of longs).
 		ThumbnailOffsetTagId: struct{}{},
 	}
-
-	tagIndex *TagIndex
 )
 
 var (
@@ -64,15 +62,15 @@ type IndexedTag struct {
 	Type uint16
 }
 
-func (it IndexedTag) String() string {
+func (it *IndexedTag) String() string {
 	return fmt.Sprintf("TAG<ID=(0x%04x) NAME=[%s] IFD=[%s]>", it.Id, it.Name, it.Ifd)
 }
 
-func (it IndexedTag) IsName(ifd, name string) bool {
+func (it *IndexedTag) IsName(ifd, name string) bool {
 	return it.Name == name && it.Ifd == ifd
 }
 
-func (it IndexedTag) Is(ifd string, id uint16) bool {
+func (it *IndexedTag) Is(ifd string, id uint16) bool {
 	return it.Id == id && it.Ifd == ifd
 }
 
@@ -317,8 +315,4 @@ func IfdId(parentIfdName, ifdName string) (ii IfdIdentity, id int) {
 	}
 
 	return ii, id
-}
-
-func init() {
-	tagIndex = NewTagIndex()
 }
