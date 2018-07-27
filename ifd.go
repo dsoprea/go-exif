@@ -1,134 +1,280 @@
 package exif
 
 import (
-    "fmt"
+	"errors"
+	"fmt"
 
-    "github.com/dsoprea/go-logging"
+	"github.com/dsoprea/go-logging"
 )
 
 const (
-    // The root IFD types (ifd0, ifd1).
-    IfdStandard = "IFD"
+	// The root IFD types (ifd0, ifd1).
+	IfdStandard = "IFD"
 
-    // Child IFD types.
-    IfdExif = "Exif"
-    IfdGps = "GPSInfo"
-    IfdIop = "Iop"
+	// Child IFD types.
+	IfdExif = "Exif"
+	IfdGps  = "GPSInfo"
+	IfdIop  = "Iop"
 
-    // Tag IDs for child IFDs.
-    IfdExifId = 0x8769
-    IfdGpsId = 0x8825
-    IfdIopId = 0xA005
+	// Tag IDs for child IFDs.
+	IfdExifId = 0x8769
+	IfdGpsId  = 0x8825
+	IfdIopId  = 0xA005
+
+	// Just a placeholder.
+	IfdRootId = 0x0000
+)
+
+var (
+	ErrIfdNotFound = errors.New("IFD not found")
 )
 
 type IfdNameAndIndex struct {
-    Ii IfdIdentity
-    Index int
+	Ii    IfdIdentity
+	Index int
 }
 
 var (
-// TODO(dustin): !! Get rid of this in favor of one of the two lookups, just below.
-    validIfds = []string {
-        IfdStandard,
-        IfdExif,
-        IfdGps,
-        IfdIop,
-    }
+	// TODO(dustin): !! Get rid of this in favor of one of the two lookups, just below.
+	validIfds = []string{
+		IfdStandard,
+		IfdExif,
+		IfdGps,
+		IfdIop,
+	}
 
-    // A lookup for IFDs by their parents.
-// TODO(dustin): !! We should switch to indexing by their unique integer IDs (defined below) rather than exposing ourselves to non-unique IFD names (even if we *do* manage the naming ourselves).
-    IfdTagIds = map[string]map[string]uint16 {
-        "": map[string]uint16 {
-            // A root IFD type. Not allowed to be a child (tag-based) IFD.
-            IfdStandard: 0x0,
-        },
+	// A lookup for IFDs by their parents.
+	// TODO(dustin): !! We should switch to indexing by their unique integer IDs (defined below) rather than exposing ourselves to non-unique IFD names (even if we *do* manage the naming ourselves).
+	IfdTagIds = map[string]map[string]uint16{
+		"": map[string]uint16{
+			// A root IFD type. Not allowed to be a child (tag-based) IFD.
+			IfdStandard: 0x0,
+		},
 
-        IfdStandard: map[string]uint16 {
-            IfdExif: IfdExifId,
-            IfdGps: IfdGpsId,
-        },
+		IfdStandard: map[string]uint16{
+			IfdExif: IfdExifId,
+			IfdGps:  IfdGpsId,
+		},
 
-        IfdExif: map[string]uint16 {
-            IfdIop: IfdIopId,
-        },
-    }
+		IfdExif: map[string]uint16{
+			IfdIop: IfdIopId,
+		},
+	}
 
-    // IfdTagNames contains the tag ID-to-name mappings and is populated by
-    // init().
-    IfdTagNames = map[string]map[uint16]string {}
+	// IfdTagNames contains the tag ID-to-name mappings and is populated by
+	// init().
+	IfdTagNames = map[string]map[uint16]string{}
 
-    // IFD Identities. These are often how we refer to IFDs, from call to call.
+	// IFD Identities. These are often how we refer to IFDs, from call to call.
 
-    // The NULL-type instance for search misses and empty responses.
-    ZeroIi = IfdIdentity{}
+	// The NULL-type instance for search misses and empty responses.
+	ZeroIi = IfdIdentity{}
 
-    RootIi = IfdIdentity{ IfdName: IfdStandard }
-    ExifIi = IfdIdentity{ ParentIfdName: IfdStandard, IfdName: IfdExif }
-    GpsIi = IfdIdentity{ ParentIfdName: IfdStandard, IfdName: IfdGps }
-    ExifIopIi = IfdIdentity{ ParentIfdName: IfdExif, IfdName: IfdIop }
+	RootIi    = IfdIdentity{IfdName: IfdStandard}
+	ExifIi    = IfdIdentity{ParentIfdName: IfdStandard, IfdName: IfdExif}
+	GpsIi     = IfdIdentity{ParentIfdName: IfdStandard, IfdName: IfdGps}
+	ExifIopIi = IfdIdentity{ParentIfdName: IfdExif, IfdName: IfdIop}
 
-    // Produce a list of unique IDs for each IFD that we can pass around (so we
-    // don't always have to be comparing parent and child names).
-    //
-    // For lack of need, this is just static.
-    //
-    // (0) is reserved for not-found/miss responses.
-    IfdIds = map[IfdIdentity]int {
-        RootIi: 1,
-        ExifIi: 2,
-        GpsIi: 3,
-        ExifIopIi: 4,
-    }
+	// Produce a list of unique IDs for each IFD that we can pass around (so we
+	// don't always have to be comparing parent and child names).
+	//
+	// For lack of need, this is just static.
+	//
+	// (0) is reserved for not-found/miss responses.
+	IfdIds = map[IfdIdentity]int{
+		RootIi:    1,
+		ExifIi:    2,
+		GpsIi:     3,
+		ExifIopIi: 4,
+	}
 
-    IfdDesignations = map[string]IfdNameAndIndex {
-        "ifd0": { RootIi, 0 },
-        "ifd1": { RootIi, 1 },
-        "exif": { ExifIi, 0 },
-        "gps": { GpsIi, 0 },
-        "iop": { ExifIopIi, 0 },
-    }
+	IfdDesignations = map[string]IfdNameAndIndex{
+		"ifd0": {RootIi, 0},
+		"ifd1": {RootIi, 1},
+		"exif": {ExifIi, 0},
+		"gps":  {GpsIi, 0},
+		"iop":  {ExifIopIi, 0},
+	}
 
-    IfdDesignationsR = make(map[IfdNameAndIndex]string)
+	IfdDesignationsR = make(map[IfdNameAndIndex]string)
 )
 
 var (
-    ifdLogger = log.NewLogger("exif.ifd")
+	ifdLogger = log.NewLogger("exif.ifd")
 )
 
 func IfdDesignation(ii IfdIdentity, index int) string {
-    if ii == RootIi {
-        return fmt.Sprintf("%s%d", ii.IfdName, index)
-    } else {
-        return ii.IfdName
-    }
+	if ii == RootIi {
+		return fmt.Sprintf("%s%d", ii.IfdName, index)
+	} else {
+		return ii.IfdName
+	}
 }
 
-
 type IfdIdentity struct {
-    ParentIfdName string
-    IfdName string
+	ParentIfdName string
+	IfdName       string
 }
 
 func (ii IfdIdentity) String() string {
-    return fmt.Sprintf("IfdIdentity<PARENT-NAME=[%s] NAME=[%s]>", ii.ParentIfdName, ii.IfdName)
+	return fmt.Sprintf("IfdIdentity<PARENT-NAME=[%s] NAME=[%s]>", ii.ParentIfdName, ii.IfdName)
 }
 
 func (ii IfdIdentity) Id() int {
-    return IfdIdWithIdentityOrFail(ii)
+	return IfdIdWithIdentityOrFail(ii)
+}
+
+type MappedIfd struct {
+	ParentTagId uint16
+
+	Name     string
+	TagId    uint16
+	Children map[uint16]*MappedIfd
+}
+
+func (mi *MappedIfd) String() string {
+	return fmt.Sprintf("MappedIfd<(0x%04X) [%s]>", mi.TagId, mi.Name)
+}
+
+type IfdMapping struct {
+	rootNode *MappedIfd
+}
+
+func NewIfdMapping() (ifdMapping *IfdMapping) {
+	rootNode := &MappedIfd{
+		Children: make(map[uint16]*MappedIfd),
+	}
+
+	return &IfdMapping{
+		rootNode: rootNode,
+	}
+}
+
+func (im *IfdMapping) Get(parentPlacement []uint16) (childIfd *MappedIfd, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	ptr := im.rootNode
+	for _, tagId := range parentPlacement {
+		if descendantPtr, found := ptr.Children[tagId]; found == false {
+			log.Panic(ErrIfdNotFound)
+		} else {
+			ptr = descendantPtr
+		}
+	}
+
+	return ptr, nil
+}
+
+// Add puts the given IFD at the given position of the tree. The position of the
+// tree is referred to as the placement and is represented by a set of tag-IDs,
+// where the leftmost is the root tag and the tags going to the right are
+// progressive descendants.
+func (im *IfdMapping) Add(parentPlacement []uint16, tagId uint16, name string) (err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	ptr, err := im.Get(parentPlacement)
+	log.PanicIf(err)
+
+	childIfd := &MappedIfd{
+		ParentTagId: ptr.TagId,
+		Name:        name,
+		TagId:       tagId,
+		Children:    make(map[uint16]*MappedIfd),
+	}
+
+	if _, found := ptr.Children[tagId]; found == true {
+		log.Panicf("child IFD with tag-ID (%04x) already registered under IFD [%s] with tag-ID (%04x)", tagId, ptr.Name, ptr.TagId)
+	}
+
+	ptr.Children[tagId] = childIfd
+
+	return nil
+}
+
+func (im *IfdMapping) dumpLineages(stack []*MappedIfd, input [][]*MappedIfd) (output [][]*MappedIfd, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	currentIfd := stack[len(stack)-1]
+
+	output = input
+	for _, childIfd := range currentIfd.Children {
+		stackCopy := make([]*MappedIfd, len(stack)+1)
+
+		copy(stackCopy, stack)
+		stackCopy[len(stack)] = childIfd
+
+		// Add to output, but don't include the obligatory root node.
+		output = append(output, stackCopy[1:])
+
+		output, err = im.dumpLineages(stackCopy, output)
+		log.PanicIf(err)
+	}
+
+	return output, nil
+}
+
+func (im *IfdMapping) DumpLineages() (output [][]*MappedIfd, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	output = make([][]*MappedIfd, 0)
+	stack := []*MappedIfd{im.rootNode}
+
+	output, err = im.dumpLineages(stack, output)
+	log.PanicIf(err)
+
+	return output, nil
+}
+
+func LoadStandardIfds(im *IfdMapping) (err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	err = im.Add([]uint16{}, IfdRootId, IfdStandard)
+	log.PanicIf(err)
+
+	err = im.Add([]uint16{IfdRootId}, IfdExifId, IfdExif)
+	log.PanicIf(err)
+
+	err = im.Add([]uint16{IfdRootId, IfdExifId}, IfdIopId, IfdIop)
+	log.PanicIf(err)
+
+	err = im.Add([]uint16{IfdRootId}, IfdGpsId, IfdGps)
+	log.PanicIf(err)
+
+	return nil
 }
 
 func init() {
-    for ifdName, tags := range IfdTagIds {
-        tagsR := make(map[uint16]string)
+	for ifdName, tags := range IfdTagIds {
+		tagsR := make(map[uint16]string)
 
-        for tagName, tagId := range tags {
-            tagsR[tagId] = tagName
-        }
+		for tagName, tagId := range tags {
+			tagsR[tagId] = tagName
+		}
 
-        IfdTagNames[ifdName] = tagsR
-    }
+		IfdTagNames[ifdName] = tagsR
+	}
 
-    for designation, ni := range IfdDesignations {
-        IfdDesignationsR[ni] = designation
-    }
+	for designation, ni := range IfdDesignations {
+		IfdDesignationsR[ni] = designation
+	}
 }
