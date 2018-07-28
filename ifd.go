@@ -1,8 +1,8 @@
 package exif
 
 import (
-	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/dsoprea/go-logging"
 )
@@ -23,10 +23,6 @@ const (
 
 	// Just a placeholder.
 	IfdRootId = 0x0000
-)
-
-var (
-	ErrIfdNotFound = errors.New("IFD not found")
 )
 
 type IfdNameAndIndex struct {
@@ -126,6 +122,7 @@ func (ii IfdIdentity) Id() int {
 
 type MappedIfd struct {
 	ParentTagId uint16
+	Path        []string
 
 	Name     string
 	TagId    uint16
@@ -133,15 +130,22 @@ type MappedIfd struct {
 }
 
 func (mi *MappedIfd) String() string {
-	return fmt.Sprintf("MappedIfd<(0x%04X) [%s]>", mi.TagId, mi.Name)
+	pathPhrase := mi.PathPhrase()
+	return fmt.Sprintf("MappedIfd<(0x%04X) [%s] PATH=[%s]>", mi.TagId, mi.Name, pathPhrase)
 }
 
+func (mi *MappedIfd) PathPhrase() string {
+	return strings.Join(mi.Path, "/")
+}
+
+// IfdMapping describes all of the IFDs that we currently recognize.
 type IfdMapping struct {
 	rootNode *MappedIfd
 }
 
 func NewIfdMapping() (ifdMapping *IfdMapping) {
 	rootNode := &MappedIfd{
+		Path:     make([]string, 0),
 		Children: make(map[uint16]*MappedIfd),
 	}
 
@@ -160,10 +164,39 @@ func (im *IfdMapping) Get(parentPlacement []uint16) (childIfd *MappedIfd, err er
 	ptr := im.rootNode
 	for _, tagId := range parentPlacement {
 		if descendantPtr, found := ptr.Children[tagId]; found == false {
-			log.Panic(ErrIfdNotFound)
+			log.Panicf(fmt.Sprintf("ifd child with tag-ID (%04x) not registered", tagId))
 		} else {
 			ptr = descendantPtr
 		}
+	}
+
+	return ptr, nil
+}
+
+func (im *IfdMapping) GetWithPath(pathPhrase string) (mi *MappedIfd, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	path := strings.Split(pathPhrase, "/")
+	ptr := im.rootNode
+
+	for _, name := range path {
+		var hit *MappedIfd
+		for _, mi := range ptr.Children {
+			if mi.Name == name {
+				hit = mi
+				break
+			}
+		}
+
+		if hit == nil {
+			log.Panicf(fmt.Sprintf("ifd child with name [%s] not registered", name))
+		}
+
+		ptr = hit
 	}
 
 	return ptr, nil
@@ -183,8 +216,16 @@ func (im *IfdMapping) Add(parentPlacement []uint16, tagId uint16, name string) (
 	ptr, err := im.Get(parentPlacement)
 	log.PanicIf(err)
 
+	path := make([]string, len(parentPlacement)+1)
+	if len(parentPlacement) > 0 {
+		copy(path, ptr.Path)
+	}
+
+	path[len(path)-1] = name
+
 	childIfd := &MappedIfd{
 		ParentTagId: ptr.TagId,
+		Path:        path,
 		Name:        name,
 		TagId:       tagId,
 		Children:    make(map[uint16]*MappedIfd),
@@ -199,7 +240,7 @@ func (im *IfdMapping) Add(parentPlacement []uint16, tagId uint16, name string) (
 	return nil
 }
 
-func (im *IfdMapping) dumpLineages(stack []*MappedIfd, input [][]*MappedIfd) (output [][]*MappedIfd, err error) {
+func (im *IfdMapping) dumpLineages(stack []*MappedIfd, input []string) (output []string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -216,7 +257,12 @@ func (im *IfdMapping) dumpLineages(stack []*MappedIfd, input [][]*MappedIfd) (ou
 		stackCopy[len(stack)] = childIfd
 
 		// Add to output, but don't include the obligatory root node.
-		output = append(output, stackCopy[1:])
+		parts := make([]string, len(stackCopy)-1)
+		for i, mi := range stackCopy[1:] {
+			parts[i] = mi.Name
+		}
+
+		output = append(output, strings.Join(parts, "/"))
 
 		output, err = im.dumpLineages(stackCopy, output)
 		log.PanicIf(err)
@@ -225,15 +271,15 @@ func (im *IfdMapping) dumpLineages(stack []*MappedIfd, input [][]*MappedIfd) (ou
 	return output, nil
 }
 
-func (im *IfdMapping) DumpLineages() (output [][]*MappedIfd, err error) {
+func (im *IfdMapping) DumpLineages() (output []string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	output = make([][]*MappedIfd, 0)
 	stack := []*MappedIfd{im.rootNode}
+	output = make([]string, 0)
 
 	output, err = im.dumpLineages(stack, output)
 	log.PanicIf(err)

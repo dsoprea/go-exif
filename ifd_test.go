@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/dsoprea/go-logging"
@@ -29,31 +28,23 @@ func TestIfdMapping_Add(t *testing.T) {
 	log.PanicIf(err)
 
 	lineages, err := im.DumpLineages()
-	lines := make([]string, len(lineages))
-	for i, lineage := range lineages {
-		descriptions := make([]string, len(lineage))
-		for i, mi := range lineage {
-			descriptions[i] = fmt.Sprintf("(0x%04x) [%s]", mi.TagId, mi.Name)
-		}
+	log.PanicIf(err)
 
-		lines[i] = strings.Join(descriptions, ", ")
-	}
-
-	sort.Strings(lines)
+	sort.Strings(lineages)
 
 	expected := []string{
-		"(0x1111) [ifd0]",
-		"(0x1111) [ifd0], (0x4444) [ifd00]",
-		"(0x1111) [ifd0], (0x4444) [ifd00], (0x5555) [ifd000]",
-		"(0x2222) [ifd1]",
-		"(0x3333) [ifd2]",
+		"ifd0",
+		"ifd0/ifd00",
+		"ifd0/ifd00/ifd000",
+		"ifd1",
+		"ifd2",
 	}
 
-	if reflect.DeepEqual(lines, expected) != true {
+	if reflect.DeepEqual(lineages, expected) != true {
 		fmt.Printf("Actual:\n")
 		fmt.Printf("\n")
 
-		for i, line := range lines {
+		for i, line := range lineages {
 			fmt.Printf("(%d) %s\n", i, line)
 		}
 
@@ -77,30 +68,22 @@ func TestIfdMapping_LoadStandardIfds(t *testing.T) {
 	log.PanicIf(err)
 
 	lineages, err := im.DumpLineages()
-	lines := make([]string, len(lineages))
-	for i, lineage := range lineages {
-		descriptions := make([]string, len(lineage))
-		for i, mi := range lineage {
-			descriptions[i] = fmt.Sprintf("(0x%04x) [%s]", mi.TagId, mi.Name)
-		}
+	log.PanicIf(err)
 
-		lines[i] = strings.Join(descriptions, ", ")
-	}
-
-	sort.Strings(lines)
+	sort.Strings(lineages)
 
 	expected := []string{
-		"(0x0000) [IFD]",
-		"(0x0000) [IFD], (0x8769) [Exif]",
-		"(0x0000) [IFD], (0x8769) [Exif], (0xa005) [Iop]",
-		"(0x0000) [IFD], (0x8825) [GPSInfo]",
+		"IFD",
+		"IFD/Exif",
+		"IFD/Exif/Iop",
+		"IFD/GPSInfo",
 	}
 
-	if reflect.DeepEqual(lines, expected) != true {
+	if reflect.DeepEqual(lineages, expected) != true {
 		fmt.Printf("Actual:\n")
 		fmt.Printf("\n")
 
-		for i, line := range lines {
+		for i, line := range lineages {
 			fmt.Printf("(%d) %s\n", i, line)
 		}
 
@@ -132,5 +115,27 @@ func TestIfdMapping_Get(t *testing.T) {
 		t.Fatalf("Tag-ID not correct")
 	} else if mi.Name != IfdIop {
 		t.Fatalf("name not correct")
+	} else if mi.PathPhrase() != "IFD/Exif/Iop" {
+		t.Fatalf("path not correct")
+	}
+}
+
+func TestIfdMapping_GetWithPath(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	mi, err := im.GetWithPath("IFD/Exif/Iop")
+	log.PanicIf(err)
+
+	if mi.ParentTagId != IfdExifId {
+		t.Fatalf("Parent tag-ID not correct")
+	} else if mi.TagId != IfdIopId {
+		t.Fatalf("Tag-ID not correct")
+	} else if mi.Name != IfdIop {
+		t.Fatalf("name not correct")
+	} else if mi.PathPhrase() != "IFD/Exif/Iop" {
+		t.Fatalf("path not correct")
 	}
 }
