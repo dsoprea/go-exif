@@ -41,6 +41,10 @@ Create an instance of the `Exif` type and call `Scan()` with a byte-slice, where
 
 Obviously, it is most efficient to properly parse the media file and then provide the specific EXIF data to be parsed, but there is also a heuristic for finding the EXIF data within the media blob, directly. This means that, at least for testing or curiosity, **you do not have to parse or even understand the format of image or audio file in order to find and decode the EXIF information inside of it.** See the usage of the `IsExif` method in the example.
 
+The library often refers to an IFD with an "IFD path" (e.g. IFD/Exif, IFD/GPSInfo). A "fully-qualified" IFD-path is one that includes an index describing which specific sibling IFD is being referred to if not the first one (e.g. IFD1, the IFD where the thumbnail is expressed per the TIFF standard).
+
+There is an "IFD mapping" and a "tag index" that must be created and passed to the library from the top. These contain all of the knowledge of the IFD hierarchies and their tag-IDs (the IFD mapping) and the tags that they are allowed to host (the tag index). There are convenience functions to load them with the standard TIFF information, but you, alternatively, may choose something totally different (to support parsing any kind of EXIF data that does not follow or is not relevant to TIFF at all).
+
 
 ### Reader Tool
 
@@ -77,7 +81,7 @@ Example output:
 [
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD0",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 271,
         "tag_name": "Make",
@@ -89,7 +93,7 @@ Example output:
     },
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD0",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 272,
         "tag_name": "Model",
@@ -102,7 +106,7 @@ Example output:
 ...
     {
         "ifd_path": "IFD/Exif",
-        "fq_ifd_path": "IFD0/Exif0",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37121,
         "tag_name": "ComponentsConfiguration",
@@ -118,7 +122,7 @@ Example output:
 ...
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD0",
+        "fq_ifd_path": "IFD",
         "ifd_index": 1,
         "tag_id": 514,
         "tag_name": "JPEGInterchangeFormatLength",
@@ -156,8 +160,13 @@ if foundAt == -1 {
 
 // Run the parse.
 
+im := exif.NewIfdMappingWithStandard()
 ti := exif.NewTagIndex()
-visitor := func(fqIfdPath string, ifdPath string, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
+
+visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
+    ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
+    log.PanicIf(err)
+
     it, err := ti.Get(ifdPath, tagId)
     if err != nil {
         if log.Is(err, exif.ErrTagNotFound) {
@@ -185,12 +194,9 @@ visitor := func(fqIfdPath string, ifdPath string, ifdIndex int, tagId uint16, ta
         }
     }
 
-    fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", ifdPath, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
+    fmt.Printf("FQ-IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", fqIfdPath, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
     return nil
 }
-
-im := NewIfdMappingWithStandard()
-ti := NewTagIndex()
 
 err = Visit(IfdStandard, im, ti, data[foundAt:], visitor)
 log.PanicIf(err)
