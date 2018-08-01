@@ -1,7 +1,7 @@
 [
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 271,
         "tag_name": "Make",
@@ -12,8 +12,8 @@
         "value_string": "Canon"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 272,
         "tag_name": "Model",
@@ -24,8 +24,8 @@
         "value_string": "Canon EOS 5D Mark III"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 274,
         "tag_name": "Orientation",
@@ -36,8 +36,8 @@
         "value_string": "1"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 282,
         "tag_name": "XResolution",
@@ -48,8 +48,8 @@
         "value_string": "72/1"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 283,
         "tag_name": "YResolution",
@@ -60,8 +60,8 @@
         "value_string": "72/1"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 296,
         "tag_name": "ResolutionUnit",
@@ -72,8 +72,8 @@
         "value_string": "2"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 306,
         "tag_name": "DateTime",
@@ -84,8 +84,8 @@
         "value_string": "2017:12:02 08:18:50"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 315,
         "tag_name": "Artist",
@@ -96,8 +96,8 @@
         "value_string": ""
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 531,
         "tag_name": "YCbCrPositioning",
@@ -108,8 +108,8 @@
         "value_string": "2"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 33432,
         "tag_name": "Copyright",
@@ -120,8 +120,8 @@
         "value_string": ""
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 34665,
         "tag_name": "ExifTag",
@@ -132,8 +132,8 @@
         "value_string": "360"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 33434,
         "tag_name": "ExposureTime",
@@ -144,8 +144,8 @@
         "value_string": "1/640"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 33437,
         "tag_name": "FNumber",
@@ -156,8 +156,8 @@
         "value_string": "4/1"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 34850,
         "tag_name": "ExposureProgram",
@@ -168,8 +168,8 @@
         "value_string": "4"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 34855,
         "tag_name": "ISOSpeedRatings",
@@ -180,8 +180,8 @@
         "value_string": "1600"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 34864,
         "tag_name": "SensitivityType",
@@ -192,8 +192,8 @@
         "value_string": "2"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 34866,
         "tag_name": "RecommendedExposureIndex",
@@ -204,8 +204,8 @@
         "value_string": "1600"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 36864,
         "tag_name": "ExifVersion",
@@ -216,8 +216,8 @@
         "value_string": "0230"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 36867,
         "tag_name": "DateTimeOriginal",
@@ -228,8 +228,8 @@
         "value_string": "2017:12:02 08:18:50"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 36868,
         "tag_name": "DateTimeDigitized",
@@ -240,8 +240,8 @@
         "value_string": "2017:12:02 08:18:50"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37121,
         "tag_name": "ComponentsConfiguration",
@@ -255,8 +255,8 @@
         "value_string": "ComponentsConfiguration\u003cID=[YCBCR] BYTES=[1 2 3 0]\u003e"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37377,
         "tag_name": "ShutterSpeedValue",
@@ -267,8 +267,8 @@
         "value_string": "614400/65536"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37378,
         "tag_name": "ApertureValue",
@@ -279,8 +279,8 @@
         "value_string": "262144/65536"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37380,
         "tag_name": "ExposureBiasValue",
@@ -291,8 +291,8 @@
         "value_string": "0/1"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37383,
         "tag_name": "MeteringMode",
@@ -303,8 +303,8 @@
         "value_string": "5"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37385,
         "tag_name": "Flash",
@@ -315,8 +315,8 @@
         "value_string": "16"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37386,
         "tag_name": "FocalLength",
@@ -327,8 +327,8 @@
         "value_string": "16/1"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37500,
         "tag_name": "MakerNote",
@@ -342,8 +342,8 @@
         "value_string": "MakerNote\u003cTYPE-ID=[28 00 01 00 03 00 31 00 00 00 74 05 00 00 02 00 03 00 04 00]\u003e"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37510,
         "tag_name": "UserComment",
@@ -357,8 +357,8 @@
         "value_string": "UserComment\u003cSIZE=(256) ENCODING=[UNDEFINED] V=[0 0 0 0 0 0 0 0]... LEN=(256)\u003e"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37520,
         "tag_name": "SubSecTime",
@@ -369,8 +369,8 @@
         "value_string": "00"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37521,
         "tag_name": "SubSecTimeOriginal",
@@ -381,8 +381,8 @@
         "value_string": "00"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 37522,
         "tag_name": "SubSecTimeDigitized",
@@ -393,8 +393,8 @@
         "value_string": "00"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 40960,
         "tag_name": "FlashpixVersion",
@@ -405,8 +405,8 @@
         "value_string": "0100"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 40961,
         "tag_name": "ColorSpace",
@@ -417,8 +417,8 @@
         "value_string": "1"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 40962,
         "tag_name": "PixelXDimension",
@@ -429,8 +429,8 @@
         "value_string": "3840"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 40963,
         "tag_name": "PixelYDimension",
@@ -441,8 +441,8 @@
         "value_string": "2560"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 40965,
         "tag_name": "InteroperabilityTag",
@@ -453,8 +453,8 @@
         "value_string": "9326"
     },
     {
-        "ifd_name": "Iop",
-        "parent_ifd_name": "Exif",
+        "ifd_path": "IFD/Exif/Iop",
+        "fq_ifd_path": "IFD/Exif/Iop",
         "ifd_index": 0,
         "tag_id": 1,
         "tag_name": "InteroperabilityIndex",
@@ -465,8 +465,8 @@
         "value_string": "R98"
     },
     {
-        "ifd_name": "Iop",
-        "parent_ifd_name": "Exif",
+        "ifd_path": "IFD/Exif/Iop",
+        "fq_ifd_path": "IFD/Exif/Iop",
         "ifd_index": 0,
         "tag_id": 2,
         "tag_name": "InteroperabilityVersion",
@@ -477,8 +477,8 @@
         "value_string": "0100"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 41486,
         "tag_name": "FocalPlaneXResolution",
@@ -489,8 +489,8 @@
         "value_string": "3840000/1461"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 41487,
         "tag_name": "FocalPlaneYResolution",
@@ -501,8 +501,8 @@
         "value_string": "2560000/972"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 41488,
         "tag_name": "FocalPlaneResolutionUnit",
@@ -513,8 +513,8 @@
         "value_string": "2"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 41985,
         "tag_name": "CustomRendered",
@@ -525,8 +525,8 @@
         "value_string": "0"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 41986,
         "tag_name": "ExposureMode",
@@ -537,8 +537,8 @@
         "value_string": "0"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 41987,
         "tag_name": "WhiteBalance",
@@ -549,8 +549,8 @@
         "value_string": "0"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 41990,
         "tag_name": "SceneCaptureType",
@@ -561,8 +561,8 @@
         "value_string": "0"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 42032,
         "tag_name": "CameraOwnerName",
@@ -573,8 +573,8 @@
         "value_string": ""
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 42033,
         "tag_name": "BodySerialNumber",
@@ -585,8 +585,8 @@
         "value_string": "063024020097"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 42034,
         "tag_name": "LensSpecification",
@@ -597,8 +597,8 @@
         "value_string": "16/1"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 42036,
         "tag_name": "LensModel",
@@ -609,8 +609,8 @@
         "value_string": "EF16-35mm f/4L IS USM"
     },
     {
-        "ifd_name": "Exif",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/Exif",
+        "fq_ifd_path": "IFD/Exif",
         "ifd_index": 0,
         "tag_id": 42037,
         "tag_name": "LensSerialNumber",
@@ -621,8 +621,8 @@
         "value_string": "2400001068"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 0,
         "tag_id": 34853,
         "tag_name": "GPSTag",
@@ -633,8 +633,8 @@
         "value_string": "9554"
     },
     {
-        "ifd_name": "GPSInfo",
-        "parent_ifd_name": "IFD",
+        "ifd_path": "IFD/GPSInfo",
+        "fq_ifd_path": "IFD/GPSInfo",
         "ifd_index": 0,
         "tag_id": 0,
         "tag_name": "GPSVersionID",
@@ -645,8 +645,8 @@
         "value_string": "0x02"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 1,
         "tag_id": 259,
         "tag_name": "Compression",
@@ -657,8 +657,8 @@
         "value_string": "6"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 1,
         "tag_id": 282,
         "tag_name": "XResolution",
@@ -669,8 +669,8 @@
         "value_string": "72/1"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 1,
         "tag_id": 283,
         "tag_name": "YResolution",
@@ -681,8 +681,8 @@
         "value_string": "72/1"
     },
     {
-        "ifd_name": "IFD",
-        "parent_ifd_name": "",
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD",
         "ifd_index": 1,
         "tag_id": 296,
         "tag_name": "ResolutionUnit",

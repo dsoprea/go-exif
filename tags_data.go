@@ -1,8 +1,8 @@
 package exif
 
 var (
-    // From assets/tags.yaml . Needs to be here so it's embedded in the binary.
-    tagsYaml = `
+	// From assets/tags.yaml . Needs to be here so it's embedded in the binary.
+	tagsYaml = `
 # Notes:
 #
 # This file was produced from http://www.exiv2.org/tags.html, using the included
@@ -13,7 +13,7 @@ var (
 # The webpage that we've produced this file from appears to indicate that
 # ImageWidth is represented by both 0x0100 and 0x0001 depending on whether the
 # encoding is RGB or YCbCr.
-Exif:
+IFD/Exif:
 - id: 0x829a
   name: ExposureTime
   type_name: RATIONAL
@@ -221,7 +221,7 @@ Exif:
 - id: 0xa435
   name: LensSerialNumber
   type_name: ASCII
-GPSInfo:
+IFD/GPSInfo:
 - id: 0x0000
   name: GPSVersionID
   type_name: BYTE
@@ -931,7 +931,7 @@ IFD:
 - id: 0xc761
   name: NoiseProfile
   type_name: DOUBLE
-Iop:
+IFD/Exif/Iop:
 - id: 0x0001
   name: InteroperabilityIndex
   type_name: ASCII

@@ -53,9 +53,14 @@ func TestIfdTagEntry_ValueBytes_RealData(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	eh, index, err := Collect(ti, rawExif)
+	eh, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	var ite *IfdTagEntry
@@ -97,9 +102,14 @@ func TestIfdTagEntry_Resolver_ValueBytes(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	eh, index, err := Collect(ti, rawExif)
+	eh, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	var ite *IfdTagEntry
@@ -142,13 +152,17 @@ func TestIfdTagEntry_Resolver_ValueBytes__Unknown_Field_And_Nonroot_Ifd(t *testi
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	ti := NewTagIndex()
+	im := NewIfdMapping()
 
-	eh, index, err := Collect(ti, rawExif)
+	err = LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	ii, _ := IfdIdOrFail(IfdStandard, IfdExif)
-	ifdExif := index.Lookup[ii][0]
+	ti := NewTagIndex()
+
+	eh, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	ifdExif := index.Lookup[IfdPathStandardExif][0]
 
 	var ite *IfdTagEntry
 	for _, thisIte := range ifdExif.Entries {
@@ -182,9 +196,14 @@ func Test_Ifd_FindTagWithId_Hit(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	ifd := index.RootIfd
@@ -203,9 +222,14 @@ func Test_Ifd_FindTagWithId_Miss(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	ifd := index.RootIfd
@@ -224,9 +248,14 @@ func Test_Ifd_FindTagWithName_Hit(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	ifd := index.RootIfd
@@ -245,9 +274,14 @@ func Test_Ifd_FindTagWithName_Miss(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	ifd := index.RootIfd
@@ -266,9 +300,14 @@ func Test_Ifd_FindTagWithName_NonStandard(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	ifd := index.RootIfd
@@ -287,9 +326,14 @@ func Test_Ifd_Thumbnail(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	ifd := index.RootIfd
@@ -325,12 +369,17 @@ func TestIfd_GpsInfo(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	ti := NewTagIndex()
+	im := NewIfdMapping()
 
-	_, index, err := Collect(ti, rawExif)
+	err = LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	ifd, err := index.RootIfd.ChildWithIfdIdentity(GpsIi)
+	ti := NewTagIndex()
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	ifd, err := index.RootIfd.ChildWithIfdPath(IfdPathStandardGps)
 	log.PanicIf(err)
 
 	gi, err := ifd.GpsInfo()
@@ -355,16 +404,21 @@ func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	collected := make([][2]interface{}, 0)
 
 	cb := func(ifd *Ifd, ite *IfdTagEntry) error {
 		item := [2]interface{}{
-			ifd.Ii.IfdName,
+			ifd.IfdPath,
 			int(ite.TagId),
 		}
 
@@ -387,46 +441,46 @@ func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 		[2]interface{}{"IFD", 0x013b},
 		[2]interface{}{"IFD", 0x0213},
 		[2]interface{}{"IFD", 0x8298},
-		[2]interface{}{"Exif", 0x829a},
-		[2]interface{}{"Exif", 0x829d},
-		[2]interface{}{"Exif", 0x8822},
-		[2]interface{}{"Exif", 0x8827},
-		[2]interface{}{"Exif", 0x8830},
-		[2]interface{}{"Exif", 0x8832},
-		[2]interface{}{"Exif", 0x9000},
-		[2]interface{}{"Exif", 0x9003},
-		[2]interface{}{"Exif", 0x9004},
-		[2]interface{}{"Exif", 0x9101},
-		[2]interface{}{"Exif", 0x9201},
-		[2]interface{}{"Exif", 0x9202},
-		[2]interface{}{"Exif", 0x9204},
-		[2]interface{}{"Exif", 0x9207},
-		[2]interface{}{"Exif", 0x9209},
-		[2]interface{}{"Exif", 0x920a},
-		[2]interface{}{"Exif", 0x927c},
-		[2]interface{}{"Exif", 0x9286},
-		[2]interface{}{"Exif", 0x9290},
-		[2]interface{}{"Exif", 0x9291},
-		[2]interface{}{"Exif", 0x9292},
-		[2]interface{}{"Exif", 0xa000},
-		[2]interface{}{"Exif", 0xa001},
-		[2]interface{}{"Exif", 0xa002},
-		[2]interface{}{"Exif", 0xa003},
-		[2]interface{}{"Iop", 0x0001},
-		[2]interface{}{"Iop", 0x0002},
-		[2]interface{}{"Exif", 0xa20e},
-		[2]interface{}{"Exif", 0xa20f},
-		[2]interface{}{"Exif", 0xa210},
-		[2]interface{}{"Exif", 0xa401},
-		[2]interface{}{"Exif", 0xa402},
-		[2]interface{}{"Exif", 0xa403},
-		[2]interface{}{"Exif", 0xa406},
-		[2]interface{}{"Exif", 0xa430},
-		[2]interface{}{"Exif", 0xa431},
-		[2]interface{}{"Exif", 0xa432},
-		[2]interface{}{"Exif", 0xa434},
-		[2]interface{}{"Exif", 0xa435},
-		[2]interface{}{"GPSInfo", 0x0000},
+		[2]interface{}{"IFD/Exif", 0x829a},
+		[2]interface{}{"IFD/Exif", 0x829d},
+		[2]interface{}{"IFD/Exif", 0x8822},
+		[2]interface{}{"IFD/Exif", 0x8827},
+		[2]interface{}{"IFD/Exif", 0x8830},
+		[2]interface{}{"IFD/Exif", 0x8832},
+		[2]interface{}{"IFD/Exif", 0x9000},
+		[2]interface{}{"IFD/Exif", 0x9003},
+		[2]interface{}{"IFD/Exif", 0x9004},
+		[2]interface{}{"IFD/Exif", 0x9101},
+		[2]interface{}{"IFD/Exif", 0x9201},
+		[2]interface{}{"IFD/Exif", 0x9202},
+		[2]interface{}{"IFD/Exif", 0x9204},
+		[2]interface{}{"IFD/Exif", 0x9207},
+		[2]interface{}{"IFD/Exif", 0x9209},
+		[2]interface{}{"IFD/Exif", 0x920a},
+		[2]interface{}{"IFD/Exif", 0x927c},
+		[2]interface{}{"IFD/Exif", 0x9286},
+		[2]interface{}{"IFD/Exif", 0x9290},
+		[2]interface{}{"IFD/Exif", 0x9291},
+		[2]interface{}{"IFD/Exif", 0x9292},
+		[2]interface{}{"IFD/Exif", 0xa000},
+		[2]interface{}{"IFD/Exif", 0xa001},
+		[2]interface{}{"IFD/Exif", 0xa002},
+		[2]interface{}{"IFD/Exif", 0xa003},
+		[2]interface{}{"IFD/Exif/Iop", 0x0001},
+		[2]interface{}{"IFD/Exif/Iop", 0x0002},
+		[2]interface{}{"IFD/Exif", 0xa20e},
+		[2]interface{}{"IFD/Exif", 0xa20f},
+		[2]interface{}{"IFD/Exif", 0xa210},
+		[2]interface{}{"IFD/Exif", 0xa401},
+		[2]interface{}{"IFD/Exif", 0xa402},
+		[2]interface{}{"IFD/Exif", 0xa403},
+		[2]interface{}{"IFD/Exif", 0xa406},
+		[2]interface{}{"IFD/Exif", 0xa430},
+		[2]interface{}{"IFD/Exif", 0xa431},
+		[2]interface{}{"IFD/Exif", 0xa432},
+		[2]interface{}{"IFD/Exif", 0xa434},
+		[2]interface{}{"IFD/Exif", 0xa435},
+		[2]interface{}{"IFD/GPSInfo", 0x0000},
 		[2]interface{}{"IFD", 0x010f},
 		[2]interface{}{"IFD", 0x0110},
 		[2]interface{}{"IFD", 0x0112},
@@ -437,46 +491,46 @@ func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 		[2]interface{}{"IFD", 0x013b},
 		[2]interface{}{"IFD", 0x0213},
 		[2]interface{}{"IFD", 0x8298},
-		[2]interface{}{"Exif", 0x829a},
-		[2]interface{}{"Exif", 0x829d},
-		[2]interface{}{"Exif", 0x8822},
-		[2]interface{}{"Exif", 0x8827},
-		[2]interface{}{"Exif", 0x8830},
-		[2]interface{}{"Exif", 0x8832},
-		[2]interface{}{"Exif", 0x9000},
-		[2]interface{}{"Exif", 0x9003},
-		[2]interface{}{"Exif", 0x9004},
-		[2]interface{}{"Exif", 0x9101},
-		[2]interface{}{"Exif", 0x9201},
-		[2]interface{}{"Exif", 0x9202},
-		[2]interface{}{"Exif", 0x9204},
-		[2]interface{}{"Exif", 0x9207},
-		[2]interface{}{"Exif", 0x9209},
-		[2]interface{}{"Exif", 0x920a},
-		[2]interface{}{"Exif", 0x927c},
-		[2]interface{}{"Exif", 0x9286},
-		[2]interface{}{"Exif", 0x9290},
-		[2]interface{}{"Exif", 0x9291},
-		[2]interface{}{"Exif", 0x9292},
-		[2]interface{}{"Exif", 0xa000},
-		[2]interface{}{"Exif", 0xa001},
-		[2]interface{}{"Exif", 0xa002},
-		[2]interface{}{"Exif", 0xa003},
-		[2]interface{}{"Iop", 0x0001},
-		[2]interface{}{"Iop", 0x0002},
-		[2]interface{}{"Exif", 0xa20e},
-		[2]interface{}{"Exif", 0xa20f},
-		[2]interface{}{"Exif", 0xa210},
-		[2]interface{}{"Exif", 0xa401},
-		[2]interface{}{"Exif", 0xa402},
-		[2]interface{}{"Exif", 0xa403},
-		[2]interface{}{"Exif", 0xa406},
-		[2]interface{}{"Exif", 0xa430},
-		[2]interface{}{"Exif", 0xa431},
-		[2]interface{}{"Exif", 0xa432},
-		[2]interface{}{"Exif", 0xa434},
-		[2]interface{}{"Exif", 0xa435},
-		[2]interface{}{"GPSInfo", 0x0000},
+		[2]interface{}{"IFD/Exif", 0x829a},
+		[2]interface{}{"IFD/Exif", 0x829d},
+		[2]interface{}{"IFD/Exif", 0x8822},
+		[2]interface{}{"IFD/Exif", 0x8827},
+		[2]interface{}{"IFD/Exif", 0x8830},
+		[2]interface{}{"IFD/Exif", 0x8832},
+		[2]interface{}{"IFD/Exif", 0x9000},
+		[2]interface{}{"IFD/Exif", 0x9003},
+		[2]interface{}{"IFD/Exif", 0x9004},
+		[2]interface{}{"IFD/Exif", 0x9101},
+		[2]interface{}{"IFD/Exif", 0x9201},
+		[2]interface{}{"IFD/Exif", 0x9202},
+		[2]interface{}{"IFD/Exif", 0x9204},
+		[2]interface{}{"IFD/Exif", 0x9207},
+		[2]interface{}{"IFD/Exif", 0x9209},
+		[2]interface{}{"IFD/Exif", 0x920a},
+		[2]interface{}{"IFD/Exif", 0x927c},
+		[2]interface{}{"IFD/Exif", 0x9286},
+		[2]interface{}{"IFD/Exif", 0x9290},
+		[2]interface{}{"IFD/Exif", 0x9291},
+		[2]interface{}{"IFD/Exif", 0x9292},
+		[2]interface{}{"IFD/Exif", 0xa000},
+		[2]interface{}{"IFD/Exif", 0xa001},
+		[2]interface{}{"IFD/Exif", 0xa002},
+		[2]interface{}{"IFD/Exif", 0xa003},
+		[2]interface{}{"IFD/Exif/Iop", 0x0001},
+		[2]interface{}{"IFD/Exif/Iop", 0x0002},
+		[2]interface{}{"IFD/Exif", 0xa20e},
+		[2]interface{}{"IFD/Exif", 0xa20f},
+		[2]interface{}{"IFD/Exif", 0xa210},
+		[2]interface{}{"IFD/Exif", 0xa401},
+		[2]interface{}{"IFD/Exif", 0xa402},
+		[2]interface{}{"IFD/Exif", 0xa403},
+		[2]interface{}{"IFD/Exif", 0xa406},
+		[2]interface{}{"IFD/Exif", 0xa430},
+		[2]interface{}{"IFD/Exif", 0xa431},
+		[2]interface{}{"IFD/Exif", 0xa432},
+		[2]interface{}{"IFD/Exif", 0xa434},
+		[2]interface{}{"IFD/Exif", 0xa435},
+		[2]interface{}{"IFD/GPSInfo", 0x0000},
 	}
 
 	if reflect.DeepEqual(collected, expected) != true {
@@ -498,7 +552,7 @@ func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 
 		fmt.Printf("\n")
 
-		t.Fatalf("tags not visited correctly: (%d) != (%d)", len(collected), len(expected))
+		t.Fatalf("tags not visited correctly")
 	}
 }
 
@@ -508,9 +562,14 @@ func ExampleIfd_EnumerateTagsRecursively() {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	cb := func(ifd *Ifd, ite *IfdTagEntry) error {
@@ -532,12 +591,17 @@ func ExampleIfd_GpsInfo() {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	ti := NewTagIndex()
+	im := NewIfdMapping()
 
-	_, index, err := Collect(ti, rawExif)
+	err = LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	ifd, err := index.RootIfd.ChildWithIfdIdentity(GpsIi)
+	ti := NewTagIndex()
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	ifd, err := index.RootIfd.ChildWithIfdPath(IfdPathStandardGps)
 	log.PanicIf(err)
 
 	gi, err := ifd.GpsInfo()

@@ -188,13 +188,18 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 
 	ibe := NewIfdByteEncoder()
 
-	ti := NewTagIndex()
-	ib := NewIfdBuilder(ti, GpsIi, TestDefaultByteOrder)
+	im := NewIfdMapping()
 
-	it, err := ti.Get(ib.ii, uint16(0x0000))
+	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(GpsIi, it, TestDefaultByteOrder, []uint8{uint8(0x12)})
+	ti := NewTagIndex()
+	ib := NewIfdBuilder(im, ti, IfdPathStandardGps, TestDefaultByteOrder)
+
+	it, err := ti.Get(ib.ifdPath, uint16(0x0000))
+	log.PanicIf(err)
+
+	bt := NewStandardBuilderTag(IfdPathStandardGps, it, TestDefaultByteOrder, []uint8{uint8(0x12)})
 
 	b := new(bytes.Buffer)
 	bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -217,13 +222,18 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 	ibe := NewIfdByteEncoder()
 
-	ti := NewTagIndex()
-	ib := NewIfdBuilder(ti, GpsIi, TestDefaultByteOrder)
+	im := NewIfdMapping()
 
-	it, err := ti.Get(ib.ii, uint16(0x0000))
+	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(GpsIi, it, TestDefaultByteOrder, []uint8{uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78)})
+	ti := NewTagIndex()
+	ib := NewIfdBuilder(im, ti, IfdPathStandardGps, TestDefaultByteOrder)
+
+	it, err := ti.Get(ib.ifdPath, uint16(0x0000))
+	log.PanicIf(err)
+
+	bt := NewStandardBuilderTag(IfdPathStandardGps, it, TestDefaultByteOrder, []uint8{uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78)})
 
 	b := new(bytes.Buffer)
 	bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -246,8 +256,13 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 	ibe := NewIfdByteEncoder()
 
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(ti, GpsIi, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, IfdPathStandardGps, TestDefaultByteOrder)
 
 	b := new(bytes.Buffer)
 	bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -255,10 +270,10 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 	addressableOffset := uint32(0x1234)
 	ida := newIfdDataAllocator(addressableOffset)
 
-	it, err := ti.Get(ib.ii, uint16(0x0000))
+	it, err := ti.Get(ib.ifdPath, uint16(0x0000))
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(GpsIi, it, TestDefaultByteOrder, []uint8{uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a)})
+	bt := NewStandardBuilderTag(IfdPathStandardGps, it, TestDefaultByteOrder, []uint8{uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a)})
 
 	childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
 	log.PanicIf(err)
@@ -275,7 +290,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
 	// Test that another allocation encodes to the new offset.
 
-	bt = NewStandardBuilderTag(GpsIi, it, TestDefaultByteOrder, []uint8{uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34)})
+	bt = NewStandardBuilderTag(IfdPathStandardGps, it, TestDefaultByteOrder, []uint8{uint8(0xbc), uint8(0xde), uint8(0xf0), uint8(0x12), uint8(0x34)})
 
 	childIfdBlock, err = ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
 	log.PanicIf(err)
@@ -300,8 +315,13 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T) {
 	ibe := NewIfdByteEncoder()
 
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(ti, RootIi, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
 
 	b := new(bytes.Buffer)
 	bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -309,9 +329,9 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T
 	addressableOffset := uint32(0x1234)
 	ida := newIfdDataAllocator(addressableOffset)
 
-	childIb := NewIfdBuilder(ti, ExifIi, TestDefaultByteOrder)
+	childIb := NewIfdBuilder(im, ti, IfdPathStandardExif, TestDefaultByteOrder)
 	tagValue := NewIfdBuilderTagValueFromIfdBuilder(childIb)
-	bt := NewChildIfdBuilderTag(RootIi, IfdExifId, tagValue)
+	bt := NewChildIfdBuilderTag(IfdPathStandard, IfdExifId, tagValue)
 
 	nextIfdOffsetToWrite := uint32(0)
 	childIfdBlock, err := ibe.encodeTagToBytes(ib, bt, bw, ida, nextIfdOffsetToWrite)
@@ -331,14 +351,19 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 	// space for and then attach to a tag (which would normally be an entry,
 	// then, in a higher IFD).
 
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
-	childIb := NewIfdBuilder(ti, ExifIi, TestDefaultByteOrder)
+	childIb := NewIfdBuilder(im, ti, IfdPathStandardExif, TestDefaultByteOrder)
 
 	childIbTestTag := &BuilderTag{
-		ii:     ExifIi,
-		tagId:  0x8822,
-		typeId: TypeShort,
-		value:  NewIfdBuilderTagValueFromBytes([]byte{0x12, 0x34}),
+		ifdPath: IfdPathStandardExif,
+		tagId:   0x8822,
+		typeId:  TypeShort,
+		value:   NewIfdBuilderTagValueFromBytes([]byte{0x12, 0x34}),
 	}
 
 	childIb.Add(childIbTestTag)
@@ -346,7 +371,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 	// Formally compose the tag that refers to it.
 
 	tagValue := NewIfdBuilderTagValueFromIfdBuilder(childIb)
-	bt := NewChildIfdBuilderTag(RootIi, IfdExifId, tagValue)
+	bt := NewChildIfdBuilderTag(IfdPathStandard, IfdExifId, tagValue)
 
 	// Encode the tag. Since we've actually provided an offset at which we can
 	// allocate data, the child-IFD will automatically be encoded, allocated,
@@ -355,7 +380,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
 	ibe := NewIfdByteEncoder()
 
-	ib := NewIfdBuilder(ti, RootIi, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
 
 	b := new(bytes.Buffer)
 	bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -387,7 +412,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("Child IFD is not the right size: (%d)", len(childIfdBlock))
 	}
 
-	iteV, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes, false)
+	iteV, err := ParseOneTag(im, ti, fmt.Sprintf("%s%d", IfdPathStandard, 0), IfdPathStandard, TestDefaultByteOrder, tagBytes, false)
 	log.PanicIf(err)
 
 	if iteV.TagId != IfdExifId {
@@ -402,15 +427,15 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("IFD's child-IFD offset (as offset) is not correct: (%d) != (%d)", iteV.ValueOffset, nextIfdOffsetToWrite)
 	} else if bytes.Compare(iteV.RawValueOffset, []byte{0x0, 0x0, 0x07, 0xd0}) != 0 {
 		t.Fatalf("IFD's child-IFD offset (as raw bytes) is not correct: [%x]", iteV.RawValueOffset)
-	} else if iteV.ChildIfdName != IfdExif {
-		t.Fatalf("IFD first tag IFD-name name not correct: [%s]", iteV.ChildIfdName)
-	} else if iteV.Ii != RootIi {
-		t.Fatalf("IFD first tag parent IFD not correct: %v", iteV.Ii)
+	} else if iteV.ChildIfdPath != IfdPathStandardExif {
+		t.Fatalf("IFD first tag IFD-name name not correct: [%s]", iteV.ChildIfdPath)
+	} else if iteV.IfdPath != IfdPathStandard {
+		t.Fatalf("IFD first tag parent IFD not correct: %v", iteV.IfdPath)
 	}
 
 	// Validate the child's raw IFD bytes.
 
-	childNextIfdOffset, childEntries, err := ParseOneIfd(ExifIi, TestDefaultByteOrder, childIfdBlock, nil, false)
+	childNextIfdOffset, childEntries, err := ParseOneIfd(im, ti, "IFD0/Exif0", "IFD/Exif", TestDefaultByteOrder, childIfdBlock, nil, false)
 	log.PanicIf(err)
 
 	if childNextIfdOffset != uint32(0) {
@@ -433,10 +458,10 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("Child IFD first tag value value (as offset) not correct: (0x%02x)", ite.ValueOffset)
 	} else if bytes.Compare(ite.RawValueOffset, []byte{0x12, 0x34, 0x0, 0x0}) != 0 {
 		t.Fatalf("Child IFD first tag value value (as raw bytes) not correct: [%v]", ite.RawValueOffset)
-	} else if ite.ChildIfdName != "" {
-		t.Fatalf("Child IFD first tag IFD-name name not empty: [%s]", ite.ChildIfdName)
-	} else if ite.Ii != ExifIi {
-		t.Fatalf("Child IFD first tag parent IFD not correct: %v", ite.Ii)
+	} else if ite.ChildIfdPath != "" {
+		t.Fatalf("Child IFD first tag IFD-name name not empty: [%s]", ite.ChildIfdPath)
+	} else if ite.IfdPath != IfdPathStandardExif {
+		t.Fatalf("Child IFD first tag parent IFD not correct: %v", ite.IfdPath)
 	}
 }
 
@@ -455,14 +480,19 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 
 	ibe := NewIfdByteEncoder()
 
-	ti := NewTagIndex()
-	ib := NewIfdBuilder(ti, RootIi, TestDefaultByteOrder)
+	im := NewIfdMapping()
 
-	it, err := ib.tagIndex.Get(ib.ii, uint16(0x000b))
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+
+	it, err := ib.tagIndex.Get(ib.ifdPath, uint16(0x000b))
 	log.PanicIf(err)
 
 	valueString := "testvalue"
-	bt := NewStandardBuilderTag(RootIi, it, TestDefaultByteOrder, valueString)
+	bt := NewStandardBuilderTag(IfdPathStandard, it, TestDefaultByteOrder, valueString)
 
 	b := new(bytes.Buffer)
 	bw := NewByteWriter(b, TestDefaultByteOrder)
@@ -490,7 +520,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 		t.Fatalf("Child IFD not have been allocated.")
 	}
 
-	ite, err := ParseOneTag(RootIi, TestDefaultByteOrder, tagBytes, false)
+	ite, err := ParseOneTag(im, ti, fmt.Sprintf("%s%d", IfdPathStandard, 0), IfdPathStandard, TestDefaultByteOrder, tagBytes, false)
 	log.PanicIf(err)
 
 	if ite.TagId != 0x000b {
@@ -505,10 +535,10 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 		t.Fatalf("Tag's value (as offset) is not correct: (%d) != (%d)", ite.ValueOffset, addressableOffset)
 	} else if bytes.Compare(ite.RawValueOffset, []byte{0x0, 0x0, 0x12, 0x34}) != 0 {
 		t.Fatalf("Tag's value (as raw bytes) is not correct: [%x]", ite.RawValueOffset)
-	} else if ite.ChildIfdName != "" {
-		t.Fatalf("Tag's IFD-name should be empty: [%s]", ite.ChildIfdName)
-	} else if ite.Ii != RootIi {
-		t.Fatalf("Tag's parent IFD is not correct: %v", ite.Ii)
+	} else if ite.ChildIfdPath != "" {
+		t.Fatalf("Tag's IFD-name should be empty: [%s]", ite.ChildIfdPath)
+	} else if ite.IfdPath != IfdPathStandard {
+		t.Fatalf("Tag's parent IFD is not correct: %v", ite.IfdPath)
 	}
 
 	expectedBuffer := bytes.NewBufferString(valueString)
@@ -523,10 +553,15 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 }
 
 func getExifSimpleTestIb() *IfdBuilder {
-	ti := NewTagIndex()
-	ib := NewIfdBuilder(ti, RootIi, TestDefaultByteOrder)
+	im := NewIfdMapping()
 
-	err := ib.AddStandard(0x000b, "asciivalue")
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+
+	err = ib.AddStandard(0x000b, "asciivalue")
 	log.PanicIf(err)
 
 	err = ib.AddStandard(0x00ff, []uint16{0x1122})
@@ -542,9 +577,14 @@ func getExifSimpleTestIb() *IfdBuilder {
 }
 
 func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	eh, index, err := Collect(ti, exifData)
+	eh, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
 	if eh.ByteOrder != TestDefaultByteOrder {
@@ -561,7 +601,7 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 
 	if ifd.ByteOrder != TestDefaultByteOrder {
 		t.Fatalf("IFD byte-order not correct.")
-	} else if ifd.Name != IfdStandard {
+	} else if ifd.IfdPath != IfdStandard {
 		t.Fatalf("IFD name not correct.")
 	} else if ifd.Index != 0 {
 		t.Fatalf("IFD index not zero: (%d)", ifd.Index)
@@ -770,10 +810,15 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 		}
 	}()
 
-	ti := NewTagIndex()
-	ib := NewIfdBuilder(ti, RootIi, TestDefaultByteOrder)
+	im := NewIfdMapping()
 
-	err := ib.AddStandard(0x000b, "asciivalue")
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+
+	err = ib.AddStandard(0x000b, "asciivalue")
 	log.PanicIf(err)
 
 	err = ib.AddStandard(0x00ff, []uint16{0x1122})
@@ -781,7 +826,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
 	// Add a child IB right in the middle.
 
-	childIb := NewIfdBuilder(ti, ExifIi, TestDefaultByteOrder)
+	childIb := NewIfdBuilder(im, ti, IfdPathStandardExif, TestDefaultByteOrder)
 
 	err = childIb.AddStandardWithName("ISOSpeedRatings", []uint16{0x1122})
 	log.PanicIf(err)
@@ -798,7 +843,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 	// Add another child IB, just to ensure a little more punishment and make
 	// sure we're managing our allocation offsets correctly.
 
-	childIb2 := NewIfdBuilder(ti, GpsIi, TestDefaultByteOrder)
+	childIb2 := NewIfdBuilder(im, ti, IfdPathStandardGps, TestDefaultByteOrder)
 
 	err = childIb2.AddStandardWithName("GPSAltitudeRef", []uint8{0x11, 0x22})
 	log.PanicIf(err)
@@ -812,7 +857,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 	// Link to another IB (sibling relationship). The root/standard IFD may
 	// occur twice in some JPEGs (for thumbnail or FlashPix images).
 
-	nextIb := NewIfdBuilder(ti, RootIi, TestDefaultByteOrder)
+	nextIb := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
 
 	err = nextIb.AddStandard(0x0101, []uint32{0x11223344})
 	log.PanicIf(err)
@@ -831,7 +876,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 
 	// Parse.
 
-	_, index, err := Collect(ti, exifData)
+	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
 	tagsDump := index.RootIfd.DumpTree()
@@ -843,15 +888,15 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
   - (0x000b)
   - (0x00ff)
   - (0x8769)
-  > IFD [IFD]->[Exif]:(0) TOP
+  > IFD [IFD]->[IFD/Exif]:(0) TOP
     - (0x8827)
     - (0x8833)
-  < IFD [IFD]->[Exif]:(0) BOTTOM
+  < IFD [IFD]->[IFD/Exif]:(0) BOTTOM
   - (0x0100)
   - (0x8825)
-  > IFD [IFD]->[GPSInfo]:(0) TOP
+  > IFD [IFD]->[IFD/GPSInfo]:(0) TOP
     - (0x0005)
-  < IFD [IFD]->[GPSInfo]:(0) BOTTOM
+  < IFD [IFD]->[IFD/GPSInfo]:(0) BOTTOM
   - (0x013e)
 < IFD [ROOT]->[IFD]:(0) BOTTOM
 * LINKING TO SIBLING IFD [IFD]:(1)
@@ -880,11 +925,15 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 func ExampleIfdByteEncoder_EncodeToExif() {
 	// Construct an IFD.
 
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
 
-	ib := NewIfdBuilder(ti, RootIi, TestDefaultByteOrder)
-
-	err := ib.AddStandardWithName("ProcessingSoftware", "asciivalue")
+	err = ib.AddStandardWithName("ProcessingSoftware", "asciivalue")
 	log.PanicIf(err)
 
 	err = ib.AddStandardWithName("DotRange", []uint8{0x11})
@@ -911,7 +960,7 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 
 	// Parse it so we can see it.
 
-	_, index, err := Collect(ti, exifData)
+	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
 	// addressableData is the byte-slice where the allocated data can be
@@ -927,10 +976,10 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 
 	// Output:
 	//
-	// 0: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x000b) TAG-TYPE=[ASCII] UNIT-COUNT=(11)> [asciivalue]
-	// 1: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0150) TAG-TYPE=[BYTE] UNIT-COUNT=(1)> [[17]]
-	// 2: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x00ff) TAG-TYPE=[SHORT] UNIT-COUNT=(1)> [[8755]]
-	// 3: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x0100) TAG-TYPE=[LONG] UNIT-COUNT=(1)> [[1146447479]]
-	// 4: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x013e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
-	// 5: IfdTagEntry<TAG-IFD=[] TAG-ID=(0x9201) TAG-TYPE=[SRATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
+	// 0: IfdTagEntry<TAG-IFD-PATH=[IFD] TAG-ID=(0x000b) TAG-TYPE=[ASCII] UNIT-COUNT=(11)> [asciivalue]
+	// 1: IfdTagEntry<TAG-IFD-PATH=[IFD] TAG-ID=(0x0150) TAG-TYPE=[BYTE] UNIT-COUNT=(1)> [[17]]
+	// 2: IfdTagEntry<TAG-IFD-PATH=[IFD] TAG-ID=(0x00ff) TAG-TYPE=[SHORT] UNIT-COUNT=(1)> [[8755]]
+	// 3: IfdTagEntry<TAG-IFD-PATH=[IFD] TAG-ID=(0x0100) TAG-TYPE=[LONG] UNIT-COUNT=(1)> [[1146447479]]
+	// 4: IfdTagEntry<TAG-IFD-PATH=[IFD] TAG-ID=(0x013e) TAG-TYPE=[RATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
+	// 5: IfdTagEntry<TAG-IFD-PATH=[IFD] TAG-ID=(0x9201) TAG-TYPE=[SRATIONAL] UNIT-COUNT=(1)> [[{286335522 858997828}]]
 }

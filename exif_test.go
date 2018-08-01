@@ -54,9 +54,11 @@ func TestVisit(t *testing.T) {
 
 	// Run the parse.
 
+	im := NewIfdMappingWithStandard()
+
 	tags := make([]string, 0)
 
-	visitor := func(ii IfdIdentity, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error) {
+	visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error) {
 		defer func() {
 			if state := recover(); state != nil {
 				err = log.Wrap(state.(error))
@@ -64,10 +66,13 @@ func TestVisit(t *testing.T) {
 			}
 		}()
 
-		it, err := ti.Get(ii, tagId)
+		ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
+		log.PanicIf(err)
+
+		it, err := ti.Get(ifdPath, tagId)
 		if err != nil {
 			if log.Is(err, ErrTagNotFound) {
-				fmt.Printf("Unknown tag: [%v] (%04x)\n", ii, tagId)
+				fmt.Printf("Unknown tag: [%s] (%04x)\n", ifdPath, tagId)
 				return nil
 			} else {
 				log.Panic(err)
@@ -76,7 +81,7 @@ func TestVisit(t *testing.T) {
 
 		valueString := ""
 		if tagType.Type() == TypeUndefined {
-			value, err := UndefinedValue(ii, tagId, valueContext, tagType.ByteOrder())
+			value, err := UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
 			if log.Is(err, ErrUnhandledUnknownTypedTag) {
 				valueString = "!UNDEFINED!"
 			} else if err != nil {
@@ -89,77 +94,73 @@ func TestVisit(t *testing.T) {
 			log.PanicIf(err)
 		}
 
-		description := fmt.Sprintf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ii.IfdName, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
+		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
 		tags = append(tags, description)
 
 		return nil
 	}
 
-	_, err = Visit(ti, data[foundAt:], visitor)
+	_, err = Visit(IfdStandard, im, ti, data[foundAt:], visitor)
 	log.PanicIf(err)
 
-	// for _, line := range tags {
-	//     fmt.Printf("TAGS: %s\n", line)
-	// }
-
 	expected := []string{
-		"IFD=[IFD] ID=(0x010f) NAME=[Make] COUNT=(6) TYPE=[ASCII] VALUE=[Canon]",
-		"IFD=[IFD] ID=(0x0110) NAME=[Model] COUNT=(22) TYPE=[ASCII] VALUE=[Canon EOS 5D Mark III]",
-		"IFD=[IFD] ID=(0x0112) NAME=[Orientation] COUNT=(1) TYPE=[SHORT] VALUE=[1]",
-		"IFD=[IFD] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
-		"IFD=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
-		"IFD=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
-		"IFD=[IFD] ID=(0x0132) NAME=[DateTime] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
-		"IFD=[IFD] ID=(0x013b) NAME=[Artist] COUNT=(1) TYPE=[ASCII] VALUE=[]",
-		"IFD=[IFD] ID=(0x0213) NAME=[YCbCrPositioning] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
-		"IFD=[IFD] ID=(0x8298) NAME=[Copyright] COUNT=(1) TYPE=[ASCII] VALUE=[]",
-		"IFD=[IFD] ID=(0x8769) NAME=[ExifTag] COUNT=(1) TYPE=[LONG] VALUE=[360]",
-		"IFD=[Exif] ID=(0x829a) NAME=[ExposureTime] COUNT=(1) TYPE=[RATIONAL] VALUE=[1/640]",
-		"IFD=[Exif] ID=(0x829d) NAME=[FNumber] COUNT=(1) TYPE=[RATIONAL] VALUE=[4/1]",
-		"IFD=[Exif] ID=(0x8822) NAME=[ExposureProgram] COUNT=(1) TYPE=[SHORT] VALUE=[4]",
-		"IFD=[Exif] ID=(0x8827) NAME=[ISOSpeedRatings] COUNT=(1) TYPE=[SHORT] VALUE=[1600]",
-		"IFD=[Exif] ID=(0x8830) NAME=[SensitivityType] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
-		"IFD=[Exif] ID=(0x8832) NAME=[RecommendedExposureIndex] COUNT=(1) TYPE=[LONG] VALUE=[1600]",
-		"IFD=[Exif] ID=(0x9000) NAME=[ExifVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0230]",
-		"IFD=[Exif] ID=(0x9003) NAME=[DateTimeOriginal] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
-		"IFD=[Exif] ID=(0x9004) NAME=[DateTimeDigitized] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
-		"IFD=[Exif] ID=(0x9101) NAME=[ComponentsConfiguration] COUNT=(4) TYPE=[UNDEFINED] VALUE=[ComponentsConfiguration<ID=[YCBCR] BYTES=[1 2 3 0]>]",
-		"IFD=[Exif] ID=(0x9201) NAME=[ShutterSpeedValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[614400/65536]",
-		"IFD=[Exif] ID=(0x9202) NAME=[ApertureValue] COUNT=(1) TYPE=[RATIONAL] VALUE=[262144/65536]",
-		"IFD=[Exif] ID=(0x9204) NAME=[ExposureBiasValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[0/1]",
-		"IFD=[Exif] ID=(0x9207) NAME=[MeteringMode] COUNT=(1) TYPE=[SHORT] VALUE=[5]",
-		"IFD=[Exif] ID=(0x9209) NAME=[Flash] COUNT=(1) TYPE=[SHORT] VALUE=[16]",
-		"IFD=[Exif] ID=(0x920a) NAME=[FocalLength] COUNT=(1) TYPE=[RATIONAL] VALUE=[16/1]",
-		"IFD=[Exif] ID=(0x927c) NAME=[MakerNote] COUNT=(8152) TYPE=[UNDEFINED] VALUE=[MakerNote<TYPE-ID=[28 00 01 00 03 00 31 00 00 00 74 05 00 00 02 00 03 00 04 00]>]",
-		"IFD=[Exif] ID=(0x9286) NAME=[UserComment] COUNT=(264) TYPE=[UNDEFINED] VALUE=[UserComment<SIZE=(256) ENCODING=[UNDEFINED] V=[0 0 0 0 0 0 0 0]... LEN=(256)>]",
-		"IFD=[Exif] ID=(0x9290) NAME=[SubSecTime] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
-		"IFD=[Exif] ID=(0x9291) NAME=[SubSecTimeOriginal] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
-		"IFD=[Exif] ID=(0x9292) NAME=[SubSecTimeDigitized] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
-		"IFD=[Exif] ID=(0xa000) NAME=[FlashpixVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0100]",
-		"IFD=[Exif] ID=(0xa001) NAME=[ColorSpace] COUNT=(1) TYPE=[SHORT] VALUE=[1]",
-		"IFD=[Exif] ID=(0xa002) NAME=[PixelXDimension] COUNT=(1) TYPE=[SHORT] VALUE=[3840]",
-		"IFD=[Exif] ID=(0xa003) NAME=[PixelYDimension] COUNT=(1) TYPE=[SHORT] VALUE=[2560]",
-		"IFD=[Exif] ID=(0xa005) NAME=[InteroperabilityTag] COUNT=(1) TYPE=[LONG] VALUE=[9326]",
-		"IFD=[Iop] ID=(0x0001) NAME=[InteroperabilityIndex] COUNT=(4) TYPE=[ASCII] VALUE=[R98]",
-		"IFD=[Iop] ID=(0x0002) NAME=[InteroperabilityVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0100]",
-		"IFD=[Exif] ID=(0xa20e) NAME=[FocalPlaneXResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[3840000/1461]",
-		"IFD=[Exif] ID=(0xa20f) NAME=[FocalPlaneYResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[2560000/972]",
-		"IFD=[Exif] ID=(0xa210) NAME=[FocalPlaneResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
-		"IFD=[Exif] ID=(0xa401) NAME=[CustomRendered] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
-		"IFD=[Exif] ID=(0xa402) NAME=[ExposureMode] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
-		"IFD=[Exif] ID=(0xa403) NAME=[WhiteBalance] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
-		"IFD=[Exif] ID=(0xa406) NAME=[SceneCaptureType] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
-		"IFD=[Exif] ID=(0xa430) NAME=[CameraOwnerName] COUNT=(1) TYPE=[ASCII] VALUE=[]",
-		"IFD=[Exif] ID=(0xa431) NAME=[BodySerialNumber] COUNT=(13) TYPE=[ASCII] VALUE=[063024020097]",
-		"IFD=[Exif] ID=(0xa432) NAME=[LensSpecification] COUNT=(4) TYPE=[RATIONAL] VALUE=[16/1]",
-		"IFD=[Exif] ID=(0xa434) NAME=[LensModel] COUNT=(22) TYPE=[ASCII] VALUE=[EF16-35mm f/4L IS USM]",
-		"IFD=[Exif] ID=(0xa435) NAME=[LensSerialNumber] COUNT=(11) TYPE=[ASCII] VALUE=[2400001068]",
-		"IFD=[IFD] ID=(0x8825) NAME=[GPSTag] COUNT=(1) TYPE=[LONG] VALUE=[9554]",
-		"IFD=[GPSInfo] ID=(0x0000) NAME=[GPSVersionID] COUNT=(4) TYPE=[BYTE] VALUE=[0x02]",
-		"IFD=[IFD] ID=(0x0103) NAME=[Compression] COUNT=(1) TYPE=[SHORT] VALUE=[6]",
-		"IFD=[IFD] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
-		"IFD=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
-		"IFD=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+		"IFD-PATH=[IFD] ID=(0x010f) NAME=[Make] COUNT=(6) TYPE=[ASCII] VALUE=[Canon]",
+		"IFD-PATH=[IFD] ID=(0x0110) NAME=[Model] COUNT=(22) TYPE=[ASCII] VALUE=[Canon EOS 5D Mark III]",
+		"IFD-PATH=[IFD] ID=(0x0112) NAME=[Orientation] COUNT=(1) TYPE=[SHORT] VALUE=[1]",
+		"IFD-PATH=[IFD] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+		"IFD-PATH=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+		"IFD-PATH=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+		"IFD-PATH=[IFD] ID=(0x0132) NAME=[DateTime] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
+		"IFD-PATH=[IFD] ID=(0x013b) NAME=[Artist] COUNT=(1) TYPE=[ASCII] VALUE=[]",
+		"IFD-PATH=[IFD] ID=(0x0213) NAME=[YCbCrPositioning] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+		"IFD-PATH=[IFD] ID=(0x8298) NAME=[Copyright] COUNT=(1) TYPE=[ASCII] VALUE=[]",
+		"IFD-PATH=[IFD] ID=(0x8769) NAME=[ExifTag] COUNT=(1) TYPE=[LONG] VALUE=[360]",
+		"IFD-PATH=[IFD/Exif] ID=(0x829a) NAME=[ExposureTime] COUNT=(1) TYPE=[RATIONAL] VALUE=[1/640]",
+		"IFD-PATH=[IFD/Exif] ID=(0x829d) NAME=[FNumber] COUNT=(1) TYPE=[RATIONAL] VALUE=[4/1]",
+		"IFD-PATH=[IFD/Exif] ID=(0x8822) NAME=[ExposureProgram] COUNT=(1) TYPE=[SHORT] VALUE=[4]",
+		"IFD-PATH=[IFD/Exif] ID=(0x8827) NAME=[ISOSpeedRatings] COUNT=(1) TYPE=[SHORT] VALUE=[1600]",
+		"IFD-PATH=[IFD/Exif] ID=(0x8830) NAME=[SensitivityType] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+		"IFD-PATH=[IFD/Exif] ID=(0x8832) NAME=[RecommendedExposureIndex] COUNT=(1) TYPE=[LONG] VALUE=[1600]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9000) NAME=[ExifVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0230]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9003) NAME=[DateTimeOriginal] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9004) NAME=[DateTimeDigitized] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9101) NAME=[ComponentsConfiguration] COUNT=(4) TYPE=[UNDEFINED] VALUE=[ComponentsConfiguration<ID=[YCBCR] BYTES=[1 2 3 0]>]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9201) NAME=[ShutterSpeedValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[614400/65536]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9202) NAME=[ApertureValue] COUNT=(1) TYPE=[RATIONAL] VALUE=[262144/65536]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9204) NAME=[ExposureBiasValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[0/1]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9207) NAME=[MeteringMode] COUNT=(1) TYPE=[SHORT] VALUE=[5]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9209) NAME=[Flash] COUNT=(1) TYPE=[SHORT] VALUE=[16]",
+		"IFD-PATH=[IFD/Exif] ID=(0x920a) NAME=[FocalLength] COUNT=(1) TYPE=[RATIONAL] VALUE=[16/1]",
+		"IFD-PATH=[IFD/Exif] ID=(0x927c) NAME=[MakerNote] COUNT=(8152) TYPE=[UNDEFINED] VALUE=[MakerNote<TYPE-ID=[28 00 01 00 03 00 31 00 00 00 74 05 00 00 02 00 03 00 04 00]>]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9286) NAME=[UserComment] COUNT=(264) TYPE=[UNDEFINED] VALUE=[UserComment<SIZE=(256) ENCODING=[UNDEFINED] V=[0 0 0 0 0 0 0 0]... LEN=(256)>]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9290) NAME=[SubSecTime] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9291) NAME=[SubSecTimeOriginal] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9292) NAME=[SubSecTimeDigitized] COUNT=(3) TYPE=[ASCII] VALUE=[00]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa000) NAME=[FlashpixVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0100]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa001) NAME=[ColorSpace] COUNT=(1) TYPE=[SHORT] VALUE=[1]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa002) NAME=[PixelXDimension] COUNT=(1) TYPE=[SHORT] VALUE=[3840]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa003) NAME=[PixelYDimension] COUNT=(1) TYPE=[SHORT] VALUE=[2560]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa005) NAME=[InteroperabilityTag] COUNT=(1) TYPE=[LONG] VALUE=[9326]",
+		"IFD-PATH=[IFD/Exif/Iop] ID=(0x0001) NAME=[InteroperabilityIndex] COUNT=(4) TYPE=[ASCII] VALUE=[R98]",
+		"IFD-PATH=[IFD/Exif/Iop] ID=(0x0002) NAME=[InteroperabilityVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0100]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa20e) NAME=[FocalPlaneXResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[3840000/1461]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa20f) NAME=[FocalPlaneYResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[2560000/972]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa210) NAME=[FocalPlaneResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa401) NAME=[CustomRendered] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa402) NAME=[ExposureMode] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa403) NAME=[WhiteBalance] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa406) NAME=[SceneCaptureType] COUNT=(1) TYPE=[SHORT] VALUE=[0]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa430) NAME=[CameraOwnerName] COUNT=(1) TYPE=[ASCII] VALUE=[]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa431) NAME=[BodySerialNumber] COUNT=(13) TYPE=[ASCII] VALUE=[063024020097]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa432) NAME=[LensSpecification] COUNT=(4) TYPE=[RATIONAL] VALUE=[16/1]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa434) NAME=[LensModel] COUNT=(22) TYPE=[ASCII] VALUE=[EF16-35mm f/4L IS USM]",
+		"IFD-PATH=[IFD/Exif] ID=(0xa435) NAME=[LensSerialNumber] COUNT=(11) TYPE=[ASCII] VALUE=[2400001068]",
+		"IFD-PATH=[IFD] ID=(0x8825) NAME=[GPSTag] COUNT=(1) TYPE=[LONG] VALUE=[9554]",
+		"IFD-PATH=[IFD/GPSInfo] ID=(0x0000) NAME=[GPSVersionID] COUNT=(4) TYPE=[BYTE] VALUE=[0x02]",
+		"IFD-PATH=[IFD] ID=(0x0103) NAME=[Compression] COUNT=(1) TYPE=[SHORT] VALUE=[6]",
+		"IFD-PATH=[IFD] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+		"IFD-PATH=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+		"IFD-PATH=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
 	}
 
 	if reflect.DeepEqual(tags, expected) == false {
@@ -225,9 +226,14 @@ func TestCollect(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
-	_, index, err := Collect(ti, rawExif)
+	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
 	rootIfd := index.RootIfd
@@ -259,66 +265,52 @@ func TestCollect(t *testing.T) {
 		t.Fatalf("Root IFD chain not terminated correctly (2).")
 	}
 
-	if rootIfd.Name != IfdStandard {
-		t.Fatalf("Root IFD is not labeled correctly: [%s]", rootIfd.Name)
-	} else if rootIfd.NextIfd.Name != IfdStandard {
-		t.Fatalf("Root IFD sibling is not labeled correctly: [%s]", rootIfd.Name)
-	} else if rootIfd.Children[0].Name != IfdExif {
-		t.Fatalf("Root IFD child (0) is not labeled correctly: [%s]", rootIfd.Children[0].Name)
-	} else if rootIfd.Children[1].Name != IfdGps {
-		t.Fatalf("Root IFD child (1) is not labeled correctly: [%s]", rootIfd.Children[1].Name)
-	} else if rootIfd.Children[0].Children[0].Name != IfdIop {
-		t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children[0].Children[0].Name)
+	if rootIfd.IfdPath != IfdPathStandard {
+		t.Fatalf("Root IFD is not labeled correctly: [%s]", rootIfd.IfdPath)
+	} else if rootIfd.NextIfd.IfdPath != IfdPathStandard {
+		t.Fatalf("Root IFD sibling is not labeled correctly: [%s]", rootIfd.IfdPath)
+	} else if rootIfd.Children[0].IfdPath != IfdPathStandardExif {
+		t.Fatalf("Root IFD child (0) is not labeled correctly: [%s]", rootIfd.Children[0].IfdPath)
+	} else if rootIfd.Children[1].IfdPath != IfdPathStandardGps {
+		t.Fatalf("Root IFD child (1) is not labeled correctly: [%s]", rootIfd.Children[1].IfdPath)
+	} else if rootIfd.Children[0].Children[0].IfdPath != IfdPathStandardExifIop {
+		t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children[0].Children[0].IfdPath)
 	}
 
-	rootIi, _ := IfdIdOrFail("", IfdStandard)
-
-	if lookup[rootIi][0].Name != IfdStandard {
+	if lookup[IfdPathStandard][0].IfdPath != IfdPathStandard {
 		t.Fatalf("Lookup for standard IFD not correct.")
-	} else if lookup[rootIi][1].Name != IfdStandard {
+	} else if lookup[IfdPathStandard][1].IfdPath != IfdPathStandard {
 		t.Fatalf("Lookup for standard IFD not correct.")
 	}
 
-	exifIi, _ := IfdIdOrFail(IfdStandard, IfdExif)
-
-	if lookup[exifIi][0].Name != IfdExif {
+	if lookup[IfdPathStandardExif][0].IfdPath != IfdPathStandardExif {
 		t.Fatalf("Lookup for EXIF IFD not correct.")
 	}
 
-	gpsIi, _ := IfdIdOrFail(IfdStandard, IfdGps)
-
-	if lookup[gpsIi][0].Name != IfdGps {
-		t.Fatalf("Lookup for EXIF IFD not correct.")
+	if lookup[IfdPathStandardGps][0].IfdPath != IfdPathStandardGps {
+		t.Fatalf("Lookup for GPS IFD not correct.")
 	}
 
-	iopIi, _ := IfdIdOrFail(IfdExif, IfdIop)
-
-	if lookup[iopIi][0].Name != IfdIop {
-		t.Fatalf("Lookup for EXIF IFD not correct.")
+	if lookup[IfdPathStandardExifIop][0].IfdPath != IfdPathStandardExifIop {
+		t.Fatalf("Lookup for IOP IFD not correct.")
 	}
 
 	foundExif := 0
 	foundGps := 0
-	for _, ite := range lookup[rootIi][0].Entries {
-		if ite.ChildIfdName == IfdExif {
+	for _, ite := range lookup[IfdPathStandard][0].Entries {
+		if ite.ChildIfdPath == IfdPathStandardExif {
 			foundExif++
 
-			name, found := IfdTagNameWithId(IfdStandard, ite.TagId)
-			if found != true {
-				t.Fatalf("could not find tag-ID for EXIF IFD")
-			} else if name != IfdExif {
-				t.Fatalf("EXIF IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, name, IfdExif)
+			if ite.TagId != IfdExifId {
+				t.Fatalf("EXIF IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, IfdExifId)
 			}
 		}
 
-		if ite.ChildIfdName == IfdGps {
+		if ite.ChildIfdPath == IfdPathStandardGps {
 			foundGps++
 
-			name, found := IfdTagNameWithId(IfdStandard, ite.TagId)
-			if found != true {
-				t.Fatalf("could not find tag-ID for GPS IFD")
-			} else if name != IfdGps {
-				t.Fatalf("GPS IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, name, IfdGps)
+			if ite.TagId != IfdGpsId {
+				t.Fatalf("GPS IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, IfdGpsId)
 			}
 		}
 	}
@@ -330,15 +322,12 @@ func TestCollect(t *testing.T) {
 	}
 
 	foundIop := 0
-	for _, ite := range lookup[exifIi][0].Entries {
-		if ite.ChildIfdName == IfdIop {
+	for _, ite := range lookup[IfdPathStandardExif][0].Entries {
+		if ite.ChildIfdPath == IfdPathStandardExifIop {
 			foundIop++
 
-			name, found := IfdTagNameWithId(IfdExif, ite.TagId)
-			if found != true {
-				t.Fatalf("could not find tag-ID for IOP IFD")
-			} else if name != IfdIop {
-				t.Fatalf("IOP IFD tag-ID mismatch: (0x%02x) [%s] != [%s]", ite.TagId, name, IfdIop)
+			if ite.TagId != IfdIopId {
+				t.Fatalf("IOP IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, IfdIopId)
 			}
 		}
 	}

@@ -113,7 +113,7 @@ func TestIfdMapping_Get(t *testing.T) {
 		t.Fatalf("Parent tag-ID not correct")
 	} else if mi.TagId != IfdIopId {
 		t.Fatalf("Tag-ID not correct")
-	} else if mi.Name != IfdIop {
+	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")
 	} else if mi.PathPhrase() != "IFD/Exif/Iop" {
 		t.Fatalf("path not correct")
@@ -133,9 +133,132 @@ func TestIfdMapping_GetWithPath(t *testing.T) {
 		t.Fatalf("Parent tag-ID not correct")
 	} else if mi.TagId != IfdIopId {
 		t.Fatalf("Tag-ID not correct")
-	} else if mi.Name != IfdIop {
+	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")
 	} else if mi.PathPhrase() != "IFD/Exif/Iop" {
 		t.Fatalf("path not correct")
+	}
+}
+
+func TestIfdMapping_ResolvePath__Regular(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	lineage, err := im.ResolvePath("IFD/Exif/Iop")
+	log.PanicIf(err)
+
+	expected := []IfdTagIdAndIndex{
+		IfdTagIdAndIndex{Name: "IFD", TagId: 0, Index: 0},
+		IfdTagIdAndIndex{Name: "Exif", TagId: 0x8769, Index: 0},
+		IfdTagIdAndIndex{Name: "Iop", TagId: 0xa005, Index: 0},
+	}
+
+	if reflect.DeepEqual(lineage, expected) != true {
+		t.Fatalf("Lineage not correct.")
+	}
+}
+
+func TestIfdMapping_ResolvePath__WithIndices(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	lineage, err := im.ResolvePath("IFD/Exif1/Iop")
+	log.PanicIf(err)
+
+	expected := []IfdTagIdAndIndex{
+		IfdTagIdAndIndex{Name: "IFD", TagId: 0, Index: 0},
+		IfdTagIdAndIndex{Name: "Exif", TagId: 0x8769, Index: 1},
+		IfdTagIdAndIndex{Name: "Iop", TagId: 0xa005, Index: 0},
+	}
+
+	if reflect.DeepEqual(lineage, expected) != true {
+		t.Fatalf("Lineage not correct.")
+	}
+}
+
+func TestIfdMapping_ResolvePath__Miss(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	_, err = im.ResolvePath("IFD/Exif/Invalid")
+	if err == nil {
+		t.Fatalf("Expected failure for invalid IFD path.")
+	} else if err.Error() != "ifd child with name [Invalid] not registered: [IFD/Exif/Invalid]" {
+		log.Panic(err)
+	}
+}
+
+func TestIfdMapping_FqPathPhraseFromLineage(t *testing.T) {
+	lineage := []IfdTagIdAndIndex{
+		IfdTagIdAndIndex{Name: "IFD", Index: 0},
+		IfdTagIdAndIndex{Name: "Exif", Index: 1},
+		IfdTagIdAndIndex{Name: "Iop", Index: 0},
+	}
+
+	im := NewIfdMapping()
+
+	fqPathPhrase := im.FqPathPhraseFromLineage(lineage)
+	if fqPathPhrase != "IFD/Exif1/Iop" {
+		t.Fatalf("path-phrase not correct: [%s]", fqPathPhrase)
+	}
+}
+
+func TestIfdMapping_PathPhraseFromLineage(t *testing.T) {
+	lineage := []IfdTagIdAndIndex{
+		IfdTagIdAndIndex{Name: "IFD", Index: 0},
+		IfdTagIdAndIndex{Name: "Exif", Index: 1},
+		IfdTagIdAndIndex{Name: "Iop", Index: 0},
+	}
+
+	im := NewIfdMapping()
+
+	fqPathPhrase := im.PathPhraseFromLineage(lineage)
+	if fqPathPhrase != "IFD/Exif/Iop" {
+		t.Fatalf("path-phrase not correct: [%s]", fqPathPhrase)
+	}
+}
+
+func TestIfdMapping_NewIfdMappingWithStandard(t *testing.T) {
+	imWith := NewIfdMappingWithStandard()
+	imWithout := NewIfdMapping()
+
+	err := LoadStandardIfds(imWithout)
+
+	outputWith, err := imWith.DumpLineages()
+	log.PanicIf(err)
+
+	sort.Strings(outputWith)
+
+	outputWithout, err := imWithout.DumpLineages()
+	log.PanicIf(err)
+
+	sort.Strings(outputWithout)
+
+	if reflect.DeepEqual(outputWith, outputWithout) != true {
+		fmt.Printf("WITH:\n")
+		fmt.Printf("\n")
+
+		for _, line := range outputWith {
+			fmt.Printf("%s\n", line)
+		}
+
+		fmt.Printf("\n")
+
+		fmt.Printf("WITHOUT:\n")
+		fmt.Printf("\n")
+
+		for _, line := range outputWithout {
+			fmt.Printf("%s\n", line)
+		}
+
+		fmt.Printf("\n")
+
+		t.Fatalf("Standard IFDs not loaded correctly.")
 	}
 }

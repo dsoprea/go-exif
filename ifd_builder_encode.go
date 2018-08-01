@@ -271,13 +271,13 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 		if nextIfdOffsetToWrite > 0 {
 			var err error
 
-			ibe.pushToJournal("encodeTagToBytes", ">", "[%s]->[%s]", ib.ii.IfdName, bt.value.Ib().ii.IfdName)
+			ibe.pushToJournal("encodeTagToBytes", ">", "[%s]->[%s]", ib.ifdPath, bt.value.Ib().ifdPath)
 
 			// Create the block of IFD data and everything it requires.
 			childIfdBlock, err = ibe.encodeAndAttachIfd(bt.value.Ib(), nextIfdOffsetToWrite)
 			log.PanicIf(err)
 
-			ibe.pushToJournal("encodeTagToBytes", "<", "[%s]->[%s]", bt.value.Ib().ii.IfdName, ib.ii.IfdName)
+			ibe.pushToJournal("encodeTagToBytes", "<", "[%s]->[%s]", bt.value.Ib().ifdPath, ib.ifdPath)
 
 			// Use the next-IFD offset for it. The IFD will actually get
 			// attached after we return.
@@ -288,7 +288,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 			// No child-IFDs are to be allocated. Finish the entry with a NULL
 			// pointer.
 
-			ibe.pushToJournal("encodeTagToBytes", "-", "*Not* descending to child: [%s]", bt.value.Ib().ii.IfdName)
+			ibe.pushToJournal("encodeTagToBytes", "-", "*Not* descending to child: [%s]", bt.value.Ib().ifdPath)
 
 			err = bw.WriteUint32(0)
 			log.PanicIf(err)
@@ -387,23 +387,6 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
 	_, err = b.Write(dataBytes)
 	log.PanicIf(err)
 
-	// TODO(dustin): !! Debugging.
-	// if thumbnailOffset != uint32(0) {
-	//     currentRelativeOffset := thumbnailOffset - ifdAddressableOffset
-	//     currentBuffer := b.Bytes()
-
-	//     len_ := len(thumbnailData)
-	//     extractedThumbnailData := currentBuffer[int(currentRelativeOffset):int(currentRelativeOffset) + len_]
-
-	//     // We didn't have enough data available, which would be queer.
-	//     if len(extractedThumbnailData) != len_ {
-	//         log.Panicf("extracted thumbnail data was truncated; not enough data")
-	//     }
-
-	// // fmt.Printf("Re-extracted (%d) bytes of thumbnail data.\n", len(extractedThumbnailData))
-	// // DumpBytes(extractedThumbnailData[:50])
-	//     }
-
 	// Append any child IFD blocks after our table and data blocks. These IFDs
 	// were equipped with the appropriate offset information so it's expected
 	// that all offsets referred to by these will be correct.
@@ -419,13 +402,6 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
 	}
 
 	ibe.pushToJournal("encodeIfdToBytes", "<", "%s", ib)
-
-	// if nextIfdOffsetToWrite > uint32(0) {
-	//     fmt.Printf("Encoded IB: %s  ADDRESSABLE-OFFSET=(0x%08x; %d):\n", ib.ii, ifdAddressableOffset, ifdAddressableOffset)
-	//     fmt.Printf("\n")
-	//         DumpBytes(b.Bytes())
-	//     fmt.Printf("\n")
-	// }
 
 	return b.Bytes(), tableSize, dataSize, childIfdSizes, nil
 }
@@ -444,20 +420,18 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
 	i := 0
 
-	// TODO(dustin): !! We suspect there's an issue with encoding sibling IFDs, here.
-
 	for thisIb := ib; thisIb != nil; thisIb = thisIb.nextIb {
 
 		// Do a dry-run in order to pre-determine its size requirement.
 
-		ibe.pushToJournal("encodeAndAttachIfd", ">", "Beginning encoding process: (%d) [%s]", i, thisIb.ii.IfdName)
+		ibe.pushToJournal("encodeAndAttachIfd", ">", "Beginning encoding process: (%d) [%s]", i, thisIb.ifdPath)
 
-		ibe.pushToJournal("encodeAndAttachIfd", ">", "Calculating size: (%d) [%s]", i, thisIb.ii.IfdName)
+		ibe.pushToJournal("encodeAndAttachIfd", ">", "Calculating size: (%d) [%s]", i, thisIb.ifdPath)
 
 		_, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(thisIb, ifdAddressableOffset, 0, false)
 		log.PanicIf(err)
 
-		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finished calculating size: (%d) [%s]", i, thisIb.ii.IfdName)
+		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finished calculating size: (%d) [%s]", i, thisIb.ifdPath)
 
 		ifdAddressableOffset += tableSize
 		nextIfdOffsetToWrite := ifdAddressableOffset + allocatedDataSize
@@ -469,7 +443,7 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
 		setNextIb := thisIb.nextIb != nil
 
-		ibe.pushToJournal("encodeAndAttachIfd", ">", "Encoding starting: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.ii.IfdName, nextIfdOffsetToWrite)
+		ibe.pushToJournal("encodeAndAttachIfd", ">", "Encoding starting: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.ifdPath, nextIfdOffsetToWrite)
 
 		tableAndAllocated, effectiveTableSize, effectiveAllocatedDataSize, childIfdSizes, err :=
 			ibe.encodeIfdToBytes(thisIb, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
@@ -482,7 +456,7 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 			log.Panicf("written allocated-data size does not match the pre-calculated allocated-data size: (%d) != (%d) %s", effectiveAllocatedDataSize, allocatedDataSize, ib)
 		}
 
-		ibe.pushToJournal("encodeAndAttachIfd", "<", "Encoding done: (%d) [%s]", i, thisIb.ii.IfdName)
+		ibe.pushToJournal("encodeAndAttachIfd", "<", "Encoding done: (%d) [%s]", i, thisIb.ifdPath)
 
 		totalChildIfdSize := uint32(0)
 		for _, childIfdSize := range childIfdSizes {
@@ -493,17 +467,16 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 			log.Panicf("IFD table and data is not a consistent size: (%d) != (%d)", len(tableAndAllocated), tableSize+allocatedDataSize+totalChildIfdSize)
 		}
 
-		// TODO(dustin): !! We might want to verify the original tableAndAllocated length, too.
+		// TODO(dustin): We might want to verify the original tableAndAllocated length, too.
 
 		_, err = b.Write(tableAndAllocated)
 		log.PanicIf(err)
 
 		// Advance past what we've allocated, thus far.
 
-		// TODO(dustin): !! If this doesn't work (or doesn't work easily), we may need to send a complex type for the addressable-offset instead of a simple integer.
 		ifdAddressableOffset += allocatedDataSize + totalChildIfdSize
 
-		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finishing encoding process: (%d) [%s] [FINAL:] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, ib.ii.IfdName, nextIfdOffsetToWrite)
+		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finishing encoding process: (%d) [%s] [FINAL:] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, ib.ifdPath, nextIfdOffsetToWrite)
 
 		i++
 	}

@@ -31,16 +31,16 @@ var (
 )
 
 type IfdEntry struct {
-	IfdName       string      `json:"ifd_name"`
-	ParentIfdName string      `json:"parent_ifd_name"`
-	IfdIndex      int         `json:"ifd_index"`
-	TagId         uint16      `json:"tag_id"`
-	TagName       string      `json:"tag_name"`
-	TagTypeId     uint16      `json:"tag_type_id"`
-	TagTypeName   string      `json:"tag_type_name"`
-	UnitCount     uint32      `json:"unit_count"`
-	Value         interface{} `json:"value"`
-	ValueString   string      `json:"value_string"`
+	IfdPath     string      `json:"ifd_path"`
+	FqIfdPath   string      `json:"fq_ifd_path"`
+	IfdIndex    int         `json:"ifd_index"`
+	TagId       uint16      `json:"tag_id"`
+	TagName     string      `json:"tag_name"`
+	TagTypeId   uint16      `json:"tag_type_id"`
+	TagTypeName string      `json:"tag_type_name"`
+	UnitCount   uint32      `json:"unit_count"`
+	Value       interface{} `json:"value"`
+	ValueString string      `json:"value_string"`
 }
 
 func main() {
@@ -72,10 +72,11 @@ func main() {
 
 	// Run the parse.
 
-	entries := make([]IfdEntry, 0)
-
+	im := exif.NewIfdMappingWithStandard()
 	ti := exif.NewTagIndex()
-	visitor := func(ii exif.IfdIdentity, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
+
+	entries := make([]IfdEntry, 0)
+	visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
 		defer func() {
 			if state := recover(); state != nil {
 				err = log.Wrap(state.(error))
@@ -83,10 +84,13 @@ func main() {
 			}
 		}()
 
-		it, err := ti.Get(ii, tagId)
+		ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
+		log.PanicIf(err)
+
+		it, err := ti.Get(ifdPath, tagId)
 		if err != nil {
 			if log.Is(err, exif.ErrTagNotFound) {
-				fmt.Printf("WARNING: Unknown tag: [%s] (%04x)\n", ii, tagId)
+				fmt.Printf("WARNING: Unknown tag: [%s] (%04x)\n", ifdPath, tagId)
 				return nil
 			} else {
 				log.Panic(err)
@@ -97,7 +101,7 @@ func main() {
 		var value interface{}
 		if tagType.Type() == exif.TypeUndefined {
 			var err error
-			value, err = exif.UndefinedValue(ii, tagId, valueContext, tagType.ByteOrder())
+			value, err = exif.UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
 			if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
 				value = nil
 			} else if err != nil {
@@ -113,16 +117,16 @@ func main() {
 		}
 
 		entry := IfdEntry{
-			IfdName:       ii.IfdName,
-			ParentIfdName: ii.ParentIfdName,
-			IfdIndex:      ifdIndex,
-			TagId:         tagId,
-			TagName:       it.Name,
-			TagTypeId:     tagType.Type(),
-			TagTypeName:   tagType.Name(),
-			UnitCount:     valueContext.UnitCount,
-			Value:         value,
-			ValueString:   valueString,
+			IfdPath:     ifdPath,
+			FqIfdPath:   fqIfdPath,
+			IfdIndex:    ifdIndex,
+			TagId:       tagId,
+			TagName:     it.Name,
+			TagTypeId:   tagType.Type(),
+			TagTypeName: tagType.Name(),
+			UnitCount:   valueContext.UnitCount,
+			Value:       value,
+			ValueString: valueString,
 		}
 
 		entries = append(entries, entry)
@@ -130,7 +134,7 @@ func main() {
 		return nil
 	}
 
-	_, err = exif.Visit(ti, rawExif, visitor)
+	_, err = exif.Visit(exif.IfdStandard, im, ti, rawExif, visitor)
 	log.PanicIf(err)
 
 	if printAsJsonArg == true {
@@ -140,7 +144,7 @@ func main() {
 		fmt.Println(string(data))
 	} else {
 		for _, entry := range entries {
-			fmt.Printf("IFD=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdName, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.ValueString)
+			fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdPath, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.ValueString)
 		}
 	}
 }

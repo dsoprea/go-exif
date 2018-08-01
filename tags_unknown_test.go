@@ -9,7 +9,8 @@ import (
 
 func TestUndefinedValue_ExifVersion(t *testing.T) {
 	byteOrder := TestDefaultByteOrder
-	ii := ExifIi
+	fqIfdPath := "IFD0/Exif0"
+	ifdPath := "IFD/Exif"
 
 	// Create our unknown-type tag's value using the fact that we know it's a
 	// non-null-terminated string.
@@ -28,18 +29,23 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
 	encodedValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
 
 	bt := &BuilderTag{
-		ii:     ii,
-		tagId:  0x9000,
-		typeId: TypeUndefined,
-		value:  encodedValue,
+		ifdPath: ifdPath,
+		tagId:   0x9000,
+		typeId:  TypeUndefined,
+		value:   encodedValue,
 	}
 
 	// Stage the build.
 
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
 	ti := NewTagIndex()
 
 	ibe := NewIfdByteEncoder()
-	ib := NewIfdBuilder(ti, ii, byteOrder)
+	ib := NewIfdBuilder(im, ti, ifdPath, byteOrder)
 
 	b := new(bytes.Buffer)
 	bw := NewByteWriter(b, byteOrder)
@@ -58,7 +64,7 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
 		t.Fatalf("Tag not encoded to the right number of bytes: (%d)", len(tagBytes))
 	}
 
-	ite, err := ParseOneTag(ii, byteOrder, tagBytes, false)
+	ite, err := ParseOneTag(im, ti, fqIfdPath, ifdPath, byteOrder, tagBytes, false)
 	log.PanicIf(err)
 
 	if ite.TagId != 0x9000 {
@@ -71,10 +77,10 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
 		t.Fatalf("Tag unit-count not correct: (%d)", ite.UnitCount)
 	} else if bytes.Compare(ite.RawValueOffset, []byte{'0', '2', '3', '0'}) != 0 {
 		t.Fatalf("Tag's value (as raw bytes) is not correct: [%x]", ite.RawValueOffset)
-	} else if ite.ChildIfdName != "" {
-		t.Fatalf("Tag's IFD-name should be empty: [%s]", ite.ChildIfdName)
-	} else if ite.Ii != ii {
-		t.Fatalf("Tag's parent IFD is not correct: %v", ite.Ii)
+	} else if ite.ChildIfdPath != "" {
+		t.Fatalf("Tag's child IFD-path should be empty: [%s]", ite.ChildIfdPath)
+	} else if ite.IfdPath != ifdPath {
+		t.Fatalf("Tag's parent IFD is not correct: %v", ite.IfdPath)
 	}
 }
 

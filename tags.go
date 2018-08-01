@@ -56,22 +56,22 @@ type encodedTag struct {
 // Indexing structures.
 
 type IndexedTag struct {
-	Id   uint16
-	Name string
-	Ifd  string
-	Type uint16
+	Id      uint16
+	Name    string
+	IfdPath string
+	Type    uint16
 }
 
 func (it *IndexedTag) String() string {
-	return fmt.Sprintf("TAG<ID=(0x%04x) NAME=[%s] IFD=[%s]>", it.Id, it.Name, it.Ifd)
+	return fmt.Sprintf("TAG<ID=(0x%04x) NAME=[%s] IFD=[%s]>", it.Id, it.Name, it.IfdPath)
 }
 
-func (it *IndexedTag) IsName(ifd, name string) bool {
-	return it.Name == name && it.Ifd == ifd
+func (it *IndexedTag) IsName(ifdPath, name string) bool {
+	return it.Name == name && it.IfdPath == ifdPath
 }
 
-func (it *IndexedTag) Is(ifd string, id uint16) bool {
-	return it.Id == id && it.Ifd == ifd
+func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
+	return it.Id == id && it.IfdPath == ifdPath
 }
 
 type TagIndex struct {
@@ -97,28 +97,28 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 
 	// Store by ID.
 
-	family, found := ti.tagsByIfd[it.Ifd]
+	family, found := ti.tagsByIfd[it.IfdPath]
 	if found == false {
 		family = make(map[uint16]*IndexedTag)
-		ti.tagsByIfd[it.Ifd] = family
+		ti.tagsByIfd[it.IfdPath] = family
 	}
 
 	if _, found := family[it.Id]; found == true {
-		log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", it.Ifd, it.Id)
+		log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", it.IfdPath, it.Id)
 	}
 
 	family[it.Id] = it
 
 	// Store by name.
 
-	familyR, found := ti.tagsByIfdR[it.Ifd]
+	familyR, found := ti.tagsByIfdR[it.IfdPath]
 	if found == false {
 		familyR = make(map[string]*IndexedTag)
-		ti.tagsByIfdR[it.Ifd] = familyR
+		ti.tagsByIfdR[it.IfdPath] = familyR
 	}
 
 	if _, found := familyR[it.Name]; found == true {
-		log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", it.Ifd, it.Name)
+		log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", it.IfdPath, it.Name)
 	}
 
 	familyR[it.Name] = it
@@ -127,7 +127,7 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 }
 
 // Get returns information about the non-IFD tag.
-func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
+func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -139,7 +139,7 @@ func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
 		log.PanicIf(err)
 	}
 
-	family, found := ti.tagsByIfd[ii.IfdName]
+	family, found := ti.tagsByIfd[ifdPath]
 	if found == false {
 		log.Panic(ErrTagNotFound)
 	}
@@ -153,7 +153,7 @@ func (ti *TagIndex) Get(ii IfdIdentity, id uint16) (it *IndexedTag, err error) {
 }
 
 // Get returns information about the non-IFD tag.
-func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, err error) {
+func (ti *TagIndex) GetWithName(ifdPath string, name string) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -165,7 +165,7 @@ func (ti *TagIndex) GetWithName(ii IfdIdentity, name string) (it *IndexedTag, er
 		log.PanicIf(err)
 	}
 
-	it, found := ti.tagsByIfdR[ii.IfdName][name]
+	it, found := ti.tagsByIfdR[ifdPath][name]
 	if found != true {
 		log.Panic(ErrTagNotFound)
 	}
@@ -192,7 +192,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 	// Load structure.
 
 	count := 0
-	for ifdName, tags := range encodedIfds {
+	for ifdPath, tags := range encodedIfds {
 		for _, tagInfo := range tags {
 			tagId := uint16(tagInfo.Id)
 			tagName := tagInfo.Name
@@ -210,10 +210,10 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 			}
 
 			it := &IndexedTag{
-				Ifd:  ifdName,
-				Id:   tagId,
-				Name: tagName,
-				Type: tagTypeId,
+				IfdPath: ifdPath,
+				Id:      tagId,
+				Name:    tagName,
+				Type:    tagTypeId,
 			}
 
 			err = ti.Add(it)
@@ -226,93 +226,4 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 	tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
 
 	return nil
-}
-
-// IfdTagWithId returns true if the given tag points to a child IFD block.
-func IfdTagNameWithIdOrFail(parentIfdName string, tagId uint16) string {
-	name, found := IfdTagNameWithId(parentIfdName, tagId)
-	if found == false {
-		log.Panicf("tag-ID (0x%02x) under parent IFD [%s] not associated with a child IFD", tagId, parentIfdName)
-	}
-
-	return name
-}
-
-// IfdTagWithId returns true if the given tag points to a child IFD block.
-
-// TODO(dustin): !! Rewrite to take an IfdIdentity, instead. We shouldn't expect that IFD names are globally unique.
-
-func IfdTagNameWithId(parentIfdName string, tagId uint16) (name string, found bool) {
-	if tags, found := IfdTagNames[parentIfdName]; found == true {
-		if name, found = tags[tagId]; found == true {
-			return name, true
-		}
-	}
-
-	return "", false
-}
-
-// IfdTagIdWithIdentity returns true if the given tag points to a child IFD
-// block.
-func IfdTagIdWithIdentity(ii IfdIdentity) (tagId uint16, found bool) {
-	if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
-		if tagId, found = tags[ii.IfdName]; found == true {
-			return tagId, true
-		}
-	}
-
-	return 0, false
-}
-
-func IfdTagIdWithIdentityOrFail(ii IfdIdentity) (tagId uint16) {
-	if tags, found := IfdTagIds[ii.ParentIfdName]; found == true {
-		if tagId, found = tags[ii.IfdName]; found == true {
-			if tagId == 0 {
-				// This IFD is not the type that can be linked to from a tag.
-				log.Panicf("not a child IFD: [%s]", ii.IfdName)
-			}
-
-			return tagId
-		}
-	}
-
-	log.Panicf("no tag for invalid IFD identity: %v", ii)
-	return 0
-}
-
-func IfdIdWithIdentity(ii IfdIdentity) int {
-	id, _ := IfdIds[ii]
-	return id
-}
-
-func IfdIdWithIdentityOrFail(ii IfdIdentity) int {
-	id, _ := IfdIds[ii]
-	if id == 0 {
-		log.Panicf("IFD not valid: %v", ii)
-	}
-
-	return id
-}
-
-func IfdIdOrFail(parentIfdName, ifdName string) (ii IfdIdentity, id int) {
-	ii, id = IfdId(parentIfdName, ifdName)
-	if id == 0 {
-		log.Panicf("IFD is not valid: [%s] [%s]", parentIfdName, ifdName)
-	}
-
-	return ii, id
-}
-
-func IfdId(parentIfdName, ifdName string) (ii IfdIdentity, id int) {
-	ii = IfdIdentity{
-		ParentIfdName: parentIfdName,
-		IfdName:       ifdName,
-	}
-
-	id, found := IfdIds[ii]
-	if found != true {
-		return IfdIdentity{}, 0
-	}
-
-	return ii, id
 }

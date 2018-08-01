@@ -1,6 +1,7 @@
 package exif
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -8,120 +9,53 @@ import (
 )
 
 const (
-	// The root IFD types (ifd0, ifd1).
-	IfdStandard = "IFD"
+	// IFD names. The paths that we referred to the IFDs with are comprised of
+	// these.
 
-	// Child IFD types.
-	IfdExif = "Exif"
-	IfdGps  = "GPSInfo"
-	IfdIop  = "Iop"
+	IfdStandard = "IFD"
+	IfdExif     = "Exif"
+	IfdGps      = "GPSInfo"
+	IfdIop      = "Iop"
 
 	// Tag IDs for child IFDs.
+
 	IfdExifId = 0x8769
 	IfdGpsId  = 0x8825
 	IfdIopId  = 0xA005
 
 	// Just a placeholder.
+
 	IfdRootId = 0x0000
-)
 
-type IfdNameAndIndex struct {
-	Ii    IfdIdentity
-	Index int
-}
+	// The paths of the standard IFDs expressed in the standard IFD-mappings
+	// and as the group-names in the tag data.
 
-var (
-	// TODO(dustin): !! Get rid of this in favor of one of the two lookups, just below.
-	validIfds = []string{
-		IfdStandard,
-		IfdExif,
-		IfdGps,
-		IfdIop,
-	}
-
-	// A lookup for IFDs by their parents.
-	// TODO(dustin): !! We should switch to indexing by their unique integer IDs (defined below) rather than exposing ourselves to non-unique IFD names (even if we *do* manage the naming ourselves).
-	IfdTagIds = map[string]map[string]uint16{
-		"": map[string]uint16{
-			// A root IFD type. Not allowed to be a child (tag-based) IFD.
-			IfdStandard: 0x0,
-		},
-
-		IfdStandard: map[string]uint16{
-			IfdExif: IfdExifId,
-			IfdGps:  IfdGpsId,
-		},
-
-		IfdExif: map[string]uint16{
-			IfdIop: IfdIopId,
-		},
-	}
-
-	// IfdTagNames contains the tag ID-to-name mappings and is populated by
-	// init().
-	IfdTagNames = map[string]map[uint16]string{}
-
-	// IFD Identities. These are often how we refer to IFDs, from call to call.
-
-	// The NULL-type instance for search misses and empty responses.
-	ZeroIi = IfdIdentity{}
-
-	RootIi    = IfdIdentity{IfdName: IfdStandard}
-	ExifIi    = IfdIdentity{ParentIfdName: IfdStandard, IfdName: IfdExif}
-	GpsIi     = IfdIdentity{ParentIfdName: IfdStandard, IfdName: IfdGps}
-	ExifIopIi = IfdIdentity{ParentIfdName: IfdExif, IfdName: IfdIop}
-
-	// Produce a list of unique IDs for each IFD that we can pass around (so we
-	// don't always have to be comparing parent and child names).
-	//
-	// For lack of need, this is just static.
-	//
-	// (0) is reserved for not-found/miss responses.
-	IfdIds = map[IfdIdentity]int{
-		RootIi:    1,
-		ExifIi:    2,
-		GpsIi:     3,
-		ExifIopIi: 4,
-	}
-
-	IfdDesignations = map[string]IfdNameAndIndex{
-		"ifd0": {RootIi, 0},
-		"ifd1": {RootIi, 1},
-		"exif": {ExifIi, 0},
-		"gps":  {GpsIi, 0},
-		"iop":  {ExifIopIi, 0},
-	}
-
-	IfdDesignationsR = make(map[IfdNameAndIndex]string)
+	IfdPathStandard        = "IFD"
+	IfdPathStandardExif    = "IFD/Exif"
+	IfdPathStandardExifIop = "IFD/Exif/Iop"
+	IfdPathStandardGps     = "IFD/GPSInfo"
 )
 
 var (
 	ifdLogger = log.NewLogger("exif.ifd")
 )
 
-func IfdDesignation(ii IfdIdentity, index int) string {
-	if ii == RootIi {
-		return fmt.Sprintf("%s%d", ii.IfdName, index)
-	} else {
-		return ii.IfdName
-	}
-}
+var (
+	ErrChildIfdNotMapped = errors.New("no child-IFD for that tag-ID under parent")
+)
 
-type IfdIdentity struct {
-	ParentIfdName string
-	IfdName       string
-}
+// type IfdIdentity struct {
+// 	ParentIfdName string
+// 	IfdName       string
+// }
 
-func (ii IfdIdentity) String() string {
-	return fmt.Sprintf("IfdIdentity<PARENT-NAME=[%s] NAME=[%s]>", ii.ParentIfdName, ii.IfdName)
-}
-
-func (ii IfdIdentity) Id() int {
-	return IfdIdWithIdentityOrFail(ii)
-}
+// func (ii IfdIdentity) String() string {
+// 	return fmt.Sprintf("IfdIdentity<PARENT-NAME=[%s] NAME=[%s]>", ii.ParentIfdName, ii.IfdName)
+// }
 
 type MappedIfd struct {
 	ParentTagId uint16
+	Placement   []uint16
 	Path        []string
 
 	Name     string
@@ -154,6 +88,22 @@ func NewIfdMapping() (ifdMapping *IfdMapping) {
 	}
 }
 
+func NewIfdMappingWithStandard() (ifdMapping *IfdMapping) {
+	defer func() {
+		if state := recover(); state != nil {
+			err := log.Wrap(state.(error))
+			log.Panic(err)
+		}
+	}()
+
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	return im
+}
+
 func (im *IfdMapping) Get(parentPlacement []uint16) (childIfd *MappedIfd, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -164,7 +114,7 @@ func (im *IfdMapping) Get(parentPlacement []uint16) (childIfd *MappedIfd, err er
 	ptr := im.rootNode
 	for _, tagId := range parentPlacement {
 		if descendantPtr, found := ptr.Children[tagId]; found == false {
-			log.Panicf(fmt.Sprintf("ifd child with tag-ID (%04x) not registered", tagId))
+			log.Panicf("ifd child with tag-ID (%04x) not registered: [%s]", tagId, ptr.PathPhrase())
 		} else {
 			ptr = descendantPtr
 		}
@@ -180,6 +130,10 @@ func (im *IfdMapping) GetWithPath(pathPhrase string) (mi *MappedIfd, err error) 
 		}
 	}()
 
+	if pathPhrase == "" {
+		log.Panicf("path-phrase is empty")
+	}
+
 	path := strings.Split(pathPhrase, "/")
 	ptr := im.rootNode
 
@@ -193,13 +147,146 @@ func (im *IfdMapping) GetWithPath(pathPhrase string) (mi *MappedIfd, err error) 
 		}
 
 		if hit == nil {
-			log.Panicf(fmt.Sprintf("ifd child with name [%s] not registered", name))
+			log.Panicf("ifd child with name [%s] not registered: [%s]", name, ptr.PathPhrase())
 		}
 
 		ptr = hit
 	}
 
 	return ptr, nil
+}
+
+// GetChild is a convenience function to get the child path for a given parent
+// placement and child tag-ID.
+func (im *IfdMapping) GetChild(parentPathPhrase string, tagId uint16) (mi *MappedIfd, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	mi, err = im.GetWithPath(parentPathPhrase)
+	log.PanicIf(err)
+
+	for _, childMi := range mi.Children {
+		if childMi.TagId == tagId {
+			return childMi, nil
+		}
+	}
+
+	// Whether or not an IFD is defined in data, such an IFD is not registered
+	// and would be unknown.
+	log.Panic(ErrChildIfdNotMapped)
+	return nil, nil
+}
+
+type IfdTagIdAndIndex struct {
+	Name  string
+	TagId uint16
+	Index int
+}
+
+func (itii IfdTagIdAndIndex) String() string {
+	return fmt.Sprintf("IfdTagIdAndIndex<NAME=[%s] ID=(%04x) INDEX=(%d)>", itii.Name, itii.TagId, itii.Index)
+}
+
+// ResolvePath takes a list of names, which can also be suffixed with indices
+// (to identify the second, third, etc.. sibling IFD) and returns a list of
+// tag-IDs and those indices.
+//
+// Example:
+//
+// - IFD/Exif/Iop
+// - IFD0/Exif/Iop
+//
+// This is the only call that supports adding the numeric indices.
+func (im *IfdMapping) ResolvePath(pathPhrase string) (lineage []IfdTagIdAndIndex, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	pathPhrase = strings.TrimSpace(pathPhrase)
+
+	if pathPhrase == "" {
+		log.Panicf("can not resolve empty path-phrase")
+	}
+
+	path := strings.Split(pathPhrase, "/")
+	lineage = make([]IfdTagIdAndIndex, len(path))
+
+	ptr := im.rootNode
+	empty := IfdTagIdAndIndex{}
+	for i, name := range path {
+		indexByte := name[len(name)-1]
+		index := 0
+		if indexByte >= '0' && indexByte <= '9' {
+			index = int(indexByte - '0')
+			name = name[:len(name)-1]
+		}
+
+		itii := IfdTagIdAndIndex{}
+		for _, mi := range ptr.Children {
+			if mi.Name != name {
+				continue
+			}
+
+			itii.Name = name
+			itii.TagId = mi.TagId
+			itii.Index = index
+
+			ptr = mi
+
+			break
+		}
+
+		if itii == empty {
+			log.Panicf("ifd child with name [%s] not registered: [%s]", name, pathPhrase)
+		}
+
+		lineage[i] = itii
+	}
+
+	return lineage, nil
+}
+
+func (im *IfdMapping) FqPathPhraseFromLineage(lineage []IfdTagIdAndIndex) (fqPathPhrase string) {
+	fqPathParts := make([]string, len(lineage))
+	for i, itii := range lineage {
+		if itii.Index > 0 {
+			fqPathParts[i] = fmt.Sprintf("%s%d", itii.Name, itii.Index)
+		} else {
+			fqPathParts[i] = itii.Name
+		}
+	}
+
+	return strings.Join(fqPathParts, "/")
+}
+
+func (im *IfdMapping) PathPhraseFromLineage(lineage []IfdTagIdAndIndex) (pathPhrase string) {
+	pathParts := make([]string, len(lineage))
+	for i, itii := range lineage {
+		pathParts[i] = itii.Name
+	}
+
+	return strings.Join(pathParts, "/")
+}
+
+// StripPathPhraseIndices returns a non-fully-qualified path-phrase (no
+// indices).
+func (im *IfdMapping) StripPathPhraseIndices(pathPhrase string) (strippedPathPhrase string, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	lineage, err := im.ResolvePath(pathPhrase)
+	log.PanicIf(err)
+
+	strippedPathPhrase = im.PathPhraseFromLineage(lineage)
+	return strippedPathPhrase, nil
 }
 
 // Add puts the given IFD at the given position of the tree. The position of the
@@ -213,6 +300,8 @@ func (im *IfdMapping) Add(parentPlacement []uint16, tagId uint16, name string) (
 		}
 	}()
 
+	// TODO(dustin): !! It would be nicer to provide a list of names in the placement rather than tag-IDs.
+
 	ptr, err := im.Get(parentPlacement)
 	log.PanicIf(err)
 
@@ -223,9 +312,17 @@ func (im *IfdMapping) Add(parentPlacement []uint16, tagId uint16, name string) (
 
 	path[len(path)-1] = name
 
+	placement := make([]uint16, len(parentPlacement)+1)
+	if len(placement) > 0 {
+		copy(placement, ptr.Placement)
+	}
+
+	placement[len(placement)-1] = tagId
+
 	childIfd := &MappedIfd{
 		ParentTagId: ptr.TagId,
 		Path:        path,
+		Placement:   placement,
 		Name:        name,
 		TagId:       tagId,
 		Children:    make(map[uint16]*MappedIfd),
@@ -307,20 +404,4 @@ func LoadStandardIfds(im *IfdMapping) (err error) {
 	log.PanicIf(err)
 
 	return nil
-}
-
-func init() {
-	for ifdName, tags := range IfdTagIds {
-		tagsR := make(map[uint16]string)
-
-		for tagName, tagId := range tags {
-			tagsR[tagId] = tagName
-		}
-
-		IfdTagNames[ifdName] = tagsR
-	}
-
-	for designation, ni := range IfdDesignations {
-		IfdDesignationsR[ni] = designation
-	}
 }

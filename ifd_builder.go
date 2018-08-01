@@ -84,8 +84,8 @@ func (ibtv IfdBuilderTagValue) Ib() *IfdBuilder {
 }
 
 type BuilderTag struct {
-	// ii is the IfdIdentity of the IFD that hosts this tag.
-	ii IfdIdentity
+	// ifdPath is the path of the IFD that hosts this tag.
+	ifdPath string
 
 	tagId  uint16
 	typeId uint16
@@ -96,21 +96,21 @@ type BuilderTag struct {
 	value *IfdBuilderTagValue
 }
 
-func NewBuilderTag(ii IfdIdentity, tagId uint16, typeId uint16, value *IfdBuilderTagValue) *BuilderTag {
+func NewBuilderTag(ifdPath string, tagId uint16, typeId uint16, value *IfdBuilderTagValue) *BuilderTag {
 	return &BuilderTag{
-		ii:     ii,
-		tagId:  tagId,
-		typeId: typeId,
-		value:  value,
+		ifdPath: ifdPath,
+		tagId:   tagId,
+		typeId:  typeId,
+		value:   value,
 	}
 }
 
-func NewChildIfdBuilderTag(ii IfdIdentity, tagId uint16, value *IfdBuilderTagValue) *BuilderTag {
+func NewChildIfdBuilderTag(ifdPath string, tagId uint16, value *IfdBuilderTagValue) *BuilderTag {
 	return &BuilderTag{
-		ii:     ii,
-		tagId:  tagId,
-		typeId: TypeLong,
-		value:  value,
+		ifdPath: ifdPath,
+		tagId:   tagId,
+		typeId:  TypeLong,
+		value:   value,
 	}
 }
 
@@ -119,7 +119,7 @@ func (bt *BuilderTag) Value() (value *IfdBuilderTagValue) {
 }
 
 func (bt *BuilderTag) String() string {
-	return fmt.Sprintf("BuilderTag<IFD=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ii, bt.tagId, TypeNames[bt.typeId], bt.value)
+	return fmt.Sprintf("BuilderTag<IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ifdPath, bt.tagId, TypeNames[bt.typeId], bt.value)
 }
 
 func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (err error) {
@@ -138,7 +138,7 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 	if bt.typeId == TypeUndefined {
 		var err error
 
-		ed, err = EncodeUndefined(bt.ii, bt.tagId, value)
+		ed, err = EncodeUndefined(bt.ifdPath, bt.tagId, value)
 		log.PanicIf(err)
 	} else {
 		var err error
@@ -154,7 +154,7 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 
 // NewStandardBuilderTag constructs a `BuilderTag` instance. The type is looked
 // up. `ii` is the type of IFD that owns this tag.
-func NewStandardBuilderTag(ii IfdIdentity, it *IndexedTag, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
+func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
 	typeId := it.Type
 	tt := NewTagType(typeId, byteOrder)
 
@@ -164,7 +164,7 @@ func NewStandardBuilderTag(ii IfdIdentity, it *IndexedTag, byteOrder binary.Byte
 	if it.Type == TypeUndefined {
 		var err error
 
-		ed, err = EncodeUndefined(ii, it.Id, value)
+		ed, err = EncodeUndefined(ifdPath, it.Id, value)
 		log.PanicIf(err)
 	} else {
 		var err error
@@ -176,15 +176,22 @@ func NewStandardBuilderTag(ii IfdIdentity, it *IndexedTag, byteOrder binary.Byte
 	tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
 
 	return NewBuilderTag(
-		ii,
+		ifdPath,
 		it.Id,
 		typeId,
 		tagValue)
 }
 
 type IfdBuilder struct {
-	// ifd is the IfdIdentity instance of the IFD that owns the current tag.
-	ii IfdIdentity
+	// ifdName is the name of the IFD represented by this instance.
+	name string
+
+	// ifdPath is the path of the IFD represented by this instance.
+	ifdPath string
+
+	// fqIfdPath is the fully-qualified path of the IFD represented by this
+	// instance.
+	fqIfdPath string
 
 	// ifdTagId will be non-zero if we're a child IFD.
 	ifdTagId uint16
@@ -207,15 +214,33 @@ type IfdBuilder struct {
 	// data. Otherwise, it's nil.
 	thumbnailData []byte
 
-	tagIndex *TagIndex
+	ifdMapping *IfdMapping
+	tagIndex   *TagIndex
 }
 
-func NewIfdBuilder(tagIndex *TagIndex, ii IfdIdentity, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
-	ifdTagId, _ := IfdTagIdWithIdentity(ii)
+func NewIfdBuilder(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath string, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
+	ifdPath, err := ifdMapping.StripPathPhraseIndices(fqIfdPath)
+	log.PanicIf(err)
+
+	var ifdTagId uint16
+
+	mi, err := ifdMapping.GetWithPath(ifdPath)
+	if err == nil {
+		ifdTagId = mi.TagId
+	} else if log.Is(err, ErrChildIfdNotMapped) == false {
+		log.Panic(err)
+	}
 
 	ib = &IfdBuilder{
-		// ii describes the current IFD and its parent.
-		ii: ii,
+		// The right-most part of the IFD-path.
+		name: mi.Name,
+
+		// ifdPath describes the current IFD placement within the IFD tree.
+		ifdPath: ifdPath,
+
+		// fqIfdPath describes the current IFD placement within the IFD tree as
+		// well as being qualified with non-zero indices.
+		fqIfdPath: fqIfdPath,
 
 		// ifdTagId is empty unless it's a child-IFD.
 		ifdTagId: ifdTagId,
@@ -223,7 +248,8 @@ func NewIfdBuilder(tagIndex *TagIndex, ii IfdIdentity, byteOrder binary.ByteOrde
 		byteOrder: byteOrder,
 		tags:      make([]*BuilderTag, 0),
 
-		tagIndex: tagIndex,
+		ifdMapping: ifdMapping,
+		tagIndex:   tagIndex,
 	}
 
 	return ib
@@ -232,20 +258,28 @@ func NewIfdBuilder(tagIndex *TagIndex, ii IfdIdentity, byteOrder binary.ByteOrde
 // NewIfdBuilderWithExistingIfd creates a new IB using the same header type
 // information as the given IFD.
 func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
-	ii := ifd.Identity()
+	name := ifd.Name
+	ifdPath := ifd.IfdPath
+	fqIfdPath := ifd.FqIfdPath
 
 	var ifdTagId uint16
 
 	// There is no tag-ID for the root IFD. It will never be a child IFD.
-	if ii != RootIi {
-		ifdTagId = IfdTagIdWithIdentityOrFail(ii)
+	if ifdPath != IfdPathStandard {
+		mi, err := ifd.ifdMapping.GetWithPath(ifdPath)
+		log.PanicIf(err)
+
+		ifdTagId = mi.TagId
 	}
 
 	ib = &IfdBuilder{
-		ii:             ii,
+		name:           name,
+		ifdPath:        ifdPath,
+		fqIfdPath:      fqIfdPath,
 		ifdTagId:       ifdTagId,
 		byteOrder:      ifd.ByteOrder,
 		existingOffset: ifd.Offset,
+		ifdMapping:     ifd.ifdMapping,
 		tagIndex:       ifd.tagIndex,
 	}
 
@@ -260,9 +294,7 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolve
 	var lastIb *IfdBuilder
 	i := 0
 	for thisExistingIfd := rootIfd; thisExistingIfd != nil; thisExistingIfd = thisExistingIfd.NextIfd {
-		ii := thisExistingIfd.Identity()
-
-		newIb := NewIfdBuilder(rootIfd.tagIndex, ii, thisExistingIfd.ByteOrder)
+		newIb := NewIfdBuilder(rootIfd.ifdMapping, rootIfd.tagIndex, rootIfd.FqIfdPath, thisExistingIfd.ByteOrder)
 		if firstIb == nil {
 			firstIb = newIb
 		} else {
@@ -279,7 +311,7 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolve
 	return firstIb
 }
 
-func (ib *IfdBuilder) ChildWithIfdIdentity(ii IfdIdentity) (childIb *IfdBuilder, err error) {
+func (ib *IfdBuilder) ChildWithTagId(childIfdTagId uint16) (childIb *IfdBuilder, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -287,12 +319,14 @@ func (ib *IfdBuilder) ChildWithIfdIdentity(ii IfdIdentity) (childIb *IfdBuilder,
 	}()
 
 	for _, bt := range ib.tags {
-		if bt.value.IsIb() {
-			childIbThis := bt.value.Ib()
+		if bt.value.IsIb() == false {
+			continue
+		}
 
-			if childIbThis.ii == ii {
-				return childIbThis, nil
-			}
+		childIbThis := bt.value.Ib()
+
+		if childIbThis.ifdTagId == childIfdTagId {
+			return childIbThis, nil
 		}
 	}
 
@@ -302,7 +336,7 @@ func (ib *IfdBuilder) ChildWithIfdIdentity(ii IfdIdentity) (childIb *IfdBuilder,
 	return nil, nil
 }
 
-func GetOrCreateIbFromRootIb(rootIb *IfdBuilder, ifdDesignation string) (ib *IfdBuilder, err error) {
+func getOrCreateIbFromRootIbInner(rootIb *IfdBuilder, parentIb *IfdBuilder, currentLineage []IfdTagIdAndIndex) (ib *IfdBuilder, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -311,99 +345,133 @@ func GetOrCreateIbFromRootIb(rootIb *IfdBuilder, ifdDesignation string) (ib *Ifd
 
 	// TODO(dustin): !! Add test.
 
-	ib = rootIb
+	thisIb := rootIb
 
-	switch ifdDesignation {
-	case "ifd0":
-		// We're already on it.
+	// Since we're calling ourselves recursively with incrementally different
+	// paths, the FQ IFD-path of the parent that called us needs to be passed
+	// in, in order for us to know it.
+	var parentLineage []IfdTagIdAndIndex
+	if parentIb != nil {
+		var err error
 
-	case "ifd1":
-		if ib.nextIb == nil {
-			ib.nextIb = NewIfdBuilder(ib.tagIndex, RootIi, ib.byteOrder)
-		}
-
-		return ib.nextIb, nil
-
-	case "exif":
-		exifIb, err := ib.ChildWithIfdIdentity(ExifIi)
-		if err != nil {
-			if log.Is(err, ErrChildIbNotFound) == true {
-				exifIb = NewIfdBuilder(exifIb.tagIndex, ExifIi, ib.byteOrder)
-
-				err := ib.AddChildIb(exifIb)
-				log.PanicIf(err)
-			} else {
-				log.Panic(err)
-			}
-		}
-
-		return exifIb, nil
-
-	case "iop":
-		exifIb, err := ib.ChildWithIfdIdentity(ExifIi)
-		if err != nil {
-			if log.Is(err, ErrChildIbNotFound) == true {
-				exifIb = NewIfdBuilder(exifIb.tagIndex, ExifIi, ib.byteOrder)
-
-				err := ib.AddChildIb(exifIb)
-				log.PanicIf(err)
-
-				// It would be more efficient to just create the IOP IFD here,
-				// since we know it won't exist, but we'd have to duplicate
-				// stuff it makes the code more complicatedto read and harder to
-				// maintain, all for a nominal speed optimization.
-			} else {
-				log.Panic(err)
-			}
-		}
-
-		iopIb, err := exifIb.ChildWithIfdIdentity(ExifIopIi)
-		if err != nil {
-			if log.Is(err, ErrChildIbNotFound) == true {
-				iopIb = NewIfdBuilder(iopIb.tagIndex, ExifIopIi, ib.byteOrder)
-
-				err := exifIb.AddChildIb(iopIb)
-				log.PanicIf(err)
-			} else {
-				log.Panic(err)
-			}
-		}
-
-		return iopIb, nil
-
-	case "gps":
-		gpsIb, err := ib.ChildWithIfdIdentity(GpsIi)
-		if err != nil {
-			if log.Is(err, ErrChildIbNotFound) == true {
-				gpsIb = NewIfdBuilder(gpsIb.tagIndex, GpsIi, ib.byteOrder)
-
-				err := ib.AddChildIb(gpsIb)
-				log.PanicIf(err)
-			} else {
-				log.Panic(err)
-			}
-		}
-
-		return gpsIb, nil
+		parentLineage, err = thisIb.ifdMapping.ResolvePath(parentIb.fqIfdPath)
+		log.PanicIf(err)
 	}
 
-	candidates := make([]string, len(IfdDesignations))
-	for key, _ := range IfdDesignations {
-		candidates = append(candidates, key)
+	// Process the current path part.
+	currentItii := currentLineage[0]
+
+	// Make sure the leftmost part of the FQ IFD-path agrees with the IB we
+	// were given.
+
+	expectedFqRootIfdPath := ""
+	if parentLineage != nil {
+		expectedLineage := append(parentLineage, currentItii)
+		expectedFqRootIfdPath = thisIb.ifdMapping.PathPhraseFromLineage(expectedLineage)
+	} else {
+		expectedFqRootIfdPath = thisIb.ifdMapping.PathPhraseFromLineage(currentLineage[:1])
 	}
 
-	log.Panicf("IFD designation not valid. Use: %s\n", strings.Join(candidates, ", "))
-	return nil, nil
+	if expectedFqRootIfdPath != thisIb.fqIfdPath {
+		log.Panicf("the FQ IFD-path [%s] we were given does not match the builder's FQ IFD-path [%s]", expectedFqRootIfdPath, thisIb.fqIfdPath)
+	}
+
+	// If we actually wanted a sibling (currentItii.Index > 0) then seek to it,
+	// appending new siblings, as required, until we get there.
+	for i := 0; i < currentItii.Index; i++ {
+		if thisIb.nextIb == nil {
+			// Generate an FQ IFD-path for the sibling. It'll use the same
+			// non-FQ IFD-path as the current IB.
+
+			siblingFqIfdPath := ""
+			if parentLineage != nil {
+				siblingFqIfdPath = fmt.Sprintf("%s/%s%d", parentIb.fqIfdPath, currentItii.Name, i+1)
+			} else {
+				siblingFqIfdPath = fmt.Sprintf("%s%d", currentItii.Name, i+1)
+			}
+
+			thisIb.nextIb = NewIfdBuilder(thisIb.ifdMapping, thisIb.tagIndex, siblingFqIfdPath, thisIb.byteOrder)
+		}
+
+		thisIb = thisIb.nextIb
+	}
+
+	// There is no child IFD to process. We're done.
+	if len(currentLineage) == 1 {
+		return thisIb, nil
+	}
+
+	// Establish the next child to be processed.
+
+	childItii := currentLineage[1]
+
+	var foundChild *IfdBuilder
+	for _, bt := range thisIb.tags {
+		if bt.value.IsIb() == false {
+			continue
+		}
+
+		childIb := bt.value.Ib()
+
+		if childIb.ifdTagId == childItii.TagId {
+			foundChild = childIb
+			break
+		}
+	}
+
+	// If we didn't find the child, add it.
+	if foundChild == nil {
+		thisIbLineage, err := thisIb.ifdMapping.ResolvePath(thisIb.fqIfdPath)
+		log.PanicIf(err)
+
+		childLineage := make([]IfdTagIdAndIndex, len(thisIbLineage)+1)
+		copy(childLineage, thisIbLineage)
+
+		childLineage[len(childLineage)-1] = childItii
+
+		fqIfdChildPath := thisIb.ifdMapping.FqPathPhraseFromLineage(childLineage)
+
+		foundChild = NewIfdBuilder(thisIb.ifdMapping, thisIb.tagIndex, fqIfdChildPath, thisIb.byteOrder)
+
+		err = thisIb.AddChildIb(foundChild)
+		log.PanicIf(err)
+	}
+
+	finalIb, err := getOrCreateIbFromRootIbInner(foundChild, thisIb, currentLineage[1:])
+	log.PanicIf(err)
+
+	return finalIb, nil
+}
+
+// GetOrCreateIbFromRootIb returns an IB representing the requested IFD, even if
+// an IB doesn't already exist for it. This function may call itself
+// recursively.
+func GetOrCreateIbFromRootIb(rootIb *IfdBuilder, fqIfdPath string) (ib *IfdBuilder, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	// lineage is a necessity of our recursion process. It doesn't include any
+	// parent IFDs on its left-side; it starts with the current IB only.
+	lineage, err := rootIb.ifdMapping.ResolvePath(fqIfdPath)
+	log.PanicIf(err)
+
+	ib, err = getOrCreateIbFromRootIbInner(rootIb, nil, lineage)
+	log.PanicIf(err)
+
+	return ib, nil
 }
 
 func (ib *IfdBuilder) String() string {
 	nextIfdPhrase := ""
 	if ib.nextIb != nil {
 		// TODO(dustin): We were setting this to ii.String(), but we were getting hex-data when printing this after building from an existing chain.
-		nextIfdPhrase = ib.nextIb.ii.IfdName
+		nextIfdPhrase = ib.nextIb.ifdPath
 	}
 
-	return fmt.Sprintf("IfdBuilder<PARENT-IFD=[%s] IFD=[%s] TAG-ID=(0x%04x) COUNT=(%d) OFF=(0x%04x) NEXT-IFD=(0x%04x)>", ib.ii.ParentIfdName, ib.ii.IfdName, ib.ifdTagId, len(ib.tags), ib.existingOffset, nextIfdPhrase)
+	return fmt.Sprintf("IfdBuilder<PATH=[%s] TAG-ID=(0x%04x) COUNT=(%d) OFF=(0x%04x) NEXT-IFD-PATH=[%s]>", ib.ifdPath, ib.ifdTagId, len(ib.tags), ib.existingOffset, nextIfdPhrase)
 }
 
 func (ib *IfdBuilder) Tags() (tags []*BuilderTag) {
@@ -428,7 +496,7 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 		}
 	}()
 
-	if ib.ii != RootIi {
+	if ib.ifdPath != IfdPathStandard {
 		log.Panicf("thumbnails can only go into a root Ifd (and only the second one)")
 	}
 
@@ -441,15 +509,15 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 	ib.thumbnailData = data
 
 	ibtvfb := NewIfdBuilderTagValueFromBytes(ib.thumbnailData)
-	offsetBt := NewBuilderTag(ib.ii, ThumbnailOffsetTagId, TypeLong, ibtvfb)
+	offsetBt := NewBuilderTag(ib.ifdPath, ThumbnailOffsetTagId, TypeLong, ibtvfb)
 
 	err = ib.Set(offsetBt)
 	log.PanicIf(err)
 
-	thumbnailSizeIt, err := ib.tagIndex.Get(ib.ii, ThumbnailSizeTagId)
+	thumbnailSizeIt, err := ib.tagIndex.Get(ib.ifdPath, ThumbnailSizeTagId)
 	log.PanicIf(err)
 
-	sizeBt := NewStandardBuilderTag(ib.ii, thumbnailSizeIt, ib.byteOrder, []uint32{uint32(len(ib.thumbnailData))})
+	sizeBt := NewStandardBuilderTag(ib.ifdPath, thumbnailSizeIt, ib.byteOrder, []uint32{uint32(len(ib.thumbnailData))})
 
 	err = ib.Set(sizeBt)
 	log.PanicIf(err)
@@ -481,7 +549,13 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 			fmt.Printf("\n")
 
 			for i, tag := range currentIb.tags {
-				_, isChildIb := IfdTagNameWithId(currentIb.ii.IfdName, tag.tagId)
+				isChildIb := false
+				_, err := ib.ifdMapping.GetChild(currentIb.ifdPath, tag.tagId)
+				if err == nil {
+					isChildIb = true
+				} else if log.Is(err, ErrChildIfdNotMapped) == false {
+					log.Panic(err)
+				}
 
 				tagName := ""
 
@@ -489,7 +563,7 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 				if isChildIb == true {
 					tagName = "<Child IFD>"
 				} else {
-					it, err := ib.tagIndex.Get(tag.ii, tag.tagId)
+					it, err := ib.tagIndex.Get(tag.ifdPath, tag.tagId)
 					if log.Is(err, ErrTagNotFound) == true {
 						tagName = "<UNKNOWN>"
 					} else if err != nil {
@@ -538,7 +612,13 @@ func (ib *IfdBuilder) printIfdTree(levels int) {
 
 		if len(currentIb.tags) > 0 {
 			for _, tag := range currentIb.tags {
-				_, isChildIb := IfdTagNameWithId(currentIb.ii.IfdName, tag.tagId)
+				isChildIb := false
+				_, err := ib.ifdMapping.GetChild(currentIb.ifdPath, tag.tagId)
+				if err == nil {
+					isChildIb = true
+				} else if log.Is(err, ErrChildIfdNotMapped) == false {
+					log.Panic(err)
+				}
 
 				if isChildIb == true {
 					if tag.value.IsIb() == false {
@@ -559,39 +639,51 @@ func (ib *IfdBuilder) PrintIfdTree() {
 	ib.printIfdTree(0)
 }
 
-func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, lines []string) (linesOutput []string) {
+func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, tagId uint16, lines []string) (linesOutput []string) {
 	if lines == nil {
 		linesOutput = make([]string, 0)
 	} else {
 		linesOutput = lines
 	}
 
-	for i, tag := range thisIb.tags {
-		childIfdName := ""
-		if tag.value.IsIb() == true {
-			childIfdName = tag.value.Ib().ii.IfdName
-		}
-
-		line := fmt.Sprintf("<PARENTS=[%s] IFD-NAME=[%s]> IFD-TAG-ID=(0x%04x) CHILD-IFD=[%s] INDEX=(%d) TAG=[0x%04x]", prefix, thisIb.ii.IfdName, thisIb.ifdTagId, childIfdName, i, tag.tagId)
+	siblingIfdIndex := 0
+	for ; thisIb != nil; thisIb = thisIb.nextIb {
+		line := fmt.Sprintf("IFD<PARENTS=[%s] FQ-IFD-PATH=[%s] IFD-INDEX=(%d) IFD-TAG-ID=(0x%04x) TAG=[0x%04x]>", prefix, thisIb.fqIfdPath, siblingIfdIndex, thisIb.ifdTagId, tagId)
 		linesOutput = append(linesOutput, line)
 
-		if tag.value.IsIb() == true {
-			childPrefix := ""
-			if prefix == "" {
-				childPrefix = fmt.Sprintf("%s", thisIb.ii.IfdName)
-			} else {
-				childPrefix = fmt.Sprintf("%s->%s", prefix, thisIb.ii.IfdName)
+		for i, tag := range thisIb.tags {
+			var childIb *IfdBuilder
+			childIfdName := ""
+			if tag.value.IsIb() == true {
+				childIb = tag.value.Ib()
+				childIfdName = childIb.ifdPath
 			}
 
-			linesOutput = thisIb.dumpToStrings(tag.value.Ib(), childPrefix, linesOutput)
+			line := fmt.Sprintf("TAG<PARENTS=[%s] FQ-IFD-PATH=[%s] IFD-TAG-ID=(0x%04x) CHILD-IFD=[%s] TAG-INDEX=(%d) TAG=[0x%04x]>", prefix, thisIb.fqIfdPath, thisIb.ifdTagId, childIfdName, i, tag.tagId)
+			linesOutput = append(linesOutput, line)
+
+			if childIb == nil {
+				continue
+			}
+
+			childPrefix := ""
+			if prefix == "" {
+				childPrefix = fmt.Sprintf("%s", thisIb.ifdPath)
+			} else {
+				childPrefix = fmt.Sprintf("%s->%s", prefix, thisIb.ifdPath)
+			}
+
+			linesOutput = thisIb.dumpToStrings(childIb, childPrefix, tag.tagId, linesOutput)
 		}
+
+		siblingIfdIndex++
 	}
 
 	return linesOutput
 }
 
 func (ib *IfdBuilder) DumpToStrings() (lines []string) {
-	return ib.dumpToStrings(ib, "", lines)
+	return ib.dumpToStrings(ib, "", 0, lines)
 }
 
 func (ib *IfdBuilder) SetNextIb(nextIb *IfdBuilder) (err error) {
@@ -789,7 +881,7 @@ func (ib *IfdBuilder) FindTagWithName(tagName string) (bt *BuilderTag, err error
 		}
 	}()
 
-	it, err := ib.tagIndex.GetWithName(ib.ii, tagName)
+	it, err := ib.tagIndex.GetWithName(ib.ifdPath, tagName)
 	log.PanicIf(err)
 
 	found, err := ib.FindN(it.Id, 1)
@@ -811,8 +903,8 @@ func (ib *IfdBuilder) add(bt *BuilderTag) (err error) {
 		}
 	}()
 
-	if bt.ii == ZeroIi {
-		log.Panicf("BuilderTag IfdIdentity is not set: %s", bt)
+	if bt.ifdPath == "" {
+		log.Panicf("BuilderTag ifdPath is not set: %s", bt)
 	} else if bt.typeId == 0x0 {
 		log.Panicf("BuilderTag type-ID is not set: %s", bt)
 	} else if bt.value == nil {
@@ -859,7 +951,7 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
 	// the current IFD and *not every* IFD.
 	for _, bt := range childIb.tags {
 		if bt.tagId == childIb.ifdTagId {
-			log.Panicf("child-IFD already added: %v", childIb.ii)
+			log.Panicf("child-IFD already added: %v", childIb.ifdPath)
 		}
 	}
 
@@ -880,7 +972,7 @@ func (ib *IfdBuilder) NewBuilderTagFromBuilder(childIb *IfdBuilder) (bt *Builder
 	value := NewIfdBuilderTagValueFromIfdBuilder(childIb)
 
 	bt = NewChildIfdBuilderTag(
-		ib.ii,
+		ib.ifdPath,
 		childIb.ifdTagId,
 		value)
 
@@ -943,7 +1035,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
 		var bt *BuilderTag
 
-		if ite.ChildIfdName != "" {
+		if ite.ChildIfdPath != "" {
 			// If we want to add an IFD tag, we'll have to build it first and
 			// *then* add it via a different method.
 
@@ -955,7 +1047,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				// (nor does it matter since this is just a temporary
 				// placeholder, in this situation).
 				value := NewIfdBuilderTagValueFromBytes([]byte{0, 0, 0, 0})
-				bt = NewBuilderTag(ite.Ii, ite.TagId, ite.TagType, value)
+				bt = NewBuilderTag(ite.IfdPath, ite.TagId, ite.TagType, value)
 			} else {
 				// Figure out which of the child-IFDs that are associated with
 				// this IFD represents this specific child IFD.
@@ -978,7 +1070,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 						childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
 					}
 
-					log.Panicf("could not find child IFD for child ITE: II=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.Ii, ite.TagId, i, childTagIds)
+					log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath, ite.TagId, i, childTagIds)
 				}
 
 				childIb := NewIfdBuilderFromExistingChain(childIfd, itevr)
@@ -1011,7 +1103,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				value = NewIfdBuilderTagValueFromBytes(valueBytes)
 			}
 
-			bt = NewBuilderTag(ifd.Ii, ite.TagId, ite.TagType, value)
+			bt = NewBuilderTag(ifd.IfdPath, ite.TagId, ite.TagType, value)
 		}
 
 		err := ib.add(bt)
@@ -1030,10 +1122,10 @@ func (ib *IfdBuilder) AddStandard(tagId uint16, value interface{}) (err error) {
 		}
 	}()
 
-	it, err := ib.tagIndex.Get(ib.ii, tagId)
+	it, err := ib.tagIndex.Get(ib.ifdPath, tagId)
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(ib.ii, it, ib.byteOrder, value)
+	bt := NewStandardBuilderTag(ib.ifdPath, it, ib.byteOrder, value)
 
 	err = ib.add(bt)
 	log.PanicIf(err)
@@ -1051,10 +1143,10 @@ func (ib *IfdBuilder) AddStandardWithName(tagName string, value interface{}) (er
 		}
 	}()
 
-	it, err := ib.tagIndex.GetWithName(ib.ii, tagName)
+	it, err := ib.tagIndex.GetWithName(ib.ifdPath, tagName)
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(ib.ii, it, ib.byteOrder, value)
+	bt := NewStandardBuilderTag(ib.ifdPath, it, ib.byteOrder, value)
 
 	err = ib.add(bt)
 	log.PanicIf(err)
@@ -1073,10 +1165,10 @@ func (ib *IfdBuilder) SetStandard(tagId uint16, value interface{}) (err error) {
 
 	// TODO(dustin): !! Add test for this function.
 
-	it, err := ib.tagIndex.Get(ib.ii, tagId)
+	it, err := ib.tagIndex.Get(ib.ifdPath, tagId)
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(ib.ii, it, ib.byteOrder, value)
+	bt := NewStandardBuilderTag(ib.ifdPath, it, ib.byteOrder, value)
 
 	i, err := ib.Find(tagId)
 	if err != nil {
@@ -1104,10 +1196,10 @@ func (ib *IfdBuilder) SetStandardWithName(tagName string, value interface{}) (er
 
 	// TODO(dustin): !! Add test for this function.
 
-	it, err := ib.tagIndex.GetWithName(ib.ii, tagName)
+	it, err := ib.tagIndex.GetWithName(ib.ifdPath, tagName)
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(ib.ii, it, ib.byteOrder, value)
+	bt := NewStandardBuilderTag(ib.ifdPath, it, ib.byteOrder, value)
 
 	i, err := ib.Find(bt.tagId)
 	if err != nil {
