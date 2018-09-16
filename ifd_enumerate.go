@@ -57,10 +57,16 @@ func (ife *IfdTagEnumerator) getUint16() (value uint16, raw []byte, err error) {
 		}
 	}()
 
-	raw = make([]byte, 2)
+	needBytes := 2
+	offset := 0
+	raw = make([]byte, needBytes)
 
-	_, err = ife.buffer.Read(raw)
-	log.PanicIf(err)
+	for offset < needBytes {
+		n, err := ife.buffer.Read(raw[offset:])
+		log.PanicIf(err)
+
+		offset += n
+	}
 
 	if ife.byteOrder == binary.BigEndian {
 		value = binary.BigEndian.Uint16(raw)
@@ -81,10 +87,16 @@ func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
 		}
 	}()
 
-	raw = make([]byte, 4)
+	needBytes := 4
+	offset := 0
+	raw = make([]byte, needBytes)
 
-	_, err = ife.buffer.Read(raw)
-	log.PanicIf(err)
+	for offset < needBytes {
+		n, err := ife.buffer.Read(raw[offset:])
+		log.PanicIf(err)
+
+		offset += n
+	}
 
 	if ife.byteOrder == binary.BigEndian {
 		value = binary.BigEndian.Uint32(raw)
