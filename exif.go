@@ -59,9 +59,9 @@ var (
 	ErrExifHeaderError = errors.New("exif header error")
 )
 
-// SearchAndExtractExif returns a slice from the beginning of the EXIF data the
+// SearchAndExtractExif returns a slice from the beginning of the EXIF data to
 // end of the file (it's not practical to try and calculate where the data
-// actually ends).
+// actually ends; it needs to be formally parsed).
 func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
