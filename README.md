@@ -39,7 +39,7 @@ $ go test github.com/dsoprea/go-exif
 
 Create an instance of the `Exif` type and call `Scan()` with a byte-slice, where the first byte is the beginning of the raw EXIF data. You may pass a callback that will be invoked for every tag or `nil` if you do not want one. If no callback is given, you are effectively just validating the structure or parsing of the image.
 
-Obviously, it is most efficient to properly parse the media file and then provide the specific EXIF data to be parsed, but there is also a heuristic for finding the EXIF data within the media blob, directly. This means that, at least for testing or curiosity, **you do not have to parse or even understand the format of image or audio file in order to find and decode the EXIF information inside of it.** See the usage of the `IsExif` method in the example.
+Obviously, it is most efficient to properly parse the media file and then provide the specific EXIF data to be parsed, but there is also a heuristic for finding the EXIF data within the media blob, directly. This means that, at least for testing or curiosity, **you do not have to parse or even understand the format of image or audio file in order to find and decode the EXIF information inside of it.** See the usage of the `SearchAndExtractExif` method in the example.
 
 The library often refers to an IFD with an "IFD path" (e.g. IFD/Exif, IFD/GPSInfo). A "fully-qualified" IFD-path is one that includes an index describing which specific sibling IFD is being referred to if not the first one (e.g. IFD1, the IFD where the thumbnail is expressed per the TIFF standard).
 
@@ -145,17 +145,14 @@ log.PanicIf(err)
 data, err := ioutil.ReadAll(f)
 log.PanicIf(err)
 
-foundAt := -1
-for i := 0; i < len(data); i++ {
-    if e.IsExif(data[i:i + 6]) == true {
-        foundAt = i
-        break
+exifData, err := exit.SearchAndExtractExif(data[i:i + 6])
+if err != nil {
+    if err == exif.ErrNoExif {
+        fmt.Printf("EXIF data not found.\n")
+        os.Exit(-1)
     }
-}
 
-if foundAt == -1 {
-    fmt.Printf("EXIF data not found.\n")
-    os.Exit(-1)
+    panic(err)
 }
 
 // Run the parse.
@@ -198,7 +195,7 @@ visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagTy
     return nil
 }
 
-err = Visit(IfdStandard, im, ti, data[foundAt:], visitor)
+err = Visit(IfdStandard, im, ti, exifData, visitor)
 log.PanicIf(err)
 ```
 
