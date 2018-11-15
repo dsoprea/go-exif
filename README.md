@@ -145,7 +145,7 @@ log.PanicIf(err)
 data, err := ioutil.ReadAll(f)
 log.PanicIf(err)
 
-exifData, err := exit.SearchAndExtractExif(data[i:i + 6])
+exifData, err := exif.SearchAndExtractExif(data)
 if err != nil {
     if err == exif.ErrNoExif {
         fmt.Printf("EXIF data not found.\n")
@@ -167,7 +167,7 @@ visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagTy
     it, err := ti.Get(ifdPath, tagId)
     if err != nil {
         if log.Is(err, exif.ErrTagNotFound) {
-            fmt.Printf("WARNING: Unknown tag: [%s] (%04x)\n", indexedIfdName, tagId)
+            fmt.Printf("WARNING: Unknown tag: [%s] (%04x)\n", ifdPath, tagId)
             return nil
         } else {
             panic(err)
@@ -176,7 +176,7 @@ visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagTy
 
     valueString := ""
     if tagType.Type() == exif.TypeUndefined {
-        value, err := exif.UndefinedValue(indexedIfdName, tagId, valueContext, tagType.ByteOrder())
+        value, err := exif.UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
         if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
             valueString = "!UNDEFINED!"
         } else if err != nil {
@@ -195,7 +195,7 @@ visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagTy
     return nil
 }
 
-err = Visit(IfdStandard, im, ti, exifData, visitor)
+_, err = exif.Visit(exif.IfdStandard, im, ti, exifData, visitor)
 log.PanicIf(err)
 ```
 
