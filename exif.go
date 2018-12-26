@@ -142,8 +142,8 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	//      CIPA DC-008-2016; JEITA CP-3451D
 	//      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
-	if len(data) < 8 {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header: (%d)", len(data))
+	if len(data) < 2 {
+		exifLogger.Warningf(nil, "Not enough data for EXIF header (1): (%d)", len(data))
 		log.Panic(ErrNoExif)
 	}
 
@@ -151,14 +151,24 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 
 	byteOrder, found := ByteOrderLookup[byteOrderBytes]
 	if found == false {
-		exifLogger.Warningf(nil, "EXIF byte-order not recognized: [%v]", byteOrderBytes)
+		// exifLogger.Warningf(nil, "EXIF byte-order not recognized: [%v]", byteOrderBytes)
+		log.Panic(ErrNoExif)
+	}
+
+	if len(data) < 4 {
+		exifLogger.Warningf(nil, "Not enough data for EXIF header (2): (%d)", len(data))
 		log.Panic(ErrNoExif)
 	}
 
 	fixedBytes := [2]byte{data[2], data[3]}
 	expectedFixedBytes := ExifFixedBytesLookup[byteOrder]
 	if fixedBytes != expectedFixedBytes {
-		exifLogger.Warningf(nil, "EXIF header fixed-bytes should be [%v] but are: [%v]", expectedFixedBytes, fixedBytes)
+		// exifLogger.Warningf(nil, "EXIF header fixed-bytes should be [%v] but are: [%v]", expectedFixedBytes, fixedBytes)
+		log.Panic(ErrNoExif)
+	}
+
+	if len(data) < 2 {
+		exifLogger.Warningf(nil, "Not enough data for EXIF header (3): (%d)", len(data))
 		log.Panic(ErrNoExif)
 	}
 
