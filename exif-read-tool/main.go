@@ -26,8 +26,9 @@ import (
 )
 
 var (
-	filepathArg    = ""
-	printAsJsonArg = false
+	filepathArg     = ""
+	printAsJsonArg  = false
+	printLoggingArg = false
 )
 
 type IfdEntry struct {
@@ -53,12 +54,18 @@ func main() {
 
 	flag.StringVar(&filepathArg, "filepath", "", "File-path of image")
 	flag.BoolVar(&printAsJsonArg, "json", false, "Print JSON")
+	flag.BoolVar(&printLoggingArg, "verbose", false, "Print logging")
 
 	flag.Parse()
 
 	if filepathArg == "" {
 		fmt.Printf("Please provide a file-path for an image.\n")
 		os.Exit(1)
+	}
+
+	if printLoggingArg == true {
+		cla := log.NewConsoleLogAdapter()
+		log.AddAdapter("console", cla)
 	}
 
 	f, err := os.Open(filepathArg)
