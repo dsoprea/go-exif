@@ -612,3 +612,42 @@ func ExampleIfd_GpsInfo() {
 	// Output:
 	// GpsInfo<LAT=(26.58667) LON=(-80.05361) ALT=(0) TIME=[2018-04-29 01:22:57 +0000 UTC]>
 }
+
+func ExampleIfd_FindTagWithName() {
+	filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+	rawExif, err := SearchFileAndExtractExif(filepath)
+	log.PanicIf(err)
+
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	tagName := "Model"
+
+	// We know the tag we want is on IFD0 (the first/root IFD).
+	results, err := index.RootIfd.FindTagWithName(tagName)
+	log.PanicIf(err)
+
+	// This should never happen.
+	if len(results) != 1 {
+		log.Panicf("there wasn't exactly one result")
+	}
+
+	ite := results[0]
+
+	valueRaw, err := index.RootIfd.TagValue(ite)
+	log.PanicIf(err)
+
+	value := valueRaw.(string)
+	fmt.Println(value)
+
+	// Output:
+	// Canon EOS 5D Mark III
+}
