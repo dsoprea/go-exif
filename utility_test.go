@@ -1,10 +1,11 @@
 package exif
 
 import (
+    "io/ioutil"
+
     "testing"
     "os"
-
-    "io/ioutil"
+    "time"
 
     "github.com/dsoprea/go-logging"
 )
@@ -70,5 +71,17 @@ func TestDumpBytesClauseToString(t *testing.T) {
 
     if s != "0x12, 0x34, 0x56" {
         t.Fatalf("result not expected")
+    }
+}
+
+func TestParseExifFullTimestamp(t *testing.T) {
+    timestamp, err := ParseExifFullTimestamp("2018:11:30 13:01:49")
+    log.PanicIf(err)
+
+    actual := timestamp.Format(time.RFC3339)
+    expected := "2018-11-30T13:01:49Z"
+
+    if actual != expected {
+        t.Fatalf("time not formatted correctly: [%s] != [%s]", actual, expected)
     }
 }
