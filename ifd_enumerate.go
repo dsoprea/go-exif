@@ -19,8 +19,9 @@ var (
 )
 
 var (
-	ErrNoThumbnail = errors.New("no thumbnail")
-	ErrNoGpsTags   = errors.New("no gps tags")
+	ErrNoThumbnail     = errors.New("no thumbnail")
+	ErrNoGpsTags       = errors.New("no gps tags")
+	ErrTagTypeNotValid = errors.New("tag type invalid")
 )
 
 // IfdTagEnumerator knows how to decode an IFD and all of the tags it
@@ -163,6 +164,10 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	valueOffset, rawValueOffset, err := ite.getUint32()
 	log.PanicIf(err)
 
+	if _, found := TypeNames[tagType]; found == false {
+		log.Panic(ErrTagTypeNotValid)
+	}
+
 	ifdPath, err := ie.ifdMapping.StripPathPhraseIndices(fqIfdPath)
 	log.PanicIf(err)
 
@@ -298,7 +303,14 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnum
 
 	for i := 0; i < int(tagCount); i++ {
 		tag, err := ie.parseTag(fqIfdPath, i, ite, resolveValues)
-		log.PanicIf(err)
+		if err != nil {
+			if log.Is(err, ErrTagTypeNotValid) == true {
+				ifdEnumerateLogger.Warningf(nil, "Tag in IFD [%s] at position (%d) has invalid type and will be skipped.", fqIfdPath, i)
+				continue
+			}
+
+			log.Panic(err)
+		}
 
 		if tag.TagId == ThumbnailOffsetTagId {
 			iteThumbnailOffset = tag
