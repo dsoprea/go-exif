@@ -1,10 +1,10 @@
 package exif
 
 import (
-    "fmt"
     "bytes"
-    "strings"
+    "fmt"
     "strconv"
+    "strings"
     "time"
 
     "github.com/dsoprea/go-logging"
@@ -27,7 +27,7 @@ func DumpBytesClause(data []byte) {
     for i, x := range data {
         fmt.Printf("0x%02x", x)
 
-        if i < len(data) - 1 {
+        if i < len(data)-1 {
             fmt.Printf(", ")
         }
     }
@@ -42,7 +42,7 @@ func DumpBytesToString(data []byte) string {
         _, err := b.WriteString(fmt.Sprintf("%02x", x))
         log.PanicIf(err)
 
-        if i < len(data) - 1 {
+        if i < len(data)-1 {
             _, err := b.WriteRune(' ')
             log.PanicIf(err)
         }
@@ -58,7 +58,7 @@ func DumpBytesClauseToString(data []byte) string {
         _, err := b.WriteString(fmt.Sprintf("0x%02x", x))
         log.PanicIf(err)
 
-        if i < len(data) - 1 {
+        if i < len(data)-1 {
             _, err := b.WriteString(", ")
             log.PanicIf(err)
         }
@@ -67,6 +67,7 @@ func DumpBytesClauseToString(data []byte) string {
     return b.String()
 }
 
+// ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49".
 func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, err error) {
     defer func() {
         if state := recover(); state != nil {
