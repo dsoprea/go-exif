@@ -1826,11 +1826,8 @@ func ExampleIfdBuilder_SetStandardWithName() {
 	results, err := childIfd.FindTagWithName(tagName)
 	log.PanicIf(err)
 
-	// We need a new one of these with the updated EXIF data.
-	itevr = NewIfdTagEntryValueResolver(updatedRawExif, index.RootIfd.ByteOrder)
-
 	for _, ite := range results {
-		value, err := itevr.Value(ite)
+		value, err := childIfd.TagValue(ite)
 		log.PanicIf(err)
 
 		stringValue := value.(string)
