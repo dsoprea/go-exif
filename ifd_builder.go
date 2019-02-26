@@ -311,6 +311,10 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolve
 	return firstIb
 }
 
+func (ib *IfdBuilder) NextIb() (nextIb *IfdBuilder, err error) {
+	return ib.nextIb, nil
+}
+
 func (ib *IfdBuilder) ChildWithTagId(childIfdTagId uint16) (childIb *IfdBuilder, err error) {
 	defer func() {
 		if state := recover(); state != nil {

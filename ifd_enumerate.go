@@ -434,6 +434,9 @@ func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor RawTa
 
 // Ifd represents a single parsed IFD.
 type Ifd struct {
+
+	// TODO(dustin): !! Why are all of these public? Privatize them and then add NextIfd().
+
 	// This is just for convenience, just so that we can easily get the values
 	// and not involve other projects in semantics that they won't otherwise
 	// need to know.
