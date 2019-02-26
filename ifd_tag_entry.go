@@ -189,6 +189,19 @@ func (itevr *IfdTagEntryValueResolver) ValueBytes(ite *IfdTagEntry) (value []byt
 		}
 	}()
 
+	// TODO(dustin): This method is not necessary in light of itevr.Value().
+
 	value, err = ite.ValueBytes(itevr.addressableData, itevr.byteOrder)
+	return value, err
+}
+
+func (itevr *IfdTagEntryValueResolver) Value(ite *IfdTagEntry) (value interface{}, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	value, err = ite.Value(itevr.addressableData, itevr.byteOrder)
 	return value, err
 }
