@@ -1760,6 +1760,87 @@ func ExampleBuilderTag_SetValue() {
 	// Output:
 }
 
+func ExampleIfdBuilder_SetStandardWithName() {
+	filepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+	rawExif, err := SearchFileAndExtractExif(filepath)
+	log.PanicIf(err)
+
+	// Boilerplate.
+
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+
+	// Load current IFDs.
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
+	ib := NewIfdBuilderFromExistingChain(index.RootIfd, itevr)
+
+	// Read the IFD whose tag we want to change.
+
+	// Standard:
+	// - "IFD0"
+	// - "IFD0/Exif0"
+	// - "IFD0/Exif0/Iop0"
+	// - "IFD0/GPSInfo0"
+	//
+	// If the numeric indices are not included, (0) is the default. Note that
+	// this isn't strictly necessary in our case since IFD0 is the first IFD anyway, but we're putting it here to show usage.
+	ifdPath := "IFD0"
+
+	childIb, err := GetOrCreateIbFromRootIb(ib, ifdPath)
+	log.PanicIf(err)
+
+	// There are a few functions that allow you to surgically change the tags in an
+	// IFD, but we're just gonna overwrite a tag that has an ASCII value.
+
+	tagName := "ProcessingSoftware"
+
+	err = childIb.SetStandardWithName(tagName, "alternative software")
+	log.PanicIf(err)
+
+	// Encode the in-memory representation back down to bytes.
+
+	ibe := NewIfdByteEncoder()
+
+	updatedRawExif, err := ibe.EncodeToExif(ib)
+	log.PanicIf(err)
+
+	// Reparse the EXIF to confirm that our value is there.
+
+	_, index, err = Collect(im, ti, updatedRawExif)
+	log.PanicIf(err)
+
+	// This isn't strictly necessary for the same reason as above, but it's here
+	// for documentation.
+	childIfd, err := FindIfdFromRootIfd(index.RootIfd, ifdPath)
+	log.PanicIf(err)
+
+	results, err := childIfd.FindTagWithName(tagName)
+	log.PanicIf(err)
+
+	// We need a new one of these with the updated EXIF data.
+	itevr = NewIfdTagEntryValueResolver(updatedRawExif, index.RootIfd.ByteOrder)
+
+	for _, ite := range results {
+		value, err := itevr.Value(ite)
+		log.PanicIf(err)
+
+		stringValue := value.(string)
+		fmt.Println(stringValue)
+	}
+
+	// Output:
+	// alternative software
+}
+
 func Test_IfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 	ti := NewTagIndex()
 
