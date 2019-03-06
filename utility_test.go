@@ -3,8 +3,9 @@ package exif
 import (
     "io/ioutil"
 
-    "testing"
+    "fmt"
     "os"
+    "testing"
     "time"
 
     "github.com/dsoprea/go-logging"
@@ -19,7 +20,7 @@ func TestDumpBytes(t *testing.T) {
     originalStdout := os.Stdout
     os.Stdout = f
 
-    DumpBytes([]byte { 0x11, 0x22 })
+    DumpBytes([]byte{0x11, 0x22})
 
     os.Stdout = originalStdout
 
@@ -43,7 +44,7 @@ func TestDumpBytesClause(t *testing.T) {
     originalStdout := os.Stdout
     os.Stdout = f
 
-    DumpBytesClause([]byte { 0x11, 0x22 })
+    DumpBytesClause([]byte{0x11, 0x22})
 
     os.Stdout = originalStdout
 
@@ -59,7 +60,7 @@ func TestDumpBytesClause(t *testing.T) {
 }
 
 func TestDumpBytesToString(t *testing.T) {
-    s := DumpBytesToString([]byte { 0x12, 0x34, 0x56 })
+    s := DumpBytesToString([]byte{0x12, 0x34, 0x56})
 
     if s != "12 34 56" {
         t.Fatalf("result not expected")
@@ -67,7 +68,7 @@ func TestDumpBytesToString(t *testing.T) {
 }
 
 func TestDumpBytesClauseToString(t *testing.T) {
-    s := DumpBytesClauseToString([]byte { 0x12, 0x34, 0x56 })
+    s := DumpBytesClauseToString([]byte{0x12, 0x34, 0x56})
 
     if s != "0x12, 0x34, 0x56" {
         t.Fatalf("result not expected")
@@ -84,4 +85,41 @@ func TestParseExifFullTimestamp(t *testing.T) {
     if actual != expected {
         t.Fatalf("time not formatted correctly: [%s] != [%s]", actual, expected)
     }
+}
+
+func TestExifFullTimestampString(t *testing.T) {
+    originalPhrase := "2018:11:30 13:01:49"
+
+    timestamp, err := ParseExifFullTimestamp(originalPhrase)
+    log.PanicIf(err)
+
+    restoredPhrase := ExifFullTimestampString(timestamp)
+    if restoredPhrase != originalPhrase {
+        t.Fatalf("Final phrase [%s] does not equal original phrase [%s]", restoredPhrase, originalPhrase)
+    }
+}
+
+func ExampleParseExifFullTimestamp() {
+    originalPhrase := "2018:11:30 13:01:49"
+
+    timestamp, err := ParseExifFullTimestamp(originalPhrase)
+    log.PanicIf(err)
+
+    fmt.Printf("To Go timestamp: [%s]\n", timestamp.Format(time.RFC3339))
+
+    // Output:
+    // To Go timestamp: [2018-11-30T13:01:49Z]
+}
+
+func ExampleExifFullTimestampString() {
+    originalPhrase := "2018:11:30 13:01:49"
+
+    timestamp, err := ParseExifFullTimestamp(originalPhrase)
+    log.PanicIf(err)
+
+    restoredPhrase := ExifFullTimestampString(timestamp)
+    fmt.Printf("To EXIF timestamp: [%s]\n", restoredPhrase)
+
+    // Output:
+    // To EXIF timestamp: [2018:11:30 13:01:49]
 }

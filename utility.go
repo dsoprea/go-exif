@@ -67,7 +67,8 @@ func DumpBytesClauseToString(data []byte) string {
     return b.String()
 }
 
-// ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49".
+// ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49" into a UTC
+// `time.Time` struct.
 func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -114,4 +115,12 @@ func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, er
 
     timestamp = time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
     return timestamp, nil
+}
+
+// ExifFullTimestampString produces a string like "2018:11:30 13:01:49" from a
+// `time.Time` struct. It will attempt to convert to UTC first.
+func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
+    t = t.UTC()
+
+    return fmt.Sprintf("%04d:%02d:%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 }

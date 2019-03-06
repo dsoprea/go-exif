@@ -1760,6 +1760,11 @@ func ExampleBuilderTag_SetValue() {
 	// Output:
 }
 
+// ExampleIfdBuilder_SetStandardWithName establishes a chain of `IfdBuilder`
+// structs from an existing chain of `Ifd` structs, navigates to the IB
+// representing IFD0, updates the ProcessingSoftware tag to a different value,
+// encodes down to a new EXIF block, reparses, and validates that the value for
+// that tag is what we set it to.
 func ExampleIfdBuilder_SetStandardWithName() {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
