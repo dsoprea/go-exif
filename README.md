@@ -19,7 +19,7 @@ Remaining Tasks:
 
 ## Getting
 
-To get the project:
+To get the project and dependencies:
 
 ```
 $ go get -t github.com/dsoprea/go-exif
@@ -36,6 +36,15 @@ $ go test github.com/dsoprea/go-exif
 
 
 ## Usage
+
+The package provides a set of [working examples](https://godoc.org/github.com/dsoprea/go-exif#pkg-examples) and is fully covered by unit-tests. Please look to these for getting familiar with how to read and write EXIF.
+
+In general, this package is concerned only with parsing and encoding raw EXIF data. It does not understand specific file-formats. This package assumes you know how to extract the raw EXIF data from a file, such as a JPEG, and, if you want to update it, know then how to write it back. File-specific formats are not the concern of *go-exif*, though we provide [exif.SearchAndExtractExif](https://godoc.org/github.com/dsoprea/go-exif#SearchAndExtractExif) and [exif.SearchFileAndExtractExif](https://godoc.org/github.com/dsoprea/go-exif#SearchFileAndExtractExif) as brute-force search mechanisms that will help you explore the EXIF information for newer formats that you might not yet have any way to parse.
+
+That said, the author also provides [go-jpeg-image-structure](https://github.com/dsoprea/go-jpeg-image-structure) and [go-png-image-structure](https://github.com/dsoprea/go-png-image-structure) to support properly reading and writing JPEG and PNG images.
+
+
+### Overview
 
 Create an instance of the `Exif` type and call `Scan()` with a byte-slice, where the first byte is the beginning of the raw EXIF data. You may pass a callback that will be invoked for every tag or `nil` if you do not want one. If no callback is given, you are effectively just validating the structure or parsing of the image.
 
