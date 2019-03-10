@@ -209,8 +209,10 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 
 	typeLogger.Debugf(nil, "UndefinedValue: IFD-PATH=[%s] TAG-ID=(0x%02x)", ifdPath, tagId)
 
-	if ifdPath == IfdPathStandardExif {
-		if tagId == 0x9000 {
+	switch ifdPath {
+	case IfdPathStandardExif:
+		switch tagId {
+		case 0x9000:
 			// ExifVersion
 
 			tt := NewTagType(TypeAsciiNoNul, byteOrder)
@@ -219,7 +221,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 			log.PanicIf(err)
 
 			return TagUnknownType_GeneralString(valueString), nil
-		} else if tagId == 0xa000 {
+		case 0xa000:
 			// FlashpixVersion
 
 			tt := NewTagType(TypeAsciiNoNul, byteOrder)
@@ -228,7 +230,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 			log.PanicIf(err)
 
 			return TagUnknownType_GeneralString(valueString), nil
-		} else if tagId == 0x9286 {
+		case 0x9286:
 			// UserComment
 
 			tt := NewTagType(TypeByte, byteOrder)
@@ -255,7 +257,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 
 			typeLogger.Warningf(nil, "User-comment encoding not valid. Returning 'unknown' type (the default).")
 			return unknownUc, nil
-		} else if tagId == 0x927c {
+		case 0x927c:
 			// MakerNote
 			// TODO(dustin): !! This is the Wild Wild West. This very well might be a child IFD, but any and all OEM's define their own formats. If we're going to be writing changes and this is complete EXIF (which may not have the first eight bytes), it might be fine. However, if these are just IFDs they'll be relative to the main EXIF, this will invalidate the MakerNote data for IFDs and any other implementations that use offsets unless we can interpret them all. It be best to return to this later and just exclude this from being written for now, though means a loss of a wealth of image metadata.
 			//                  -> We can also just blindly try to interpret as an IFD and just validate that it's looks good (maybe it will even have a 'next ifd' pointer that we can validate is 0x0).
@@ -284,7 +286,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 			}
 
 			return mn, nil
-		} else if tagId == 0x9101 {
+		case 0x9101:
 			// ComponentsConfiguration
 
 			tt := NewTagType(TypeByte, byteOrder)
@@ -310,7 +312,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 
 			return cc, nil
 		}
-	} else if ifdPath == IfdPathStandardGps {
+	case IfdPathStandardGps:
 		if tagId == 0x001c {
 			// GPSAreaInformation
 
@@ -330,7 +332,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 
 			return TagUnknownType_GeneralString(valueString), nil
 		}
-	} else if ifdPath == IfdPathStandardExifIop {
+	case IfdPathStandardExifIop:
 		if tagId == 0x0002 {
 			// InteropVersion
 

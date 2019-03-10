@@ -30,7 +30,8 @@ type IfdBuilderTagValue struct {
 }
 
 func (ibtv IfdBuilderTagValue) String() string {
-	if ibtv.IsBytes() == true {
+	switch {
+	case ibtv.IsBytes():
 		var valuePhrase string
 		if len(ibtv.valueBytes) <= 8 {
 			valuePhrase = fmt.Sprintf("%v", ibtv.valueBytes)
@@ -39,9 +40,9 @@ func (ibtv IfdBuilderTagValue) String() string {
 		}
 
 		return fmt.Sprintf("IfdBuilderTagValue<BYTES=%v LEN=(%d)>", valuePhrase, len(ibtv.valueBytes))
-	} else if ibtv.IsIb() == true {
+	case ibtv.IsIb():
 		return fmt.Sprintf("IfdBuilderTagValue<IB=%s>", ibtv.ib)
-	} else {
+	default:
 		log.Panicf("IBTV state undefined")
 		return ""
 	}
@@ -567,12 +568,12 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 				if isChildIb == true {
 					tagName = "<Child IFD>"
 				} else {
-					it, err := ib.tagIndex.Get(tag.ifdPath, tag.tagId)
-					if log.Is(err, ErrTagNotFound) == true {
+					switch it, err := ib.tagIndex.Get(tag.ifdPath, tag.tagId); {
+					case log.Is(err, ErrTagNotFound):
 						tagName = "<UNKNOWN>"
-					} else if err != nil {
+					case err != nil:
 						log.Panic(err)
-					} else {
+					default:
 						tagName = it.Name
 					}
 				}
@@ -808,13 +809,13 @@ func (ib *IfdBuilder) Set(bt *BuilderTag) (err error) {
 		}
 	}()
 
-	position, err := ib.Find(bt.tagId)
-	if err == nil {
+	switch position, err := ib.Find(bt.tagId); {
+	case err == nil:
 		ib.tags[position] = bt
-	} else if log.Is(err, ErrTagEntryNotFound) == true {
+	case log.Is(err, ErrTagEntryNotFound):
 		err = ib.add(bt)
 		log.PanicIf(err)
-	} else {
+	default:
 		log.Panic(err)
 	}
 
@@ -907,11 +908,12 @@ func (ib *IfdBuilder) add(bt *BuilderTag) (err error) {
 		}
 	}()
 
-	if bt.ifdPath == "" {
+	switch {
+	case bt.ifdPath == "":
 		log.Panicf("BuilderTag ifdPath is not set: %s", bt)
-	} else if bt.typeId == 0x0 {
+	case bt.typeId == 0x0:
 		log.Panicf("BuilderTag type-ID is not set: %s", bt)
-	} else if bt.value == nil {
+	case bt.value == nil:
 		log.Panicf("BuilderTag value is not set: %s", bt)
 	}
 

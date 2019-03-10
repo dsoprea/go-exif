@@ -108,12 +108,12 @@ func main() {
 		var value interface{}
 		if tagType.Type() == exif.TypeUndefined {
 			var err error
-			value, err = exif.UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
-			if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
+			switch value, err = exif.UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder()); {
+			case log.Is(err, exif.ErrUnhandledUnknownTypedTag):
 				value = nil
-			} else if err != nil {
+			case err != nil:
 				log.Panic(err)
-			} else {
+			default:
 				valueString = fmt.Sprintf("%v", value)
 			}
 		} else {
