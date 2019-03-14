@@ -147,7 +147,7 @@ Example output:
 
 ## Example
 
-```
+```go
 f, err := os.Open(filepathArgument)
 log.PanicIf(err)
 
