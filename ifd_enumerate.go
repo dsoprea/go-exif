@@ -821,8 +821,11 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	}
 
 	if tags, found := ifd.EntriesByTagId[TagVersionId]; found == false {
-		log.Panic(ErrNoGpsTags)
+		// We've seen this. We'll just have to default to assuming we're in a
+		// 2.2.0.0 format.
+		ifdEnumerateLogger.Warningf(nil, "No GPS version tag (0x%04x) found.", TagVersionId)
 	} else if bytes.Compare(tags[0].value, []byte{2, 2, 0, 0}) != 0 {
+		ifdEnumerateLogger.Errorf(nil, nil, "GPS version not supported: %v", tags[0].value)
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -834,6 +837,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	latitudeValue, err := ifd.TagValue(tags[0])
 	log.PanicIf(err)
 
+	// Look for whether North or South.
 	tags, found = ifd.EntriesByTagId[TagLatitudeRefId]
 	if found == false {
 		log.Panicf("latitude-ref not found")
@@ -850,6 +854,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	longitudeValue, err := ifd.TagValue(tags[0])
 	log.PanicIf(err)
 
+	// Look for whether West or East.
 	tags, found = ifd.EntriesByTagId[TagLongitudeRefId]
 	if found == false {
 		log.Panicf("longitude-ref not found")
