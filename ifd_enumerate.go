@@ -24,6 +24,15 @@ var (
 	ErrTagTypeNotValid = errors.New("tag type invalid")
 )
 
+var (
+	ValidGpsVersions = [][4]byte{
+		{2, 2, 0, 0},
+
+		// // Suddenly appeared at the default in 2.31: https://home.jeita.or.jp/tsc/std-pdf/CP-3451D.pdf
+		// {2, 3, 0, 0},
+	}
+)
+
 // IfdTagEnumerator knows how to decode an IFD and all of the tags it
 // describes.
 //
@@ -824,14 +833,25 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		// We've seen this. We'll just have to default to assuming we're in a
 		// 2.2.0.0 format.
 		ifdEnumerateLogger.Warningf(nil, "No GPS version tag (0x%04x) found.", TagVersionId)
-	} else if bytes.Compare(tags[0].value, []byte{2, 2, 0, 0}) != 0 {
-		ifdEnumerateLogger.Errorf(nil, nil, "GPS version not supported: %v", tags[0].value)
-		log.Panic(ErrNoGpsTags)
+	} else {
+		hit := false
+		for _, acceptedGpsVersion := range ValidGpsVersions {
+			if bytes.Compare(tags[0].value, acceptedGpsVersion[:]) == 0 {
+				hit = true
+				break
+			}
+		}
+
+		if hit != true {
+			ifdEnumerateLogger.Warningf(nil, "GPS version not supported: %v", tags[0].value)
+			log.Panic(ErrNoGpsTags)
+		}
 	}
 
 	tags, found := ifd.EntriesByTagId[TagLatitudeId]
 	if found == false {
-		log.Panicf("latitude not found")
+		ifdEnumerateLogger.Warningf(nil, "latitude not found")
+		log.Panic(ErrNoGpsTags)
 	}
 
 	latitudeValue, err := ifd.TagValue(tags[0])
@@ -840,7 +860,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	// Look for whether North or South.
 	tags, found = ifd.EntriesByTagId[TagLatitudeRefId]
 	if found == false {
-		log.Panicf("latitude-ref not found")
+		ifdEnumerateLogger.Warningf(nil, "latitude-ref not found")
+		log.Panic(ErrNoGpsTags)
 	}
 
 	latitudeRefValue, err := ifd.TagValue(tags[0])
@@ -848,7 +869,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	tags, found = ifd.EntriesByTagId[TagLongitudeId]
 	if found == false {
-		log.Panicf("longitude not found")
+		ifdEnumerateLogger.Warningf(nil, "longitude not found")
+		log.Panic(ErrNoGpsTags)
 	}
 
 	longitudeValue, err := ifd.TagValue(tags[0])
@@ -857,7 +879,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	// Look for whether West or East.
 	tags, found = ifd.EntriesByTagId[TagLongitudeRefId]
 	if found == false {
-		log.Panicf("longitude-ref not found")
+		ifdEnumerateLogger.Warningf(nil, "longitude-ref not found")
+		log.Panic(ErrNoGpsTags)
 	}
 
 	longitudeRefValue, err := ifd.TagValue(tags[0])
