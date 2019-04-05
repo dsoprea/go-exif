@@ -28,8 +28,17 @@ var (
 	ValidGpsVersions = [][4]byte{
 		{2, 2, 0, 0},
 
-		// // Suddenly appeared at the default in 2.31: https://home.jeita.or.jp/tsc/std-pdf/CP-3451D.pdf
-		// {2, 3, 0, 0},
+		// Suddenly appeared at the default in 2.31: https://home.jeita.or.jp/tsc/std-pdf/CP-3451D.pdf
+		//
+		// Note that the presence of 2.3.0.0 doesn't seem to guarantee
+		// coordinates. In some cases, we seen just the following:
+		//
+		// GPS Tag Version     |2.3.0.0
+		// GPS Receiver Status |V
+		// Geodetic Survey Data|WGS-84
+		// GPS Differential Cor|0
+		//
+		{2, 3, 0, 0},
 	}
 )
 
