@@ -24,6 +24,18 @@ var (
 	ErrChildIbNotFound  = errors.New("child IB not found")
 )
 
+// IfdPathAndTag very specfically describes any one tag within a given IFD tree.
+type IfdPathAndTag struct {
+	// IfdPath is either a normal or fully-qualified (with indices) IFD path.
+	IfdPath string
+
+	// TagName is the name of a tag. This must be populated if `TagId` is not.
+	TagName string
+
+	// TagId is the ID of a tag. This must be populated if `TagName` is not.
+	TagId uint16
+}
+
 type IfdBuilderTagValue struct {
 	valueBytes []byte
 	ib         *IfdBuilder
@@ -288,11 +300,15 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 
 // NewIfdBuilderFromExistingChain creates a chain of IB instances from an
 // IFD chain generated from real data.
-func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolver) (firstIb *IfdBuilder) {
+func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolver) (ib *IfdBuilder) {
+	ib = NewIfdBuilderFromExistingChainWithFilter(rootIfd, itevr, nil)
+	return ib
+}
+
+func NewIfdBuilderFromExistingChainWithFilter(rootIfd *Ifd, itevr *IfdTagEntryValueResolver, includeFilter []IfdPathAndTag, excludeFilter []IfdPathAndTag) (firstIb *IfdBuilder) {
 	// TODO(dustin): !! When we actually write the code to flatten the IB to bytes, make sure to skip the tags that have a nil value (which will happen when we add-from-exsting without a resolver instance).
 
 	var lastIb *IfdBuilder
-	i := 0
 	for thisExistingIfd := rootIfd; thisExistingIfd != nil; thisExistingIfd = thisExistingIfd.NextIfd {
 		newIb := NewIfdBuilder(rootIfd.ifdMapping, rootIfd.tagIndex, rootIfd.FqIfdPath, thisExistingIfd.ByteOrder)
 		if firstIb == nil {
@@ -301,11 +317,12 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolve
 			lastIb.SetNextIb(newIb)
 		}
 
-		err := newIb.AddTagsFromExisting(thisExistingIfd, itevr, nil, nil)
+		err := newIb.AddTagsFromExistingWithFilter(thisExistingIfd, itevr, includeFilter, excludeFilter)
 		log.PanicIf(err)
 
-		lastIb = newIb
-		i++
+		if len(newIb.Tags()) > 0 {
+			lastIb = newIb
+		}
 	}
 
 	return firstIb
@@ -981,6 +998,23 @@ func (ib *IfdBuilder) NewBuilderTagFromBuilder(childIb *IfdBuilder) (bt *Builder
 		value)
 
 	return bt
+}
+
+func (ib *IfdBuilder) AddTagsFromExistingWithFilter(ifd *Ifd, itevr *IfdTagEntryValueResolver, includeFilter []IfdPathAndTag, excludeFilter []IfdPathAndTag) (err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	// TODO(dustin): !! We'd like to implement our IfdPathAndTag-based filter, but:
+	//
+	// - we might not be able to avoid duplicating AddTagsFromExisting since:
+	//   1) the existing filtering, which is insufficient, is so pervasive.
+	//   2) we really don't want to add support for both types of filtering to the signature of the existing AddTagsFromExisting.
+	// - we'll need to curry the given filters back to the NewIfdBuilderFromExistingChain method above.
+
+	return nil
 }
 
 // AddTagsFromExisting does a verbatim copy of the entries in `ifd` to this
