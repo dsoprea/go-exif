@@ -14,11 +14,11 @@ var (
 
 type GpsDegrees struct {
 	Orientation               byte
-	Degrees, Minutes, Seconds int
+	Degrees, Minutes, Seconds float64
 }
 
 func (d GpsDegrees) String() string {
-	return fmt.Sprintf("Degrees<O=[%s] D=(%d) M=(%d) S=(%d)>", string([]byte{d.Orientation}), d.Degrees, d.Minutes, d.Seconds)
+	return fmt.Sprintf("Degrees<O=[%s] D=(%g) M=(%g) S=(%g)>", string([]byte{d.Orientation}), d.Degrees, d.Minutes, d.Seconds)
 }
 
 func (d GpsDegrees) Decimal() float64 {

@@ -901,18 +901,18 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	gi.Latitude = GpsDegrees{
 		Orientation: latitudeRefValue.(string)[0],
-		Degrees:     int(float64(latitudeRaw[0].Numerator) / float64(latitudeRaw[0].Denominator)),
-		Minutes:     int(float64(latitudeRaw[1].Numerator) / float64(latitudeRaw[1].Denominator)),
-		Seconds:     int(float64(latitudeRaw[2].Numerator) / float64(latitudeRaw[2].Denominator)),
+		Degrees:     float64(latitudeRaw[0].Numerator) / float64(latitudeRaw[0].Denominator),
+		Minutes:     float64(latitudeRaw[1].Numerator) / float64(latitudeRaw[1].Denominator),
+		Seconds:     float64(latitudeRaw[2].Numerator) / float64(latitudeRaw[2].Denominator),
 	}
 
 	longitudeRaw := longitudeValue.([]Rational)
 
 	gi.Longitude = GpsDegrees{
 		Orientation: longitudeRefValue.(string)[0],
-		Degrees:     int(float64(longitudeRaw[0].Numerator) / float64(longitudeRaw[0].Denominator)),
-		Minutes:     int(float64(longitudeRaw[1].Numerator) / float64(longitudeRaw[1].Denominator)),
-		Seconds:     int(float64(longitudeRaw[2].Numerator) / float64(longitudeRaw[2].Denominator)),
+		Degrees:     float64(longitudeRaw[0].Numerator) / float64(longitudeRaw[0].Denominator),
+		Minutes:     float64(longitudeRaw[1].Numerator) / float64(longitudeRaw[1].Denominator),
+		Seconds:     float64(longitudeRaw[2].Numerator) / float64(longitudeRaw[2].Denominator),
 	}
 
 	// Parse altitude.
