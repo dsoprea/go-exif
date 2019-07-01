@@ -1006,13 +1006,127 @@ func (ib *IfdBuilder) AddTagsFromExistingWithFilter(ifd *Ifd, itevr *IfdTagEntry
 			err = log.Wrap(state.(error))
 		}
 	}()
-
-	// TODO(dustin): !! We'd like to implement our IfdPathAndTag-based filter, but:
-	//
-	// - we might not be able to avoid duplicating AddTagsFromExisting since:
-	//   1) the existing filtering, which is insufficient, is so pervasive.
-	//   2) we really don't want to add support for both types of filtering to the signature of the existing AddTagsFromExisting.
+	
 	// - we'll need to curry the given filters back to the NewIfdBuilderFromExistingChain method above.
+	// - I am not clear what needs to happen ^.
+
+	thumbnailData, err := ifd.Thumbnail()
+	if err == nil {
+		err = ib.SetThumbnail(thumbnailData)
+		log.PanicIf(err)
+	} else if log.Is(err, ErrNoThumbnail) == false {
+		log.Panic(err)
+	}
+
+	for i, ite := range ifd.Entries {
+		if ite.TagId == ThumbnailOffsetTagId || ite.TagId == ThumbnailSizeTagId {
+			// These will be added on-the-fly when we encode.
+			continue
+		}
+
+		if len(includeFilter) > 0 {
+			found := false
+			for _, includedIte := range includeFilter {
+				if includedIte.IfdPath == ite.IfdPath && includedIte.TagId == ite.TagId {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				continue
+			}
+		}
+		if len(excludeFilter) > 0 {
+			found := false
+			for _, excludedIte := range excludeFilter {
+				if excludedIte.IfdPath == ite.IfdPath && excludedIte.TagId == ite.TagId {
+					found = true
+					break
+				}
+			}
+
+			if found {
+				continue
+			}
+		}
+
+		var bt *BuilderTag
+
+		if ite.ChildIfdPath != "" {
+			// If we want to add an IFD tag, we'll have to build it first and
+			// *then* add it via a different method.
+
+			if itevr == nil {
+				// We don't have any ability to resolve the structure of the
+				// child-IFD. Just install it as a normal tag rather than a
+				// fully-structured child-IFD. We're going to blank the value,
+				// though, since its original offset will no longer be valid
+				// (nor does it matter since this is just a temporary
+				// placeholder, in this situation).
+				value := NewIfdBuilderTagValueFromBytes([]byte{0, 0, 0, 0})
+				bt = NewBuilderTag(ite.IfdPath, ite.TagId, ite.TagType, value)
+			} else {
+				// Figure out which of the child-IFDs that are associated with
+				// this IFD represents this specific child IFD.
+
+				var childIfd *Ifd
+				for _, thisChildIfd := range ifd.Children {
+					if thisChildIfd.ParentTagIndex != i {
+						continue
+					} else if thisChildIfd.TagId != 0xffff && thisChildIfd.TagId != ite.TagId {
+						log.Panicf("child-IFD tag is not correct: TAG-POSITION=(%d) ITE=%s CHILD-IFD=%s", thisChildIfd.ParentTagIndex, ite, thisChildIfd)
+					}
+
+					childIfd = thisChildIfd
+					break
+				}
+
+				if childIfd == nil {
+					childTagIds := make([]string, len(ifd.Children))
+					for j, childIfd := range ifd.Children {
+						childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
+					}
+
+					log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath, ite.TagId, i, childTagIds)
+				}
+
+				childIb := NewIfdBuilderFromExistingChain(childIfd, itevr)
+				bt = ib.NewBuilderTagFromBuilder(childIb)
+			}
+		} else {
+			var value *IfdBuilderTagValue
+
+			if itevr == nil {
+				// rawValueOffsetCopy is our own private copy of the original data.
+				// It should always be four-bytes, but just copy whatever there is.
+				rawValueOffsetCopy := make([]byte, len(ite.RawValueOffset))
+				copy(rawValueOffsetCopy, ite.RawValueOffset)
+
+				value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
+			} else {
+				var err error
+
+				// TODO(dustin): !! Not correct. If we're adding from existing and it's an unknown-type tag that we can't parse, we're just going to be seting the placeholder even though there's nothing stopping us from just taking the raw bytes (other than some design decisions that we'd have to make in order to do this).
+
+				valueBytes, err := itevr.ValueBytes(ite)
+				if err != nil {
+					if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
+						valueBytes = []byte(UnparseableUnknownTagValuePlaceholder)
+					} else {
+						log.Panic(err)
+					}
+				}
+
+				value = NewIfdBuilderTagValueFromBytes(valueBytes)
+			}
+
+			bt = NewBuilderTag(ifd.IfdPath, ite.TagId, ite.TagType, value)
+		}
+
+		err := ib.add(bt)
+		log.PanicIf(err)
+	}
 
 	return nil
 }
