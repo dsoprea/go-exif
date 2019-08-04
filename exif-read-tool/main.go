@@ -49,6 +49,7 @@ func main() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
 			log.PrintErrorf(err, "Program error.")
+			os.Exit(1)
 		}
 	}()
 
