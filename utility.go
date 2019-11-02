@@ -124,3 +124,99 @@ func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
 
     return fmt.Sprintf("%04d:%02d:%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 }
+
+// ExifTag is one simple representation of a tag in a flat list of all of them.
+type ExifTag struct {
+    IfdPath string `json:"ifd_path"`
+
+    TagId   uint16 `json:"id"`
+    TagName string `json:"name"`
+
+    TagTypeId   uint16      `json:"type_id"`
+    TagTypeName string      `json:"type_name"`
+    Value       interface{} `json:"value"`
+    ValueBytes  []byte      `json:"value_bytes"`
+
+    ChildIfdPath string `json:"child_ifd_path"`
+}
+
+// String returns a string representation.
+func (et ExifTag) String() string {
+    return fmt.Sprintf("ExifTag<IFD-PATH=[%s] TAG-ID=(0x%02x) TAG-NAME=[%s] TAG-TYPE=[%s] VALUE=[%v] VALUE-BYTES=(%d) CHILD-IFD-PATH=[%s]", et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.Value, len(et.ValueBytes), et.ChildIfdPath)
+}
+
+// GetFlatExifData returns a simple, flat representation of all tags.
+func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    im := NewIfdMappingWithStandard()
+    ti := NewTagIndex()
+
+    _, index, err := Collect(im, ti, exifData)
+    log.PanicIf(err)
+
+    q := []*Ifd{index.RootIfd}
+
+    exifTags = make([]ExifTag, 0)
+
+    for len(q) > 0 {
+        var ifd *Ifd
+        ifd, q = q[0], q[1:]
+
+        ti := NewTagIndex()
+        for _, ite := range ifd.Entries {
+            tagName := ""
+
+            it, err := ti.Get(ifd.IfdPath, ite.TagId)
+            if err != nil {
+                // If it's a non-standard tag, just leave the name blank.
+                if log.Is(err, ErrTagNotFound) != true {
+                    log.PanicIf(err)
+                }
+            } else {
+                tagName = it.Name
+            }
+
+            value, err := ifd.TagValue(ite)
+            if err != nil {
+                if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
+                    value = UnparseableUnknownTagValuePlaceholder
+                } else {
+                    log.Panic(err)
+                }
+            }
+
+            valueBytes, err := ifd.TagValueBytes(ite)
+            if err != nil && log.Is(err, ErrUnhandledUnknownTypedTag) == false {
+                log.Panic(err)
+            }
+
+            et := ExifTag{
+                IfdPath:      ifd.IfdPath,
+                TagId:        ite.TagId,
+                TagName:      tagName,
+                TagTypeId:    ite.TagType,
+                TagTypeName:  TypeNames[ite.TagType],
+                Value:        value,
+                ValueBytes:   valueBytes,
+                ChildIfdPath: ite.ChildIfdPath,
+            }
+
+            exifTags = append(exifTags, et)
+        }
+
+        for _, childIfd := range ifd.Children {
+            q = append(q, childIfd)
+        }
+
+        if ifd.NextIfd != nil {
+            q = append(q, ifd.NextIfd)
+        }
+    }
+
+    return exifTags, nil
+}
