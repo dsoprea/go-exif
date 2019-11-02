@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"crypto/sha1"
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
 )
 
 const (
-	UnparseableUnknownTagValuePlaceholder = "!UNPARSEABLE"
+	UnparseableUnknownTagValuePlaceholder = "!UNKNOWN"
 )
 
 const (
@@ -126,7 +127,14 @@ func (mn TagUnknownType_927C_MakerNote) String() string {
 		parts[i] = fmt.Sprintf("%02x", c)
 	}
 
-	return fmt.Sprintf("MakerNote<TYPE-ID=[%s]>", strings.Join(parts, " "))
+	h := sha1.New()
+
+	_, err := h.Write(mn.MakerNoteBytes)
+	log.PanicIf(err)
+
+	digest := h.Sum(nil)
+
+	return fmt.Sprintf("MakerNote<TYPE-ID=[%s] LEN=(%d) SHA1=[%020x]>", strings.Join(parts, " "), len(mn.MakerNoteBytes), digest)
 }
 
 func (uc TagUnknownType_927C_MakerNote) ValueBytes() (value []byte, err error) {
@@ -197,6 +205,24 @@ func EncodeUndefined(ifdPath string, tagId uint16, value interface{}) (ed Encode
 
 	// Never called.
 	return EncodedData{}, nil
+}
+
+type TagUnknownType_UnknownValue []byte
+
+func (tutuv TagUnknownType_UnknownValue) String() string {
+	parts := make([]string, len(tutuv))
+	for i, c := range tutuv {
+		parts[i] = fmt.Sprintf("%02x", c)
+	}
+
+	h := sha1.New()
+
+	_, err := h.Write(tutuv)
+	log.PanicIf(err)
+
+	digest := h.Sum(nil)
+
+	return fmt.Sprintf("Unknown<DATA=[%s] LEN=(%d) SHA1=[%020x]>", strings.Join(parts, " "), len(tutuv), digest)
 }
 
 // UndefinedValue knows how to resolve the value for most unknown-type tags.
@@ -347,9 +373,20 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext ValueContext, byt
 	//
 	// complex: 0xa302, 0xa20c, 0x8828
 	// long: 0xa301, 0xa300
-
+	//
 	// 0xa40b is device-specific and unhandled.
 
-	log.Panic(ErrUnhandledUnknownTypedTag)
-	return nil, nil
+	// Return encapsulated data rather than an error so that we can at least
+	// print/profile the opaque data.
+
+	tt := NewTagType(TypeByte, byteOrder)
+
+	valueBytes, err := tt.ReadByteValues(valueContext)
+	log.PanicIf(err)
+
+	tutuv := TagUnknownType_UnknownValue(valueBytes)
+	return tutuv, nil
+
+	// log.Panic(ErrUnhandledUnknownTypedTag)
+	// return nil, nil
 }

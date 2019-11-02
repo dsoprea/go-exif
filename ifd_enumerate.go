@@ -259,6 +259,9 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 			switch value.(type) {
 			case []byte:
 				return value.([]byte), false, nil
+			case TagUnknownType_UnknownValue:
+				b := []byte(value.(TagUnknownType_UnknownValue))
+				return b, false, nil
 			case string:
 				return []byte(value.(string)), false, nil
 			case UnknownTagValue:
@@ -268,7 +271,7 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 				return valueBytes, false, nil
 			default:
 				// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
-				log.Panicf("can not produce bytes for unknown-type tag (0x%04x): [%s]", ite.TagId, reflect.TypeOf(value))
+				log.Panicf("can not produce bytes for unknown-type tag (0x%04x) (1): [%s]", ite.TagId, reflect.TypeOf(value))
 			}
 		}
 	} else {

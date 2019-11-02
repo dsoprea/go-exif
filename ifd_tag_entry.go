@@ -104,6 +104,9 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 		switch value.(type) {
 		case []byte:
 			return value.([]byte), nil
+		case TagUnknownType_UnknownValue:
+			b := []byte(value.(TagUnknownType_UnknownValue))
+			return b, nil
 		case string:
 			return []byte(value.(string)), nil
 		case UnknownTagValue:
@@ -113,7 +116,7 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 			return valueBytes, nil
 		default:
 			// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
-			log.Panicf("can not produce bytes for unknown-type tag (0x%04x): [%s]", ite.TagId, reflect.TypeOf(value))
+			log.Panicf("can not produce bytes for unknown-type tag (0x%04x) (2): [%s]", ite.TagId, reflect.TypeOf(value))
 		}
 	}
 
