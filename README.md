@@ -216,3 +216,9 @@ EXIF has an excellently-documented structure but there are a lot of devices and 
 **If you are able to help, it would be deeply appreciated if you could run the included reader-tool against all of the EXIF-compatible files you have. This is mostly going to be JPEG files (but not all variations). If you are able to test a large number of files (thousands or millions), please post an issue no matter what. Mention how many files you tried, whether there were any failures, and, if you would be willing, give us access to the failed files.**
 
 If you are able to test 1M+ files, I will give you credit on the project. The further back in time your images reach, the higher in the list your name/company will go.
+
+## Contributors/Testing
+
+Thank you to the following users for providing their non-trivial time or corpus to test go-exif.
+
+- [philip-firstorder](https://github.com/philip-firstorder) (200K images)
