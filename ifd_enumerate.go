@@ -294,19 +294,58 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 	return valueBytes, false, nil
 }
 
+// RawTagVisitorPtr is an optional callback that can get hit for every tag we parse
+// through. `addressableData` is the byte array startign after the EXIF header
+// (where the offsets of all IFDs and values are calculated from).
+//
+// This was reimplemented as an interface to allow for simpler change management
+// in the future.
+type RawTagWalk interface {
+	Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext *ValueContext) (err error)
+}
+
+type RawTagWalkLegacyWrapper struct {
+	legacyVisitor RawTagVisitor
+}
+
+func (rtwlw RawTagWalkLegacyWrapper) Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext *ValueContext) (err error) {
+	return rtwlw.legacyVisitor(fqIfdPath, ifdIndex, tagId, tagType, *valueContext)
+}
+
 // RawTagVisitor is an optional callback that can get hit for every tag we parse
 // through. `addressableData` is the byte array startign after the EXIF header
 // (where the offsets of all IFDs and values are calculated from).
+//
+// DEPRECATED(dustin): Use a RawTagWalk instead.
 type RawTagVisitor func(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnumerator, visitor RawTagVisitor, doDescend bool, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnumerator, visitor interface{}, doDescend bool, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	var visitorWrapper RawTagWalk
+
+	if visitor != nil {
+		var ok bool
+
+		visitorWrapper, ok = visitor.(RawTagWalk)
+		if ok == false {
+			// Legacy usage.
+
+			// `ok` can be `true` but `legacyVisitor` can still be `nil` (when
+			// passed as nil).
+			if legacyVisitor, ok := visitor.(RawTagVisitor); ok == true && legacyVisitor != nil {
+				visitorWrapper = RawTagWalkLegacyWrapper{
+					legacyVisitor: legacyVisitor,
+				}
+			}
+		}
+	}
 
 	tagCount, _, err := ite.getUint16()
 	log.PanicIf(err)
@@ -338,7 +377,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnum
 			continue
 		}
 
-		if visitor != nil {
+		if visitorWrapper != nil {
 			tt := NewTagType(tag.TagType, ie.byteOrder)
 
 			vc :=
@@ -350,7 +389,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnum
 					tag.TagType,
 					ie.byteOrder)
 
-			err := visitor(fqIfdPath, ifdIndex, tag.TagId, tt, vc)
+			err := visitorWrapper.Visit(fqIfdPath, ifdIndex, tag.TagId, tt, vc)
 			log.PanicIf(err)
 		}
 
@@ -412,7 +451,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 }
 
 // Scan enumerates the different EXIF's IFD blocks.
-func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor RawTagVisitor, resolveValues bool) (err error) {
+func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor interface{}, resolveValues bool) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

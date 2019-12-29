@@ -129,11 +129,9 @@ func (bt *BuilderTag) String() string {
 	var valueString string
 
 	if bt.value.IsBytes() == true {
-		tt := NewTagType(bt.typeId, bt.byteOrder)
-
 		var err error
 
-		valueString, err = tt.Format(bt.value.Bytes(), false)
+		valueString, err = Format(bt.value.Bytes(), bt.typeId, false, bt.byteOrder)
 		log.PanicIf(err)
 	} else {
 		valueString = fmt.Sprintf("%v", bt.value)

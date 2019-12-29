@@ -90,7 +90,7 @@ func TestVisit(t *testing.T) {
 				valueString = fmt.Sprintf("%v", value)
 			}
 		} else {
-			valueString, err = tagType.ResolveAsString(valueContext, true)
+			valueString, err = valueContext.FormatFirst()
 			log.PanicIf(err)
 		}
 

@@ -70,9 +70,7 @@ func (ite IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.Byte
 
 		value = fmt.Sprintf("%v", valueRaw)
 	} else {
-		tt := NewTagType(ite.TagType, byteOrder)
-
-		value, err = tt.ResolveAsString(vc, false)
+		value, err = vc.Format()
 		log.PanicIf(err)
 	}
 

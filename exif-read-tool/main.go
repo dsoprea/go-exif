@@ -117,7 +117,7 @@ func main() {
 				valueString = fmt.Sprintf("%v", value)
 			}
 		} else {
-			valueString, err = tagType.ResolveAsString(valueContext, true)
+			valueString, err = valueContext.FormatFirst()
 			log.PanicIf(err)
 
 			value = valueString
