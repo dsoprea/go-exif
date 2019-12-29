@@ -183,6 +183,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
 			log.PrintErrorf(err, "Test failure.")
+			panic(err)
 		}
 	}()
 
@@ -347,6 +348,14 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T
 }
 
 func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
+	defer func() {
+		if state := recover(); state != nil {
+			err := log.Wrap(state.(error))
+			log.PrintErrorf(err, "Test failure.")
+			panic(err)
+		}
+	}()
+
 	// Create a child IFD (represented by an IB instance) that we can allocate
 	// space for and then attach to a tag (which would normally be an entry,
 	// then, in a higher IFD).
@@ -470,6 +479,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
 			log.PrintErrorf(err, "Test failure.")
+			panic(err)
 		}
 	}()
 
@@ -708,6 +718,7 @@ func Test_IfdByteEncoder_encodeIfdToBytes_fullExif(t *testing.T) {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
 			log.PrintErrorf(err, "Test failure.")
+			panic(err)
 		}
 	}()
 
@@ -757,6 +768,7 @@ func Test_IfdByteEncoder_EncodeToExifPayload(t *testing.T) {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
 			log.PrintErrorf(err, "Test failure.")
+			panic(err)
 		}
 	}()
 
@@ -807,6 +819,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
 			log.PrintErrorf(err, "Test failure.")
+			panic(err)
 		}
 	}()
 
