@@ -55,12 +55,14 @@ func (ite IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.Byte
 		}
 	}()
 
-	vc := ValueContext{
-		UnitCount:       ite.UnitCount,
-		ValueOffset:     ite.ValueOffset,
-		RawValueOffset:  ite.RawValueOffset,
-		AddressableData: addressableData,
-	}
+	vc :=
+		newValueContext(
+			ite.UnitCount,
+			ite.ValueOffset,
+			ite.RawValueOffset,
+			addressableData,
+			ite.TagType,
+			byteOrder)
 
 	if ite.TagType == TypeUndefined {
 		valueRaw, err := UndefinedValue(ite.IfdPath, ite.TagId, vc, byteOrder)
@@ -91,12 +93,14 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 	// (obviously). However, here, in order to produce the list of bytes, we
 	// need to coerce whatever `UndefinedValue()` returns.
 	if ite.TagType == TypeUndefined {
-		valueContext := ValueContext{
-			UnitCount:       ite.UnitCount,
-			ValueOffset:     ite.ValueOffset,
-			RawValueOffset:  ite.RawValueOffset,
-			AddressableData: addressableData,
-		}
+		valueContext :=
+			newValueContext(
+				ite.UnitCount,
+				ite.ValueOffset,
+				ite.RawValueOffset,
+				addressableData,
+				ite.TagType,
+				byteOrder)
 
 		value, err := UndefinedValue(ite.IfdPath, ite.TagId, valueContext, byteOrder)
 		log.PanicIf(err)
@@ -150,12 +154,14 @@ func (ite IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder)
 		}
 	}()
 
-	vc := ValueContext{
-		UnitCount:       ite.UnitCount,
-		ValueOffset:     ite.ValueOffset,
-		RawValueOffset:  ite.RawValueOffset,
-		AddressableData: addressableData,
-	}
+	vc :=
+		newValueContext(
+			ite.UnitCount,
+			ite.ValueOffset,
+			ite.RawValueOffset,
+			addressableData,
+			ite.TagType,
+			byteOrder)
 
 	if ite.TagType == TypeUndefined {
 		value, err = UndefinedValue(ite.IfdPath, ite.TagId, vc, byteOrder)

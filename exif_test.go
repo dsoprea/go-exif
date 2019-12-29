@@ -94,7 +94,7 @@ func TestVisit(t *testing.T) {
 			log.PanicIf(err)
 		}
 
-		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
+		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, valueContext.UnitCount(), tagType.Name(), valueString)
 		tags = append(tags, description)
 
 		return nil

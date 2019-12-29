@@ -158,11 +158,11 @@ func (tt TagType) readRawEncoded(valueContext ValueContext) (rawBytes []byte, er
 
     unitSizeRaw := uint32(tt.tagType.Size())
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
-        byteLength := unitSizeRaw * valueContext.UnitCount
-        return valueContext.RawValueOffset[:byteLength], nil
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
+        byteLength := unitSizeRaw * valueContext.UnitCount()
+        return valueContext.RawValueOffset()[:byteLength], nil
     } else {
-        return valueContext.AddressableData[valueContext.ValueOffset : valueContext.ValueOffset+valueContext.UnitCount*unitSizeRaw], nil
+        return valueContext.AddressableData()[valueContext.ValueOffset() : valueContext.ValueOffset()+valueContext.UnitCount()*unitSizeRaw], nil
     }
 }
 
@@ -409,21 +409,21 @@ func (tt TagType) ReadByteValues(valueContext ValueContext) (value []byte, err e
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading BYTE value (embedded).")
 
         // In this case, the bytes normally used for the offset are actually
         // data.
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseBytes(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseBytes(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading BYTE value (at offset).")
 
-        value, err = tt.ParseBytes(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseBytes(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 
@@ -437,18 +437,18 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading ASCII value (embedded).")
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseAscii(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseAscii(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading ASCII value (at offset).")
 
-        value, err = tt.ParseAscii(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseAscii(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 
@@ -462,18 +462,18 @@ func (tt TagType) ReadAsciiNoNulValue(valueContext ValueContext) (value string, 
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading ASCII value (no-nul; embedded).")
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseAsciiNoNul(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseAsciiNoNul(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
 
-        value, err = tt.ParseAsciiNoNul(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseAsciiNoNul(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 
@@ -487,18 +487,18 @@ func (tt TagType) ReadShortValues(valueContext ValueContext) (value []uint16, er
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading SHORT value (embedded).")
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseShorts(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseShorts(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading SHORT value (at offset).")
 
-        value, err = tt.ParseShorts(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseShorts(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 
@@ -512,18 +512,18 @@ func (tt TagType) ReadLongValues(valueContext ValueContext) (value []uint32, err
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading LONG value (embedded).")
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseLongs(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseLongs(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading LONG value (at offset).")
 
-        value, err = tt.ParseLongs(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseLongs(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 
@@ -537,18 +537,18 @@ func (tt TagType) ReadRationalValues(valueContext ValueContext) (value []Rationa
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading RATIONAL value (embedded).")
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseRationals(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseRationals(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading RATIONAL value (at offset).")
 
-        value, err = tt.ParseRationals(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseRationals(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 
@@ -562,18 +562,18 @@ func (tt TagType) ReadSignedLongValues(valueContext ValueContext) (value []int32
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading SLONG value (embedded).")
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseSignedLongs(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseSignedLongs(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading SLONG value (at offset).")
 
-        value, err = tt.ParseSignedLongs(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseSignedLongs(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 
@@ -587,18 +587,18 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
         }
     }()
 
-    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
         typeLogger.Debugf(nil, "Reading SRATIONAL value (embedded).")
 
-        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
-        rawValue := valueContext.RawValueOffset[:byteLength]
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount()
+        rawValue := valueContext.RawValueOffset()[:byteLength]
 
-        value, err = tt.ParseSignedRationals(rawValue, valueContext.UnitCount)
+        value, err = tt.ParseSignedRationals(rawValue, valueContext.UnitCount())
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading SRATIONAL value (at offset).")
 
-        value, err = tt.ParseSignedRationals(valueContext.AddressableData[valueContext.ValueOffset:], valueContext.UnitCount)
+        value, err = tt.ParseSignedRationals(valueContext.AddressableData()[valueContext.ValueOffset():], valueContext.UnitCount())
         log.PanicIf(err)
     }
 

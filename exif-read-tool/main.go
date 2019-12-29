@@ -131,7 +131,7 @@ func main() {
 			TagName:     it.Name,
 			TagTypeId:   tagType.Type(),
 			TagTypeName: tagType.Name(),
-			UnitCount:   valueContext.UnitCount,
+			UnitCount:   valueContext.UnitCount(),
 			Value:       value,
 			ValueString: valueString,
 		}
