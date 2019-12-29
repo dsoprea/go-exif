@@ -90,7 +90,7 @@ type BuilderTag struct {
 	ifdPath string
 
 	tagId  uint16
-	typeId uint16
+	typeId TagTypePrimitive
 
 	// value is either a value that can be encoded, an IfdBuilder instance (for
 	// child IFDs), or an IfdTagEntry instance representing an existing,
@@ -102,7 +102,7 @@ type BuilderTag struct {
 	byteOrder binary.ByteOrder
 }
 
-func NewBuilderTag(ifdPath string, tagId uint16, typeId uint16, value *IfdBuilderTagValue, byteOrder binary.ByteOrder) *BuilderTag {
+func NewBuilderTag(ifdPath string, tagId uint16, typeId TagTypePrimitive, value *IfdBuilderTagValue, byteOrder binary.ByteOrder) *BuilderTag {
 	return &BuilderTag{
 		ifdPath:   ifdPath,
 		tagId:     tagId,

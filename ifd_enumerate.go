@@ -145,15 +145,6 @@ func NewIfdEnumerate(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte
 	}
 }
 
-// ValueContext describes all of the parameters required to find and extract
-// the actual tag value.
-type ValueContext struct {
-	UnitCount       uint32
-	ValueOffset     uint32
-	RawValueOffset  []byte
-	AddressableData []byte
-}
-
 func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerator) {
 	ite = NewIfdTagEnumerator(
 		ie.exifData[ExifAddressableAreaStart:],
@@ -173,8 +164,10 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	tagId, _, err := ite.getUint16()
 	log.PanicIf(err)
 
-	tagType, _, err := ite.getUint16()
+	tagTypeRaw, _, err := ite.getUint16()
 	log.PanicIf(err)
+
+	tagType := TagTypePrimitive(tagTypeRaw)
 
 	unitCount, _, err := ite.getUint32()
 	log.PanicIf(err)
@@ -276,7 +269,7 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 		}
 	} else {
 		originalType := NewTagType(ite.TagType, ie.byteOrder)
-		byteCount := uint32(originalType.Size()) * ite.UnitCount
+		byteCount := uint32(originalType.Type().Size()) * ite.UnitCount
 
 		tt := NewTagType(TypeByte, ie.byteOrder)
 

@@ -132,10 +132,10 @@ type ExifTag struct {
     TagId   uint16 `json:"id"`
     TagName string `json:"name"`
 
-    TagTypeId   uint16      `json:"type_id"`
-    TagTypeName string      `json:"type_name"`
-    Value       interface{} `json:"value"`
-    ValueBytes  []byte      `json:"value_bytes"`
+    TagTypeId   TagTypePrimitive `json:"type_id"`
+    TagTypeName string           `json:"type_name"`
+    Value       interface{}      `json:"value"`
+    ValueBytes  []byte           `json:"value_bytes"`
 
     ChildIfdPath string `json:"child_ifd_path"`
 }

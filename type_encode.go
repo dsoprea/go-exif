@@ -1,8 +1,8 @@
 package exif
 
 import (
-    "reflect"
     "bytes"
+    "reflect"
 
     "encoding/binary"
 
@@ -13,14 +13,12 @@ var (
     typeEncodeLogger = log.NewLogger("exif.type_encode")
 )
 
-
 // EncodedData encapsulates the compound output of an encoding operation.
 type EncodedData struct {
-    Type uint16
-    Encoded []byte
+    Type      TagTypePrimitive
+    Encoded   []byte
     UnitCount uint32
 }
-
 
 type ValueEncoder struct {
     byteOrder binary.ByteOrder
@@ -31,7 +29,6 @@ func NewValueEncoder(byteOrder binary.ByteOrder) *ValueEncoder {
         byteOrder: byteOrder,
     }
 }
-
 
 func (ve *ValueEncoder) encodeBytes(value []uint8) (ed EncodedData, err error) {
     ed.Type = TypeByte
@@ -81,10 +78,10 @@ func (ve *ValueEncoder) encodeShorts(value []uint16) (ed EncodedData, err error)
     }()
 
     ed.UnitCount = uint32(len(value))
-    ed.Encoded = make([]byte, ed.UnitCount * 2)
+    ed.Encoded = make([]byte, ed.UnitCount*2)
 
     for i := uint32(0); i < ed.UnitCount; i++ {
-// TODO(dustin): We have a ton of duplication in how we handle the byte-orders and the inherent risk of accidentally doing something inconsistently. Move this to reusable code.
+        // TODO(dustin): We have a ton of duplication in how we handle the byte-orders and the inherent risk of accidentally doing something inconsistently. Move this to reusable code.
         if ve.byteOrder == binary.BigEndian {
             binary.BigEndian.PutUint16(ed.Encoded[i*2:(i+1)*2], value[i])
         } else {
@@ -105,7 +102,7 @@ func (ve *ValueEncoder) encodeLongs(value []uint32) (ed EncodedData, err error) 
     }()
 
     ed.UnitCount = uint32(len(value))
-    ed.Encoded = make([]byte, ed.UnitCount * 4)
+    ed.Encoded = make([]byte, ed.UnitCount*4)
 
     for i := uint32(0); i < ed.UnitCount; i++ {
         if ve.byteOrder == binary.BigEndian {
@@ -128,7 +125,7 @@ func (ve *ValueEncoder) encodeRationals(value []Rational) (ed EncodedData, err e
     }()
 
     ed.UnitCount = uint32(len(value))
-    ed.Encoded = make([]byte, ed.UnitCount * 8)
+    ed.Encoded = make([]byte, ed.UnitCount*8)
 
     for i := uint32(0); i < ed.UnitCount; i++ {
         if ve.byteOrder == binary.BigEndian {
@@ -154,7 +151,7 @@ func (ve *ValueEncoder) encodeSignedLongs(value []int32) (ed EncodedData, err er
 
     ed.UnitCount = uint32(len(value))
 
-    b := bytes.NewBuffer(make([]byte, 0, 8 * ed.UnitCount))
+    b := bytes.NewBuffer(make([]byte, 0, 8*ed.UnitCount))
 
     for i := uint32(0); i < ed.UnitCount; i++ {
         if ve.byteOrder == binary.BigEndian {
@@ -181,7 +178,7 @@ func (ve *ValueEncoder) encodeSignedRationals(value []SignedRational) (ed Encode
 
     ed.UnitCount = uint32(len(value))
 
-    b := bytes.NewBuffer(make([]byte, 0, 8 * ed.UnitCount))
+    b := bytes.NewBuffer(make([]byte, 0, 8*ed.UnitCount))
 
     for i := uint32(0); i < ed.UnitCount; i++ {
         if ve.byteOrder == binary.BigEndian {

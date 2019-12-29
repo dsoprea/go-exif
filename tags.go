@@ -59,7 +59,7 @@ type IndexedTag struct {
 	Id      uint16
 	Name    string
 	IfdPath string
-	Type    uint16
+	Type    TagTypePrimitive
 }
 
 func (it *IndexedTag) String() string {

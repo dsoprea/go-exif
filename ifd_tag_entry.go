@@ -16,7 +16,7 @@ var (
 type IfdTagEntry struct {
 	TagId          uint16
 	TagIndex       int
-	TagType        uint16
+	TagType        TagTypePrimitive
 	UnitCount      uint32
 	ValueOffset    uint32
 	RawValueOffset []byte
@@ -121,7 +121,7 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 	}
 
 	originalType := NewTagType(ite.TagType, byteOrder)
-	byteCount := uint32(originalType.Size()) * ite.UnitCount
+	byteCount := uint32(originalType.Type().Size()) * ite.UnitCount
 
 	tt := NewTagType(TypeByte, byteOrder)
 

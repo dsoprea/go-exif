@@ -12,18 +12,43 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
-const (
-    TypeByte           = uint16(1)
-    TypeAscii          = uint16(2)
-    TypeShort          = uint16(3)
-    TypeLong           = uint16(4)
-    TypeRational       = uint16(5)
-    TypeUndefined      = uint16(7)
-    TypeSignedLong     = uint16(9)
-    TypeSignedRational = uint16(10)
+type TagTypePrimitive uint16
 
-    // Custom, for our purposes.
-    TypeAsciiNoNul = uint16(0xf0)
+func (tagType TagTypePrimitive) Size() int {
+    if tagType == TypeByte {
+        return 1
+    } else if tagType == TypeAscii || tagType == TypeAsciiNoNul {
+        return 1
+    } else if tagType == TypeShort {
+        return 2
+    } else if tagType == TypeLong {
+        return 4
+    } else if tagType == TypeRational {
+        return 8
+    } else if tagType == TypeSignedLong {
+        return 4
+    } else if tagType == TypeSignedRational {
+        return 8
+    } else {
+        log.Panicf("can not determine tag-value size for type (%d): [%s]", tagType, TypeNames[tagType])
+
+        // Never called.
+        return 0
+    }
+}
+
+const (
+    TypeByte           TagTypePrimitive = 1
+    TypeAscii                           = 2
+    TypeShort                           = 3
+    TypeLong                            = 4
+    TypeRational                        = 5
+    TypeUndefined                       = 7
+    TypeSignedLong                      = 9
+    TypeSignedRational                  = 10
+
+    // TypeAsciiNoNul is just a pseudo-type, for our own purposes.
+    TypeAsciiNoNul = 0xf0
 )
 
 var (
@@ -32,7 +57,7 @@ var (
 
 var (
     // TODO(dustin): Rename TypeNames() to typeNames() and add getter.
-    TypeNames = map[uint16]string{
+    TypeNames = map[TagTypePrimitive]string{
         TypeByte:           "BYTE",
         TypeAscii:          "ASCII",
         TypeShort:          "SHORT",
@@ -45,7 +70,7 @@ var (
         TypeAsciiNoNul: "_ASCII_NO_NUL",
     }
 
-    TypeNamesR = map[string]uint16{}
+    TypeNamesR = map[string]TagTypePrimitive{}
 )
 
 var (
@@ -74,12 +99,12 @@ type SignedRational struct {
 }
 
 type TagType struct {
-    tagType   uint16
+    tagType   TagTypePrimitive
     name      string
     byteOrder binary.ByteOrder
 }
 
-func NewTagType(tagType uint16, byteOrder binary.ByteOrder) TagType {
+func NewTagType(tagType TagTypePrimitive, byteOrder binary.ByteOrder) TagType {
     name, found := TypeNames[tagType]
     if found == false {
         log.Panicf("tag-type not valid: 0x%04x", tagType)
@@ -100,7 +125,7 @@ func (tt TagType) Name() string {
     return tt.name
 }
 
-func (tt TagType) Type() uint16 {
+func (tt TagType) Type() TagTypePrimitive {
     return tt.tagType
 }
 
@@ -108,37 +133,20 @@ func (tt TagType) ByteOrder() binary.ByteOrder {
     return tt.byteOrder
 }
 
+// DEPRECATED(dustin): `(TagTypePrimitive).Size()` should be used, directly.
 func (tt TagType) Size() int {
-    return TagTypeSize(tt.Type())
+    return tt.Type().Size()
 }
 
-func TagTypeSize(tagType uint16) int {
-    if tagType == TypeByte {
-        return 1
-    } else if tagType == TypeAscii || tagType == TypeAsciiNoNul {
-        return 1
-    } else if tagType == TypeShort {
-        return 2
-    } else if tagType == TypeLong {
-        return 4
-    } else if tagType == TypeRational {
-        return 8
-    } else if tagType == TypeSignedLong {
-        return 4
-    } else if tagType == TypeSignedRational {
-        return 8
-    } else {
-        log.Panicf("can not determine tag-value size for type (%d): [%s]", tagType, TypeNames[tagType])
-
-        // Never called.
-        return 0
-    }
+// DEPRECATED(dustin): `(TagTypePrimitive).Size()` should be used, directly.
+func TagTypeSize(tagType TagTypePrimitive) int {
+    return tagType.Size()
 }
 
 // valueIsEmbedded will return a boolean indicating whether the value should be
 // found directly within the IFD entry or an offset to somewhere else.
 func (tt TagType) valueIsEmbedded(unitCount uint32) bool {
-    return (tt.Size() * int(unitCount)) <= 4
+    return (tt.tagType.Size() * int(unitCount)) <= 4
 }
 
 func (tt TagType) readRawEncoded(valueContext ValueContext) (rawBytes []byte, err error) {
@@ -148,11 +156,13 @@ func (tt TagType) readRawEncoded(valueContext ValueContext) (rawBytes []byte, er
         }
     }()
 
+    unitSizeRaw := uint32(tt.tagType.Size())
+
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := unitSizeRaw * valueContext.UnitCount
         return valueContext.RawValueOffset[:byteLength], nil
     } else {
-        return valueContext.AddressableData[valueContext.ValueOffset : valueContext.ValueOffset+valueContext.UnitCount*uint32(tt.Size())], nil
+        return valueContext.AddressableData[valueContext.ValueOffset : valueContext.ValueOffset+valueContext.UnitCount*unitSizeRaw], nil
     }
 }
 
@@ -169,7 +179,7 @@ func (tt TagType) ParseBytes(data []byte, unitCount uint32) (value []uint8, err 
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -192,7 +202,7 @@ func (tt TagType) ParseAscii(data []byte, unitCount uint32) (value string, err e
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -224,7 +234,7 @@ func (tt TagType) ParseAsciiNoNul(data []byte, unitCount uint32) (value string, 
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -244,7 +254,7 @@ func (tt TagType) ParseShorts(data []byte, unitCount uint32) (value []uint16, er
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -273,7 +283,7 @@ func (tt TagType) ParseLongs(data []byte, unitCount uint32) (value []uint32, err
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -302,7 +312,7 @@ func (tt TagType) ParseRationals(data []byte, unitCount uint32) (value []Rationa
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -333,7 +343,7 @@ func (tt TagType) ParseSignedLongs(data []byte, unitCount uint32) (value []int32
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -366,7 +376,7 @@ func (tt TagType) ParseSignedRationals(data []byte, unitCount uint32) (value []S
 
     count := int(unitCount)
 
-    if len(data) < (tt.Size() * count) {
+    if len(data) < (tt.tagType.Size() * count) {
         log.Panic(ErrNotEnoughData)
     }
 
@@ -405,7 +415,7 @@ func (tt TagType) ReadByteValues(valueContext ValueContext) (value []byte, err e
         // In this case, the bytes normally used for the offset are actually
         // data.
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseBytes(rawValue, valueContext.UnitCount)
@@ -430,7 +440,7 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading ASCII value (embedded).")
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseAscii(rawValue, valueContext.UnitCount)
@@ -455,7 +465,7 @@ func (tt TagType) ReadAsciiNoNulValue(valueContext ValueContext) (value string, 
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading ASCII value (no-nul; embedded).")
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseAsciiNoNul(rawValue, valueContext.UnitCount)
@@ -480,7 +490,7 @@ func (tt TagType) ReadShortValues(valueContext ValueContext) (value []uint16, er
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading SHORT value (embedded).")
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseShorts(rawValue, valueContext.UnitCount)
@@ -505,7 +515,7 @@ func (tt TagType) ReadLongValues(valueContext ValueContext) (value []uint32, err
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading LONG value (embedded).")
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseLongs(rawValue, valueContext.UnitCount)
@@ -530,7 +540,7 @@ func (tt TagType) ReadRationalValues(valueContext ValueContext) (value []Rationa
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading RATIONAL value (embedded).")
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseRationals(rawValue, valueContext.UnitCount)
@@ -555,7 +565,7 @@ func (tt TagType) ReadSignedLongValues(valueContext ValueContext) (value []int32
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading SLONG value (embedded).")
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseSignedLongs(rawValue, valueContext.UnitCount)
@@ -580,7 +590,7 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
     if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading SRATIONAL value (embedded).")
 
-        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        byteLength := uint32(tt.tagType.Size()) * valueContext.UnitCount
         rawValue := valueContext.RawValueOffset[:byteLength]
 
         value, err = tt.ParseSignedRationals(rawValue, valueContext.UnitCount)
@@ -632,7 +642,7 @@ func (tt TagType) Format(rawBytes []byte, justFirst bool) (value string, err err
     // TODO(dustin): !! Add tests
 
     typeId := tt.Type()
-    typeSize := TagTypeSize(typeId)
+    typeSize := typeId.Size()
 
     if len(rawBytes)%typeSize != 0 {
         log.Panicf("byte-count (%d) does not align for [%s] type with a size of (%d) bytes", len(rawBytes), TypeNames[typeId], typeSize)

@@ -212,7 +212,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 
 	// Works for both values and child IFDs (which have an official size of
 	// LONG).
-	err = bw.WriteUint16(bt.typeId)
+	err = bw.WriteUint16(uint16(bt.typeId))
 	log.PanicIf(err)
 
 	// Write unit-count.
@@ -226,7 +226,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 		// It's a non-unknown value.Calculate the count of values of
 		// the type that we're writing and the raw bytes for the whole list.
 
-		typeSize := uint32(TagTypeSize(effectiveType))
+		typeSize := uint32(effectiveType.Size())
 
 		valueBytes := bt.value.Bytes()
 
