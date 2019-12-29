@@ -1,8 +1,8 @@
 package exif
 
 import (
-    "errors"
     "bytes"
+    "errors"
     "fmt"
     "strconv"
     "strings"
@@ -13,13 +13,13 @@ import (
 )
 
 const (
-    TypeByte = uint16(1)
-    TypeAscii = uint16(2)
-    TypeShort = uint16(3)
-    TypeLong = uint16(4)
-    TypeRational = uint16(5)
-    TypeUndefined = uint16(7)
-    TypeSignedLong = uint16(9)
+    TypeByte           = uint16(1)
+    TypeAscii          = uint16(2)
+    TypeShort          = uint16(3)
+    TypeLong           = uint16(4)
+    TypeRational       = uint16(5)
+    TypeUndefined      = uint16(7)
+    TypeSignedLong     = uint16(9)
     TypeSignedRational = uint16(10)
 
     // Custom, for our purposes.
@@ -31,20 +31,21 @@ var (
 )
 
 var (
-    TypeNames = map[uint16]string {
-        TypeByte: "BYTE",
-        TypeAscii: "ASCII",
-        TypeShort: "SHORT",
-        TypeLong: "LONG",
-        TypeRational: "RATIONAL",
-        TypeUndefined: "UNDEFINED",
-        TypeSignedLong: "SLONG",
+    // TODO(dustin): Rename TypeNames() to typeNames() and add getter.
+    TypeNames = map[uint16]string{
+        TypeByte:           "BYTE",
+        TypeAscii:          "ASCII",
+        TypeShort:          "SHORT",
+        TypeLong:           "LONG",
+        TypeRational:       "RATIONAL",
+        TypeUndefined:      "UNDEFINED",
+        TypeSignedLong:     "SLONG",
         TypeSignedRational: "SRATIONAL",
 
         TypeAsciiNoNul: "_ASCII_NO_NUL",
     }
 
-    TypeNamesR = map[string]uint16 {}
+    TypeNamesR = map[string]uint16{}
 )
 
 var (
@@ -62,27 +63,19 @@ var (
     ErrUnhandledUnknownTypedTag = errors.New("not a standard unknown-typed tag")
 )
 
-
 type Rational struct {
-    Numerator uint32
+    Numerator   uint32
     Denominator uint32
 }
 
 type SignedRational struct {
-    Numerator int32
+    Numerator   int32
     Denominator int32
 }
 
-func init() {
-    for typeId, typeName := range TypeNames {
-        TypeNamesR[typeName] = typeId
-    }
-}
-
-
 type TagType struct {
-    tagType uint16
-    name string
+    tagType   uint16
+    name      string
     byteOrder binary.ByteOrder
 }
 
@@ -93,8 +86,8 @@ func NewTagType(tagType uint16, byteOrder binary.ByteOrder) TagType {
     }
 
     return TagType{
-        tagType: tagType,
-        name: name,
+        tagType:   tagType,
+        name:      name,
         byteOrder: byteOrder,
     }
 }
@@ -142,10 +135,25 @@ func TagTypeSize(tagType uint16) int {
     }
 }
 
-// ValueIsEmbedded will return a boolean indicating whether the value should be
+// valueIsEmbedded will return a boolean indicating whether the value should be
 // found directly within the IFD entry or an offset to somewhere else.
-func (tt TagType) ValueIsEmbedded(unitCount uint32) bool {
+func (tt TagType) valueIsEmbedded(unitCount uint32) bool {
     return (tt.Size() * int(unitCount)) <= 4
+}
+
+func (tt TagType) readRawEncoded(valueContext ValueContext) (rawBytes []byte, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        return valueContext.RawValueOffset[:byteLength], nil
+    } else {
+        return valueContext.AddressableData[valueContext.ValueOffset : valueContext.ValueOffset+valueContext.UnitCount*uint32(tt.Size())], nil
+    }
 }
 
 func (tt TagType) ParseBytes(data []byte, unitCount uint32) (value []uint8, err error) {
@@ -188,7 +196,7 @@ func (tt TagType) ParseAscii(data []byte, unitCount uint32) (value string, err e
         log.Panic(ErrNotEnoughData)
     }
 
-    if len(data) == 0 || data[count - 1] != 0 {
+    if len(data) == 0 || data[count-1] != 0 {
         s := string(data[:count])
         typeLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
 
@@ -197,7 +205,7 @@ func (tt TagType) ParseAscii(data []byte, unitCount uint32) (value string, err e
         // Auto-strip the NUL from the end. It serves no purpose outside of
         // encoding semantics.
 
-        return string(data[:count - 1]), nil
+        return string(data[:count-1]), nil
     }
 }
 
@@ -302,10 +310,10 @@ func (tt TagType) ParseRationals(data []byte, unitCount uint32) (value []Rationa
     for i := 0; i < count; i++ {
         if tt.byteOrder == binary.BigEndian {
             value[i].Numerator = binary.BigEndian.Uint32(data[i*8:])
-            value[i].Denominator = binary.BigEndian.Uint32(data[i*8 + 4:])
+            value[i].Denominator = binary.BigEndian.Uint32(data[i*8+4:])
         } else {
             value[i].Numerator = binary.LittleEndian.Uint32(data[i*8:])
-            value[i].Denominator = binary.LittleEndian.Uint32(data[i*8 + 4:])
+            value[i].Denominator = binary.LittleEndian.Uint32(data[i*8+4:])
         }
     }
 
@@ -391,12 +399,16 @@ func (tt TagType) ReadByteValues(valueContext ValueContext) (value []byte, err e
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading BYTE value (embedded).")
 
         // In this case, the bytes normally used for the offset are actually
         // data.
-        value, err = tt.ParseBytes(valueContext.RawValueOffset, valueContext.UnitCount)
+
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseBytes(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading BYTE value (at offset).")
@@ -415,10 +427,13 @@ func (tt TagType) ReadAsciiValue(valueContext ValueContext) (value string, err e
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading ASCII value (embedded).")
 
-        value, err = tt.ParseAscii(valueContext.RawValueOffset, valueContext.UnitCount)
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseAscii(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading ASCII value (at offset).")
@@ -437,10 +452,13 @@ func (tt TagType) ReadAsciiNoNulValue(valueContext ValueContext) (value string, 
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading ASCII value (no-nul; embedded).")
 
-        value, err = tt.ParseAsciiNoNul(valueContext.RawValueOffset, valueContext.UnitCount)
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseAsciiNoNul(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading ASCII value (no-nul; at offset).")
@@ -459,10 +477,13 @@ func (tt TagType) ReadShortValues(valueContext ValueContext) (value []uint16, er
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading SHORT value (embedded).")
 
-        value, err = tt.ParseShorts(valueContext.RawValueOffset, valueContext.UnitCount)
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseShorts(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading SHORT value (at offset).")
@@ -481,10 +502,13 @@ func (tt TagType) ReadLongValues(valueContext ValueContext) (value []uint32, err
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading LONG value (embedded).")
 
-        value, err = tt.ParseLongs(valueContext.RawValueOffset, valueContext.UnitCount)
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseLongs(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading LONG value (at offset).")
@@ -503,10 +527,13 @@ func (tt TagType) ReadRationalValues(valueContext ValueContext) (value []Rationa
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading RATIONAL value (embedded).")
 
-        value, err = tt.ParseRationals(valueContext.RawValueOffset, valueContext.UnitCount)
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseRationals(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading RATIONAL value (at offset).")
@@ -525,10 +552,13 @@ func (tt TagType) ReadSignedLongValues(valueContext ValueContext) (value []int32
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading SLONG value (embedded).")
 
-        value, err = tt.ParseSignedLongs(valueContext.RawValueOffset, valueContext.UnitCount)
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseSignedLongs(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading SLONG value (at offset).")
@@ -547,10 +577,13 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
         }
     }()
 
-    if tt.ValueIsEmbedded(valueContext.UnitCount) == true {
+    if tt.valueIsEmbedded(valueContext.UnitCount) == true {
         typeLogger.Debugf(nil, "Reading SRATIONAL value (embedded).")
 
-        value, err = tt.ParseSignedRationals(valueContext.RawValueOffset, valueContext.UnitCount)
+        byteLength := uint32(tt.Size()) * valueContext.UnitCount
+        rawValue := valueContext.RawValueOffset[:byteLength]
+
+        value, err = tt.ParseSignedRationals(rawValue, valueContext.UnitCount)
         log.PanicIf(err)
     } else {
         typeLogger.Debugf(nil, "Reading SRATIONAL value (at offset).")
@@ -578,100 +611,138 @@ func (tt TagType) ResolveAsString(valueContext ValueContext, justFirst bool) (va
         }
     }()
 
-// TODO(dustin): Implement Resolve(), below.
-    // valueRaw, err := tt.Resolve(valueContext)
-    // log.PanicIf(err)
+    rawBytes, err := tt.readRawEncoded(valueContext)
+    log.PanicIf(err)
+
+    valueString, err := tt.Format(rawBytes, justFirst)
+    log.PanicIf(err)
+
+    return valueString, nil
+}
+
+// Format returns a stringified value for the given bytes. Automatically
+// calculates count based on type size.
+func (tt TagType) Format(rawBytes []byte, justFirst bool) (value string, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    // TODO(dustin): !! Add tests
 
     typeId := tt.Type()
+    typeSize := TagTypeSize(typeId)
+
+    if len(rawBytes)%typeSize != 0 {
+        log.Panicf("byte-count (%d) does not align for [%s] type with a size of (%d) bytes", len(rawBytes), TypeNames[typeId], typeSize)
+    }
+
+    // unitCount is the calculated unit-count. This should equal the original
+    // value from the tag (pre-resolution).
+    unitCount := uint32(len(rawBytes) / typeSize)
+
+    // Truncate the items if it's not bytes or a string and we just want the first.
+
+    valueSuffix := ""
+    if justFirst == true && unitCount > 1 && typeId != TypeByte && typeId != TypeAscii && typeId != TypeAsciiNoNul {
+        unitCount = 1
+        valueSuffix = "..."
+    }
 
     if typeId == TypeByte {
-        raw, err := tt.ReadByteValues(valueContext)
+        items, err := tt.ParseBytes(rawBytes, unitCount)
         log.PanicIf(err)
 
-        if justFirst == false {
-            return DumpBytesToString(raw), nil
-        } else if valueContext.UnitCount > 0 {
-            return fmt.Sprintf("0x%02x", raw[0]), nil
-        } else {
-            return "", nil
-        }
+        return DumpBytesToString(items), nil
     } else if typeId == TypeAscii {
-        raw, err := tt.ReadAsciiValue(valueContext)
+        phrase, err := tt.ParseAscii(rawBytes, unitCount)
         log.PanicIf(err)
 
-        return fmt.Sprintf("%s", raw), nil
+        return phrase, nil
     } else if typeId == TypeAsciiNoNul {
-        raw, err := tt.ReadAsciiNoNulValue(valueContext)
+        phrase, err := tt.ParseAsciiNoNul(rawBytes, unitCount)
         log.PanicIf(err)
 
-        return fmt.Sprintf("%s", raw), nil
+        return phrase, nil
     } else if typeId == TypeShort {
-        raw, err := tt.ReadShortValues(valueContext)
+        items, err := tt.ParseShorts(rawBytes, unitCount)
         log.PanicIf(err)
 
-        if justFirst == false {
-            return fmt.Sprintf("%v", raw), nil
-        } else if valueContext.UnitCount > 0 {
-            return fmt.Sprintf("%v", raw[0]), nil
+        if len(items) > 0 {
+            if justFirst == true {
+                return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
+            } else {
+                return fmt.Sprintf("%v", items), nil
+            }
         } else {
             return "", nil
         }
     } else if typeId == TypeLong {
-        raw, err := tt.ReadLongValues(valueContext)
+        items, err := tt.ParseLongs(rawBytes, unitCount)
         log.PanicIf(err)
 
-        if justFirst == false {
-            return fmt.Sprintf("%v", raw), nil
-        } else if valueContext.UnitCount > 0 {
-            return fmt.Sprintf("%v", raw[0]), nil
+        if len(items) > 0 {
+            if justFirst == true {
+                return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
+            } else {
+                return fmt.Sprintf("%v", items), nil
+            }
         } else {
             return "", nil
         }
     } else if typeId == TypeRational {
-        raw, err := tt.ReadRationalValues(valueContext)
+        items, err := tt.ParseRationals(rawBytes, unitCount)
         log.PanicIf(err)
 
-        parts := make([]string, len(raw))
-        for i, r := range raw {
-            parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
-        }
+        if len(items) > 0 {
+            parts := make([]string, len(items))
+            for i, r := range items {
+                parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
+            }
 
-        if justFirst == false {
-            return fmt.Sprintf("%v", parts), nil
-        } else if valueContext.UnitCount > 0 {
-            return parts[0], nil
+            if justFirst == true {
+                return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
+            } else {
+                return fmt.Sprintf("%v", parts), nil
+            }
         } else {
             return "", nil
         }
     } else if typeId == TypeSignedLong {
-        raw, err := tt.ReadSignedLongValues(valueContext)
+        items, err := tt.ParseSignedLongs(rawBytes, unitCount)
         log.PanicIf(err)
 
-        if justFirst == false {
-            return fmt.Sprintf("%v", raw), nil
-        } else if valueContext.UnitCount > 0 {
-            return fmt.Sprintf("%v", raw[0]), nil
+        if len(items) > 0 {
+            if justFirst == true {
+                return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
+            } else {
+                return fmt.Sprintf("%v", items), nil
+            }
         } else {
             return "", nil
         }
     } else if typeId == TypeSignedRational {
-        raw, err := tt.ReadSignedRationalValues(valueContext)
+        items, err := tt.ParseSignedRationals(rawBytes, unitCount)
         log.PanicIf(err)
 
-        parts := make([]string, len(raw))
-        for i, r := range raw {
+        parts := make([]string, len(items))
+        for i, r := range items {
             parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
         }
 
-        if justFirst == false {
-            return fmt.Sprintf("%v", raw), nil
-        } else if valueContext.UnitCount > 0 {
-            return parts[0], nil
+        if len(items) > 0 {
+            if justFirst == true {
+                return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
+            } else {
+                return fmt.Sprintf("%v", parts), nil
+            }
         } else {
             return "", nil
         }
     } else {
-        log.Panicf("value of type (%d) [%s] is unparseable", typeId, tt)
+        // Affects only "unknown" values, in general.
+        log.Panicf("value of type (%d) [%s] can not be formatted into string", typeId, tt)
 
         // Never called.
         return "", nil
@@ -755,7 +826,7 @@ func (tt TagType) FromString(valueString string) (value interface{}, err error) 
     }()
 
     if tt.tagType == TypeUndefined {
-// TODO(dustin): Circle back to this.
+        // TODO(dustin): Circle back to this.
         log.Panicf("undefined-type values are not supported")
     }
 
@@ -787,7 +858,7 @@ func (tt TagType) FromString(valueString string) (value interface{}, err error) 
         log.PanicIf(err)
 
         return Rational{
-            Numerator: uint32(numerator),
+            Numerator:   uint32(numerator),
             Denominator: uint32(denominator),
         }, nil
     } else if tt.tagType == TypeSignedLong {
@@ -805,11 +876,17 @@ func (tt TagType) FromString(valueString string) (value interface{}, err error) 
         log.PanicIf(err)
 
         return SignedRational{
-            Numerator: int32(numerator),
+            Numerator:   int32(numerator),
             Denominator: int32(denominator),
         }, nil
     }
 
     log.Panicf("from-string encoding for type not supported; this shouldn't happen: (%d)", tt.Type())
     return nil, nil
+}
+
+func init() {
+    for typeId, typeName := range TypeNames {
+        TypeNamesR[typeName] = typeId
+    }
 }

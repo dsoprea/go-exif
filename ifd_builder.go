@@ -59,6 +59,8 @@ func NewIfdBuilderTagValueFromIfdBuilder(ib *IfdBuilder) *IfdBuilderTagValue {
 	}
 }
 
+// IsBytes returns true if the bytes are populated. This is always the case
+// when we're loaded from a tag in an existing IFD.
 func (ibtv IfdBuilderTagValue) IsBytes() bool {
 	return ibtv.valueBytes != nil
 }
@@ -94,14 +96,19 @@ type BuilderTag struct {
 	// child IFDs), or an IfdTagEntry instance representing an existing,
 	// previously-stored tag.
 	value *IfdBuilderTagValue
+
+	// byteOrder is the byte order. It's chiefly/originally here to support
+	// printing the value.
+	byteOrder binary.ByteOrder
 }
 
-func NewBuilderTag(ifdPath string, tagId uint16, typeId uint16, value *IfdBuilderTagValue) *BuilderTag {
+func NewBuilderTag(ifdPath string, tagId uint16, typeId uint16, value *IfdBuilderTagValue, byteOrder binary.ByteOrder) *BuilderTag {
 	return &BuilderTag{
-		ifdPath: ifdPath,
-		tagId:   tagId,
-		typeId:  typeId,
-		value:   value,
+		ifdPath:   ifdPath,
+		tagId:     tagId,
+		typeId:    typeId,
+		value:     value,
+		byteOrder: byteOrder,
 	}
 }
 
@@ -119,7 +126,20 @@ func (bt *BuilderTag) Value() (value *IfdBuilderTagValue) {
 }
 
 func (bt *BuilderTag) String() string {
-	return fmt.Sprintf("BuilderTag<IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ifdPath, bt.tagId, TypeNames[bt.typeId], bt.value)
+	var valueString string
+
+	if bt.value.IsBytes() == true {
+		tt := NewTagType(bt.typeId, bt.byteOrder)
+
+		var err error
+
+		valueString, err = tt.Format(bt.value.Bytes(), false)
+		log.PanicIf(err)
+	} else {
+		valueString = fmt.Sprintf("%v", bt.value)
+	}
+
+	return fmt.Sprintf("BuilderTag<IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ifdPath, bt.tagId, TypeNames[bt.typeId], valueString)
 }
 
 func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (err error) {
@@ -179,7 +199,8 @@ func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.Byte
 		ifdPath,
 		it.Id,
 		typeId,
-		tagValue)
+		tagValue,
+		byteOrder)
 }
 
 type IfdBuilder struct {
@@ -513,7 +534,13 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 	ib.thumbnailData = data
 
 	ibtvfb := NewIfdBuilderTagValueFromBytes(ib.thumbnailData)
-	offsetBt := NewBuilderTag(ib.ifdPath, ThumbnailOffsetTagId, TypeLong, ibtvfb)
+	offsetBt :=
+		NewBuilderTag(
+			ib.ifdPath,
+			ThumbnailOffsetTagId,
+			TypeLong,
+			ibtvfb,
+			ib.byteOrder)
 
 	err = ib.Set(offsetBt)
 	log.PanicIf(err)
@@ -1051,7 +1078,12 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				// (nor does it matter since this is just a temporary
 				// placeholder, in this situation).
 				value := NewIfdBuilderTagValueFromBytes([]byte{0, 0, 0, 0})
-				bt = NewBuilderTag(ite.IfdPath, ite.TagId, ite.TagType, value)
+				bt = NewBuilderTag(
+					ite.IfdPath,
+					ite.TagId,
+					ite.TagType,
+					value,
+					ib.byteOrder)
 			} else {
 				// Figure out which of the child-IFDs that are associated with
 				// this IFD represents this specific child IFD.
@@ -1107,7 +1139,12 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				value = NewIfdBuilderTagValueFromBytes(valueBytes)
 			}
 
-			bt = NewBuilderTag(ifd.IfdPath, ite.TagId, ite.TagType, value)
+			bt = NewBuilderTag(
+				ifd.IfdPath,
+				ite.TagId,
+				ite.TagType,
+				value,
+				ib.byteOrder)
 		}
 
 		err := ib.add(bt)

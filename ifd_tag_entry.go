@@ -125,7 +125,7 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 
 	tt := NewTagType(TypeByte, byteOrder)
 
-	if tt.ValueIsEmbedded(byteCount) == true {
+	if tt.valueIsEmbedded(byteCount) == true {
 		iteLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
 
 		// In this case, the bytes normally used for the offset are actually

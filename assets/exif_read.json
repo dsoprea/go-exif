@@ -593,8 +593,8 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 4,
-        "value": "16/1",
-        "value_string": "16/1"
+        "value": "16/1...",
+        "value_string": "16/1..."
     },
     {
         "ifd_path": "IFD/Exif",
@@ -641,8 +641,8 @@
         "tag_type_id": 1,
         "tag_type_name": "BYTE",
         "unit_count": 4,
-        "value": "0x02",
-        "value_string": "0x02"
+        "value": "02 03 00 00",
+        "value_string": "02 03 00 00"
     },
     {
         "ifd_path": "IFD",
