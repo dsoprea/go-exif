@@ -68,6 +68,8 @@ func (ibtv IfdBuilderTagValue) IsBytes() bool {
 func (ibtv IfdBuilderTagValue) Bytes() []byte {
 	if ibtv.IsBytes() == false {
 		log.Panicf("this tag is not a byte-slice value")
+	} else if ibtv.IsIb() == true {
+		log.Panicf("this tag is an IFD-builder value not a byte-slice")
 	}
 
 	return ibtv.valueBytes
@@ -80,6 +82,8 @@ func (ibtv IfdBuilderTagValue) IsIb() bool {
 func (ibtv IfdBuilderTagValue) Ib() *IfdBuilder {
 	if ibtv.IsIb() == false {
 		log.Panicf("this tag is not an IFD-builder value")
+	} else if ibtv.IsBytes() == true {
+		log.Panicf("this tag is a byte-slice, not a IFD-builder")
 	}
 
 	return ibtv.ib
@@ -602,7 +606,13 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 					}
 				}
 
-				fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, tag)
+				value := tag.Value()
+
+				if value.IsIb() == true {
+					fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, value.Ib())
+				} else {
+					fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, tag)
+				}
 
 				if isChildIb == true {
 					if tag.value.IsIb() == false {
