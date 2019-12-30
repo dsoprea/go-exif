@@ -81,12 +81,7 @@ func (ve *ValueEncoder) encodeShorts(value []uint16) (ed EncodedData, err error)
     ed.Encoded = make([]byte, ed.UnitCount*2)
 
     for i := uint32(0); i < ed.UnitCount; i++ {
-        // TODO(dustin): We have a ton of duplication in how we handle the byte-orders and the inherent risk of accidentally doing something inconsistently. Move this to reusable code.
-        if ve.byteOrder == binary.BigEndian {
-            binary.BigEndian.PutUint16(ed.Encoded[i*2:(i+1)*2], value[i])
-        } else {
-            binary.LittleEndian.PutUint16(ed.Encoded[i*2:(i+1)*2], value[i])
-        }
+        ve.byteOrder.PutUint16(ed.Encoded[i*2:(i+1)*2], value[i])
     }
 
     ed.Type = TypeShort
@@ -105,11 +100,7 @@ func (ve *ValueEncoder) encodeLongs(value []uint32) (ed EncodedData, err error) 
     ed.Encoded = make([]byte, ed.UnitCount*4)
 
     for i := uint32(0); i < ed.UnitCount; i++ {
-        if ve.byteOrder == binary.BigEndian {
-            binary.BigEndian.PutUint32(ed.Encoded[i*4:(i+1)*4], value[i])
-        } else {
-            binary.LittleEndian.PutUint32(ed.Encoded[i*4:(i+1)*4], value[i])
-        }
+        ve.byteOrder.PutUint32(ed.Encoded[i*4:(i+1)*4], value[i])
     }
 
     ed.Type = TypeLong
@@ -128,13 +119,8 @@ func (ve *ValueEncoder) encodeRationals(value []Rational) (ed EncodedData, err e
     ed.Encoded = make([]byte, ed.UnitCount*8)
 
     for i := uint32(0); i < ed.UnitCount; i++ {
-        if ve.byteOrder == binary.BigEndian {
-            binary.BigEndian.PutUint32(ed.Encoded[i*8+0:i*8+4], value[i].Numerator)
-            binary.BigEndian.PutUint32(ed.Encoded[i*8+4:i*8+8], value[i].Denominator)
-        } else {
-            binary.LittleEndian.PutUint32(ed.Encoded[i*8+0:i*8+4], value[i].Numerator)
-            binary.LittleEndian.PutUint32(ed.Encoded[i*8+4:i*8+8], value[i].Denominator)
-        }
+        ve.byteOrder.PutUint32(ed.Encoded[i*8+0:i*8+4], value[i].Numerator)
+        ve.byteOrder.PutUint32(ed.Encoded[i*8+4:i*8+8], value[i].Denominator)
     }
 
     ed.Type = TypeRational
@@ -154,13 +140,8 @@ func (ve *ValueEncoder) encodeSignedLongs(value []int32) (ed EncodedData, err er
     b := bytes.NewBuffer(make([]byte, 0, 8*ed.UnitCount))
 
     for i := uint32(0); i < ed.UnitCount; i++ {
-        if ve.byteOrder == binary.BigEndian {
-            err := binary.Write(b, binary.BigEndian, value[i])
-            log.PanicIf(err)
-        } else {
-            err := binary.Write(b, binary.LittleEndian, value[i])
-            log.PanicIf(err)
-        }
+        err := binary.Write(b, ve.byteOrder, value[i])
+        log.PanicIf(err)
     }
 
     ed.Type = TypeSignedLong
@@ -181,19 +162,11 @@ func (ve *ValueEncoder) encodeSignedRationals(value []SignedRational) (ed Encode
     b := bytes.NewBuffer(make([]byte, 0, 8*ed.UnitCount))
 
     for i := uint32(0); i < ed.UnitCount; i++ {
-        if ve.byteOrder == binary.BigEndian {
-            err := binary.Write(b, binary.BigEndian, value[i].Numerator)
-            log.PanicIf(err)
+        err := binary.Write(b, ve.byteOrder, value[i].Numerator)
+        log.PanicIf(err)
 
-            err = binary.Write(b, binary.BigEndian, value[i].Denominator)
-            log.PanicIf(err)
-        } else {
-            err := binary.Write(b, binary.LittleEndian, value[i].Numerator)
-            log.PanicIf(err)
-
-            err = binary.Write(b, binary.LittleEndian, value[i].Denominator)
-            log.PanicIf(err)
-        }
+        err = binary.Write(b, ve.byteOrder, value[i].Denominator)
+        log.PanicIf(err)
     }
 
     ed.Type = TypeSignedRational

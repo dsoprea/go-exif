@@ -87,11 +87,7 @@ func (ife *IfdTagEnumerator) getUint16() (value uint16, raw []byte, err error) {
 		offset += n
 	}
 
-	if ife.byteOrder == binary.BigEndian {
-		value = binary.BigEndian.Uint16(raw)
-	} else {
-		value = binary.LittleEndian.Uint16(raw)
-	}
+	value = ife.byteOrder.Uint16(raw)
 
 	return value, raw, nil
 }
@@ -117,11 +113,7 @@ func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
 		offset += n
 	}
 
-	if ife.byteOrder == binary.BigEndian {
-		value = binary.BigEndian.Uint32(raw)
-	} else {
-		value = binary.LittleEndian.Uint32(raw)
-	}
+	value = ife.byteOrder.Uint32(raw)
 
 	return value, raw, nil
 }
