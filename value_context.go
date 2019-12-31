@@ -28,9 +28,12 @@ type ValueContext struct {
 	// undefinedValueUnitCount is the effective unit-count to use if this is an
 	// "undefined" value.
 	undefinedValueUnitCount uint32
+
+	ifdPath string
+	tagId   uint16
 }
 
-func newValueContext(unitCount, valueOffset uint32, rawValueOffset, addressableData []byte, tagType TagTypePrimitive, byteOrder binary.ByteOrder) *ValueContext {
+func newValueContext(ifdPath string, tagId uint16, unitCount, valueOffset uint32, rawValueOffset, addressableData []byte, tagType TagTypePrimitive, byteOrder binary.ByteOrder) *ValueContext {
 	return &ValueContext{
 		unitCount:       unitCount,
 		valueOffset:     valueOffset,
@@ -39,7 +42,22 @@ func newValueContext(unitCount, valueOffset uint32, rawValueOffset, addressableD
 
 		tagType:   tagType,
 		byteOrder: byteOrder,
+
+		ifdPath: ifdPath,
+		tagId:   tagId,
 	}
+}
+
+func newValueContextFromTag(ite *IfdTagEntry, addressableData []byte, byteOrder binary.ByteOrder) *ValueContext {
+	return newValueContext(
+		ite.IfdPath,
+		ite.TagId,
+		ite.UnitCount,
+		ite.ValueOffset,
+		ite.RawValueOffset,
+		addressableData,
+		ite.TagType,
+		byteOrder)
 }
 
 func (vc *ValueContext) SetUnknownValueParameters(tagType TagTypePrimitive, unitCount uint32) {

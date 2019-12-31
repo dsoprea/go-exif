@@ -210,6 +210,18 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	return tag, nil
 }
 
+func (ie *IfdEnumerate) GetValueContext(ite *IfdTagEntry) *ValueContext {
+
+	// TODO(dustin): Add test
+
+	addressableData := ie.exifData[ExifAddressableAreaStart:]
+
+	return newValueContextFromTag(
+		ite,
+		addressableData,
+		ie.byteOrder)
+}
+
 func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, isUnhandledUnknown bool, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -225,15 +237,7 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 	// (obviously). However, here, in order to produce the list of bytes, we
 	// need to coerce whatever `UndefinedValue()` returns.
 	if ite.TagType == TypeUndefined {
-		valueContext :=
-			newValueContext(
-				ite.UnitCount,
-				ite.ValueOffset,
-				ite.RawValueOffset,
-				addressableData,
-				ite.TagType,
-				ie.byteOrder,
-			)
+		valueContext := ie.GetValueContext(ite)
 
 		value, err := UndefinedValue(ite.IfdPath, ite.TagId, valueContext, ie.byteOrder)
 		if err != nil {
@@ -372,16 +376,9 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnum
 		if visitorWrapper != nil {
 			tt := NewTagType(tag.TagType, ie.byteOrder)
 
-			vc :=
-				newValueContext(
-					tag.UnitCount,
-					tag.ValueOffset,
-					tag.RawValueOffset,
-					ie.exifData[ExifAddressableAreaStart:],
-					tag.TagType,
-					ie.byteOrder)
+			valueContext := ie.GetValueContext(tag)
 
-			err := visitorWrapper.Visit(fqIfdPath, ifdIndex, tag.TagId, tt, vc)
+			err := visitorWrapper.Visit(fqIfdPath, ifdIndex, tag.TagId, tt, valueContext)
 			log.PanicIf(err)
 		}
 

@@ -43,34 +43,31 @@ type IfdTagEntry struct {
 	isUnhandledUnknown bool
 }
 
-func (ite IfdTagEntry) String() string {
+func (ite *IfdTagEntry) String() string {
 	return fmt.Sprintf("IfdTagEntry<TAG-IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.IfdPath, ite.TagId, TypeNames[ite.TagType], ite.UnitCount)
 }
 
 // ValueString renders a string from whatever the value in this tag is.
-func (ite IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.ByteOrder) (value string, err error) {
+func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.ByteOrder) (value string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	vc :=
-		newValueContext(
-			ite.UnitCount,
-			ite.ValueOffset,
-			ite.RawValueOffset,
+	valueContext :=
+		newValueContextFromTag(
+			ite,
 			addressableData,
-			ite.TagType,
 			byteOrder)
 
 	if ite.TagType == TypeUndefined {
-		valueRaw, err := UndefinedValue(ite.IfdPath, ite.TagId, vc, byteOrder)
+		valueRaw, err := UndefinedValue(ite.IfdPath, ite.TagId, valueContext, byteOrder)
 		log.PanicIf(err)
 
 		value = fmt.Sprintf("%v", valueRaw)
 	} else {
-		value, err = vc.Format()
+		value, err = valueContext.Format()
 		log.PanicIf(err)
 	}
 
@@ -78,7 +75,7 @@ func (ite IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.Byte
 }
 
 // ValueBytes renders a specific list of bytes from the value in this tag.
-func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteOrder) (value []byte, err error) {
+func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteOrder) (value []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -92,12 +89,9 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 	// need to coerce whatever `UndefinedValue()` returns.
 	if ite.TagType == TypeUndefined {
 		valueContext :=
-			newValueContext(
-				ite.UnitCount,
-				ite.ValueOffset,
-				ite.RawValueOffset,
+			newValueContextFromTag(
+				ite,
 				addressableData,
-				ite.TagType,
 				byteOrder)
 
 		value, err := UndefinedValue(ite.IfdPath, ite.TagId, valueContext, byteOrder)
@@ -145,29 +139,26 @@ func (ite IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteO
 }
 
 // Value returns the specific, parsed, typed value from the tag.
-func (ite IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder) (value interface{}, err error) {
+func (ite *IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder) (value interface{}, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	vc :=
-		newValueContext(
-			ite.UnitCount,
-			ite.ValueOffset,
-			ite.RawValueOffset,
+	valueContext :=
+		newValueContextFromTag(
+			ite,
 			addressableData,
-			ite.TagType,
 			byteOrder)
 
 	if ite.TagType == TypeUndefined {
-		value, err = UndefinedValue(ite.IfdPath, ite.TagId, vc, byteOrder)
+		value, err = UndefinedValue(ite.IfdPath, ite.TagId, valueContext, byteOrder)
 		log.PanicIf(err)
 	} else {
 		tt := NewTagType(ite.TagType, byteOrder)
 
-		value, err = tt.Resolve(vc)
+		value, err = tt.Resolve(valueContext)
 		log.PanicIf(err)
 	}
 
