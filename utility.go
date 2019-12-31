@@ -182,18 +182,10 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
             }
 
             value, err := ifd.TagValue(ite)
-            if err != nil {
-                if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
-                    value = UnparseableUnknownTagValuePlaceholder
-                } else {
-                    log.Panic(err)
-                }
-            }
+            log.PanicIf(err)
 
             valueBytes, err := ifd.TagValueBytes(ite)
-            if err != nil && log.Is(err, ErrUnhandledUnknownTypedTag) == false {
-                log.Panic(err)
-            }
+            log.PanicIf(err)
 
             et := ExifTag{
                 IfdPath:      ifd.IfdPath,

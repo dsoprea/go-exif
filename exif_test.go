@@ -82,13 +82,9 @@ func TestVisit(t *testing.T) {
 		valueString := ""
 		if tagType.Type() == TypeUndefined {
 			value, err := valueContext.Undefined()
-			if log.Is(err, ErrUnhandledUnknownTypedTag) {
-				valueString = "!UNDEFINED!"
-			} else if err != nil {
-				log.Panic(err)
-			} else {
-				valueString = fmt.Sprintf("%v", value)
-			}
+			log.PanicIf(err)
+
+			valueString = fmt.Sprintf("%v", value)
 		} else {
 			valueString, err = valueContext.FormatFirst()
 			log.PanicIf(err)

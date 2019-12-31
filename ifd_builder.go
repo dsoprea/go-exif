@@ -1135,14 +1135,9 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
 				// TODO(dustin): !! Not correct. If we're adding from existing and it's an unknown-type tag that we can't parse, we're just going to be seting the placeholder even though there's nothing stopping us from just taking the raw bytes (other than some design decisions that we'd have to make in order to do this).
 
+				// TODO(dustin): !! This probably isn't correct. This will only work if the type is a one-byte type (e.g. ascii, bytes). Otherwise, we'll be reading the wrong number of bytes.
 				valueBytes, err := itevr.ValueBytes(ite)
-				if err != nil {
-					if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
-						valueBytes = []byte(UnparseableUnknownTagValuePlaceholder)
-					} else {
-						log.Panic(err)
-					}
-				}
+				log.PanicIf(err)
 
 				value = NewIfdBuilderTagValueFromBytes(valueBytes)
 			}

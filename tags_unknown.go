@@ -12,10 +12,6 @@ import (
 )
 
 const (
-	UnparseableUnknownTagValuePlaceholder = "!UNKNOWN"
-)
-
-const (
 	TagUnknownType_9298_UserComment_Encoding_ASCII     = iota
 	TagUnknownType_9298_UserComment_Encoding_JIS       = iota
 	TagUnknownType_9298_UserComment_Encoding_UNICODE   = iota
@@ -401,7 +397,4 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 
 	tutuv := TagUnknownType_UnknownValue(valueBytes)
 	return tutuv, nil
-
-	// log.Panic(ErrUnhandledUnknownTypedTag)
-	// return nil, nil
 }

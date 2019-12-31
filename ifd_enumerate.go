@@ -240,31 +240,24 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 		valueContext := ie.GetValueContext(ite)
 
 		value, err := valueContext.Undefined()
-		if err != nil {
-			if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
-				valueBytes = []byte(UnparseableUnknownTagValuePlaceholder)
-				return valueBytes, true, nil
-			} else {
-				log.Panic(err)
-			}
-		} else {
-			switch value.(type) {
-			case []byte:
-				return value.([]byte), false, nil
-			case TagUnknownType_UnknownValue:
-				b := []byte(value.(TagUnknownType_UnknownValue))
-				return b, false, nil
-			case string:
-				return []byte(value.(string)), false, nil
-			case UnknownTagValue:
-				valueBytes, err := value.(UnknownTagValue).ValueBytes()
-				log.PanicIf(err)
+		log.PanicIf(err)
 
-				return valueBytes, false, nil
-			default:
-				// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
-				log.Panicf("can not produce bytes for unknown-type tag (0x%04x) (1): [%s]", ite.TagId, reflect.TypeOf(value))
-			}
+		switch value.(type) {
+		case []byte:
+			return value.([]byte), false, nil
+		case TagUnknownType_UnknownValue:
+			b := []byte(value.(TagUnknownType_UnknownValue))
+			return b, false, nil
+		case string:
+			return []byte(value.(string)), false, nil
+		case UnknownTagValue:
+			valueBytes, err := value.(UnknownTagValue).ValueBytes()
+			log.PanicIf(err)
+
+			return valueBytes, false, nil
+		default:
+			// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
+			log.Panicf("can not produce bytes for unknown-type tag (0x%04x) (1): [%s]", ite.TagId, reflect.TypeOf(value))
 		}
 	} else {
 		originalType := NewTagType(ite.TagType, ie.byteOrder)
@@ -716,13 +709,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 				var err error
 
 				value, err = ifd.TagValue(tag)
-				if err != nil {
-					if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
-						value = UnparseableUnknownTagValuePlaceholder
-					} else {
-						log.Panic(err)
-					}
-				}
+				log.PanicIf(err)
 			}
 
 			fmt.Printf("%s - TAG: %s NAME=[%s] VALUE=[%v]\n", indent, tag, tagName, value)
