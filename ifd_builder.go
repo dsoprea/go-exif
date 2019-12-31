@@ -1121,9 +1121,15 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				bt = ib.NewBuilderTagFromBuilder(childIb)
 			}
 		} else {
+			// Non-IFD tag.
+
 			var value *IfdBuilderTagValue
 
+			// TODO(dustin): !! We should be able to dump (i.e. deimplement) the concept of itevr's and exclusively use ValueContext, now.
+
 			if itevr == nil {
+				// TODO(dustin): !! This might not make sense. The undefined-type data will just likely now have invalid value.
+
 				// rawValueOffsetCopy is our own private copy of the original data.
 				// It should always be four-bytes, but just copy whatever there is.
 				rawValueOffsetCopy := make([]byte, len(ite.RawValueOffset))
@@ -1131,15 +1137,44 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
 				value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
 			} else {
-				var err error
+				valueContext := newValueContextFromTag(
+					ite,
+					ifd.addressableData,
+					ifd.ByteOrder)
 
-				// TODO(dustin): !! Not correct. If we're adding from existing and it's an unknown-type tag that we can't parse, we're just going to be seting the placeholder even though there's nothing stopping us from just taking the raw bytes (other than some design decisions that we'd have to make in order to do this).
+				var rawBytes []byte
 
-				// TODO(dustin): !! This probably isn't correct. This will only work if the type is a one-byte type (e.g. ascii, bytes). Otherwise, we'll be reading the wrong number of bytes.
-				valueBytes, err := itevr.ValueBytes(ite)
-				log.PanicIf(err)
+				if ite.TagType == TypeUndefined {
+					// It's an undefined-type value. Try to process, or skip if
+					// we don't know how to.
 
-				value = NewIfdBuilderTagValueFromBytes(valueBytes)
+					x, err := valueContext.Undefined()
+					log.PanicIf(err)
+
+					// TODO(dustin): !! Add test for this.
+					_, isUnknownUndefined := x.(TagUnknownType_UnknownValue)
+
+					if isUnknownUndefined == true {
+						continue
+					}
+
+					undefined, ok := x.(UnknownTagValue)
+					if ok != true {
+						log.Panicf("unexpected value returned from undefined-value processor")
+					}
+
+					rawBytes, err = undefined.ValueBytes()
+					log.PanicIf(err)
+				} else {
+					// It's a value with a standard type.
+
+					var err error
+
+					rawBytes, err = valueContext.readRawEncoded()
+					log.PanicIf(err)
+				}
+
+				value = NewIfdBuilderTagValueFromBytes(rawBytes)
 			}
 
 			bt = NewBuilderTag(
