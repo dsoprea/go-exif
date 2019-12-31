@@ -235,11 +235,11 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 	// (`ValueString`) is easy because we can just pass everything to
 	// `Sprintf()`. Returning the raw, typed value (`Value`) is easy
 	// (obviously). However, here, in order to produce the list of bytes, we
-	// need to coerce whatever `UndefinedValue()` returns.
+	// need to coerce whatever `Undefined()` returns.
 	if ite.TagType == TypeUndefined {
 		valueContext := ie.GetValueContext(ite)
 
-		value, err := UndefinedValue(ite.IfdPath, ite.TagId, valueContext, ie.byteOrder)
+		value, err := valueContext.Undefined()
 		if err != nil {
 			if log.Is(err, ErrUnhandledUnknownTypedTag) == true {
 				valueBytes = []byte(UnparseableUnknownTagValuePlaceholder)

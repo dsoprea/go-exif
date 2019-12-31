@@ -326,7 +326,7 @@ func (tt TagType) ReadSignedRationalValues(valueContext ValueContext) (value []S
 //
 // Since this method lacks the information to process unknown-type tags (e.g.
 // byte-order, tag-ID, IFD type), it will return an error if attempted. See
-// `UndefinedValue()`.
+// `Undefined()`.
 func (tt TagType) ResolveAsString(valueContext ValueContext, justFirst bool) (value string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -349,7 +349,7 @@ func (tt TagType) ResolveAsString(valueContext ValueContext, justFirst bool) (va
 //
 // Since this method lacks the information to process unknown-type tags (e.g.
 // byte-order, tag-ID, IFD type), it will return an error if attempted. See
-// `UndefinedValue()`.
+// `Undefined()`.
 func (tt TagType) Resolve(valueContext *ValueContext) (values interface{}, err error) {
 	defer func() {
 		if state := recover(); state != nil {

@@ -108,7 +108,7 @@ func main() {
 		var value interface{}
 		if tagType.Type() == exif.TypeUndefined {
 			var err error
-			value, err = exif.UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
+			value, err = valueContext.Undefined()
 			if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
 				value = nil
 			} else if err != nil {

@@ -47,6 +47,18 @@ func (ite *IfdTagEntry) String() string {
 	return fmt.Sprintf("IfdTagEntry<TAG-IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.IfdPath, ite.TagId, TypeNames[ite.TagType], ite.UnitCount)
 }
 
+// TODO(dustin): TODO(dustin): Stop exporting IfdPath and TagId.
+//
+// func (ite *IfdTagEntry) IfdPath() string {
+// 	return ite.IfdPath
+// }
+
+// TODO(dustin): TODO(dustin): Stop exporting IfdPath and TagId.
+//
+// func (ite *IfdTagEntry) TagId() uint16 {
+// 	return ite.TagId
+// }
+
 // ValueString renders a string from whatever the value in this tag is.
 func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.ByteOrder) (value string, err error) {
 	defer func() {
@@ -62,7 +74,7 @@ func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.Byt
 			byteOrder)
 
 	if ite.TagType == TypeUndefined {
-		valueRaw, err := UndefinedValue(ite.IfdPath, ite.TagId, valueContext, byteOrder)
+		valueRaw, err := valueContext.Undefined()
 		log.PanicIf(err)
 
 		value = fmt.Sprintf("%v", valueRaw)
@@ -86,7 +98,7 @@ func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.Byte
 	// (`ValueString`) is easy because we can just pass everything to
 	// `Sprintf()`. Returning the raw, typed value (`Value`) is easy
 	// (obviously). However, here, in order to produce the list of bytes, we
-	// need to coerce whatever `UndefinedValue()` returns.
+	// need to coerce whatever `Undefined()` returns.
 	if ite.TagType == TypeUndefined {
 		valueContext :=
 			newValueContextFromTag(
@@ -94,7 +106,7 @@ func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.Byte
 				addressableData,
 				byteOrder)
 
-		value, err := UndefinedValue(ite.IfdPath, ite.TagId, valueContext, byteOrder)
+		value, err := valueContext.Undefined()
 		log.PanicIf(err)
 
 		switch value.(type) {
@@ -153,7 +165,7 @@ func (ite *IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder
 			byteOrder)
 
 	if ite.TagType == TypeUndefined {
-		value, err = UndefinedValue(ite.IfdPath, ite.TagId, valueContext, byteOrder)
+		value, err = valueContext.Undefined()
 		log.PanicIf(err)
 	} else {
 		tt := NewTagType(ite.TagType, byteOrder)

@@ -341,6 +341,21 @@ func (vc *ValueContext) Values() (value interface{}, err error) {
 	return value, nil
 }
 
+// Undefined attempts to identify and decode supported undefined-type fields.
+// This is the primary, preferred interface to reading undefined values.
+func (vc *ValueContext) Undefined() (value interface{}, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	value, err = UndefinedValue(vc.ifdPath, vc.tagId, vc, vc.byteOrder)
+	log.PanicIf(err)
+
+	return value, nil
+}
+
 func init() {
 	parser = &Parser{}
 }

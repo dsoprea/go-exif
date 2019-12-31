@@ -81,7 +81,7 @@ func TestVisit(t *testing.T) {
 
 		valueString := ""
 		if tagType.Type() == TypeUndefined {
-			value, err := UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
+			value, err := valueContext.Undefined()
 			if log.Is(err, ErrUnhandledUnknownTypedTag) {
 				valueString = "!UNDEFINED!"
 			} else if err != nil {
