@@ -21,13 +21,9 @@ type ValueContext struct {
 	tagType   TagTypePrimitive
 	byteOrder binary.ByteOrder
 
-	// undefinedValueTagType is the effective type to use if this is an "undefined"
-	// value.
-	undefinedValueTagType TagTypePrimitive
-
-	// undefinedValueUnitCount is the effective unit-count to use if this is an
+	// undefinedValueTagType is the effective type to use if this is an
 	// "undefined" value.
-	undefinedValueUnitCount uint32
+	undefinedValueTagType TagTypePrimitive
 
 	ifdPath string
 	tagId   uint16
@@ -60,9 +56,8 @@ func newValueContextFromTag(ite *IfdTagEntry, addressableData []byte, byteOrder 
 		byteOrder)
 }
 
-func (vc *ValueContext) SetUnknownValueParameters(tagType TagTypePrimitive, unitCount uint32) {
+func (vc *ValueContext) SetUnknownValueType(tagType TagTypePrimitive) {
 	vc.undefinedValueTagType = tagType
-	vc.undefinedValueUnitCount = unitCount
 }
 
 func (vc *ValueContext) UnitCount() uint32 {
@@ -85,25 +80,23 @@ func (vc *ValueContext) AddressableData() []byte {
 // be precalculated since the size is not defined for all types (namely the
 // "undefined" types).
 func (vc *ValueContext) isEmbedded() bool {
-	tagType, unitCount := vc.effectiveValueParameters()
+	tagType := vc.effectiveValueType()
 
-	return (tagType.Size() * int(unitCount)) <= 4
+	return (tagType.Size() * int(vc.unitCount)) <= 4
 }
 
-func (vc *ValueContext) effectiveValueParameters() (tagType TagTypePrimitive, unitCount uint32) {
+func (vc *ValueContext) effectiveValueType() (tagType TagTypePrimitive) {
 	if vc.tagType == TypeUndefined {
 		tagType = vc.undefinedValueTagType
-		unitCount = vc.undefinedValueUnitCount
 
 		if tagType == 0 {
 			log.Panicf("undefined-value type not set")
 		}
 	} else {
 		tagType = vc.tagType
-		unitCount = vc.unitCount
 	}
 
-	return tagType, unitCount
+	return tagType
 }
 
 func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
@@ -113,15 +106,15 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 		}
 	}()
 
-	tagType, unitCount := vc.effectiveValueParameters()
+	tagType := vc.effectiveValueType()
 
 	unitSizeRaw := uint32(tagType.Size())
 
 	if vc.isEmbedded() == true {
-		byteLength := unitSizeRaw * unitCount
+		byteLength := unitSizeRaw * vc.unitCount
 		return vc.rawValueOffset[:byteLength], nil
 	} else {
-		return vc.addressableData[vc.valueOffset : vc.valueOffset+unitCount*unitSizeRaw], nil
+		return vc.addressableData[vc.valueOffset : vc.valueOffset+vc.unitCount*unitSizeRaw], nil
 	}
 }
 
@@ -133,7 +126,7 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 //
 // Since this method lacks the information to process undefined-type tags (e.g.
 // byte-order, tag-ID, IFD type), it will return an error if attempted. See
-// `UndefinedValue()`.
+// `Undefined()`.
 func (vc *ValueContext) Format() (value string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -301,7 +294,7 @@ func (vc *ValueContext) ReadSignedRationals() (value []SignedRational, err error
 //
 // Since this method lacks the information to process unknown-type tags (e.g.
 // byte-order, tag-ID, IFD type), it will return an error if attempted. See
-// `UndefinedValue()`.
+// `Undefined()`.
 func (vc *ValueContext) Values() (value interface{}, err error) {
 	defer func() {
 		if state := recover(); state != nil {

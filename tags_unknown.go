@@ -233,6 +233,8 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		}
 	}()
 
+	// TODO(dustin): Stop exporting this. Use `(*ValueContext).Undefined()`.
+
 	var valueContextPtr *ValueContext
 
 	if vc, ok := valueContext.(*ValueContext); ok == true {
@@ -252,7 +254,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		if tagId == 0x9000 {
 			// ExifVersion
 
-			valueContextPtr.SetUnknownValueParameters(TypeAsciiNoNul, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeAsciiNoNul)
 
 			valueString, err := valueContextPtr.ReadAsciiNoNul()
 			log.PanicIf(err)
@@ -261,7 +263,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		} else if tagId == 0xa000 {
 			// FlashpixVersion
 
-			valueContextPtr.SetUnknownValueParameters(TypeAsciiNoNul, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeAsciiNoNul)
 
 			valueString, err := valueContextPtr.ReadAsciiNoNul()
 			log.PanicIf(err)
@@ -270,7 +272,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		} else if tagId == 0x9286 {
 			// UserComment
 
-			valueContextPtr.SetUnknownValueParameters(TypeByte, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeByte)
 
 			valueBytes, err := valueContextPtr.ReadBytes()
 			log.PanicIf(err)
@@ -299,7 +301,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 			// TODO(dustin): !! This is the Wild Wild West. This very well might be a child IFD, but any and all OEM's define their own formats. If we're going to be writing changes and this is complete EXIF (which may not have the first eight bytes), it might be fine. However, if these are just IFDs they'll be relative to the main EXIF, this will invalidate the MakerNote data for IFDs and any other implementations that use offsets unless we can interpret them all. It be best to return to this later and just exclude this from being written for now, though means a loss of a wealth of image metadata.
 			//                  -> We can also just blindly try to interpret as an IFD and just validate that it's looks good (maybe it will even have a 'next ifd' pointer that we can validate is 0x0).
 
-			valueContextPtr.SetUnknownValueParameters(TypeByte, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeByte)
 
 			valueBytes, err := valueContextPtr.ReadBytes()
 			log.PanicIf(err)
@@ -326,7 +328,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		} else if tagId == 0x9101 {
 			// ComponentsConfiguration
 
-			valueContextPtr.SetUnknownValueParameters(TypeByte, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeByte)
 
 			valueBytes, err := valueContextPtr.ReadBytes()
 			log.PanicIf(err)
@@ -353,7 +355,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		if tagId == 0x001c {
 			// GPSAreaInformation
 
-			valueContextPtr.SetUnknownValueParameters(TypeAsciiNoNul, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeAsciiNoNul)
 
 			valueString, err := valueContextPtr.ReadAsciiNoNul()
 			log.PanicIf(err)
@@ -362,7 +364,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		} else if tagId == 0x001b {
 			// GPSProcessingMethod
 
-			valueContextPtr.SetUnknownValueParameters(TypeAsciiNoNul, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeAsciiNoNul)
 
 			valueString, err := valueContextPtr.ReadAsciiNoNul()
 			log.PanicIf(err)
@@ -373,7 +375,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		if tagId == 0x0002 {
 			// InteropVersion
 
-			valueContextPtr.SetUnknownValueParameters(TypeAsciiNoNul, valueContextPtr.UnitCount())
+			valueContextPtr.SetUnknownValueType(TypeAsciiNoNul)
 
 			valueString, err := valueContextPtr.ReadAsciiNoNul()
 			log.PanicIf(err)
@@ -392,7 +394,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 	// Return encapsulated data rather than an error so that we can at least
 	// print/profile the opaque data.
 
-	valueContextPtr.SetUnknownValueParameters(TypeByte, valueContextPtr.UnitCount())
+	valueContextPtr.SetUnknownValueType(TypeByte)
 
 	valueBytes, err := valueContextPtr.ReadBytes()
 	log.PanicIf(err)
