@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path"
 	"reflect"
 	"testing"
 
@@ -26,8 +25,7 @@ func TestVisit(t *testing.T) {
 
 	// Open the file.
 
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-	f, err := os.Open(filepath)
+	f, err := os.Open(testImageFilepath)
 	log.PanicIf(err)
 
 	defer f.Close()
@@ -189,11 +187,9 @@ func TestVisit(t *testing.T) {
 }
 
 func TestSearchFileAndExtractExif(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
 	// Returns a slice starting with the EXIF data and going to the end of the
 	// image.
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
@@ -202,9 +198,7 @@ func TestSearchFileAndExtractExif(t *testing.T) {
 }
 
 func TestSearchAndExtractExif(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	imageData, err := ioutil.ReadFile(filepath)
+	imageData, err := ioutil.ReadFile(testImageFilepath)
 	log.PanicIf(err)
 
 	rawExif, err := SearchAndExtractExif(imageData)
@@ -223,9 +217,7 @@ func TestCollect(t *testing.T) {
 		}
 	}()
 
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()

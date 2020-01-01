@@ -48,9 +48,7 @@ func TestIfdTagEntry_ValueBytes_RealData(t *testing.T) {
 		}
 	}()
 
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -90,9 +88,7 @@ func TestIfdTagEntry_ValueBytes_RealData(t *testing.T) {
 }
 
 func TestIfd_FindTagWithId_Hit(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -116,9 +112,7 @@ func TestIfd_FindTagWithId_Hit(t *testing.T) {
 }
 
 func TestIfd_FindTagWithId_Miss(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -142,9 +136,7 @@ func TestIfd_FindTagWithId_Miss(t *testing.T) {
 }
 
 func TestIfd_FindTagWithName_Hit(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -168,9 +160,7 @@ func TestIfd_FindTagWithName_Hit(t *testing.T) {
 }
 
 func TestIfd_FindTagWithName_Miss(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -194,9 +184,7 @@ func TestIfd_FindTagWithName_Miss(t *testing.T) {
 }
 
 func TestIfd_FindTagWithName_NonStandard(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -220,9 +208,7 @@ func TestIfd_FindTagWithName_NonStandard(t *testing.T) {
 }
 
 func TestIfd_Thumbnail(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -298,9 +284,7 @@ func TestIfd_GpsInfo(t *testing.T) {
 }
 
 func TestIfd_EnumerateTagsRecursively(t *testing.T) {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -456,9 +440,7 @@ func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 }
 
 func ExampleIfd_EnumerateTagsRecursively() {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -513,9 +495,7 @@ func ExampleIfd_GpsInfo() {
 }
 
 func ExampleIfd_FindTagWithName() {
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()

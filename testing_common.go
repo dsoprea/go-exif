@@ -1,10 +1,21 @@
 package exif
 
 import (
+	"os"
+	"path"
 	"reflect"
 	"testing"
 
+	"io/ioutil"
+
 	"github.com/dsoprea/go-logging"
+)
+
+var (
+	assetsPath        = ""
+	testImageFilepath = ""
+
+	testExifData = make([]byte, 0)
 )
 
 func getExifSimpleTestIb() *IfdBuilder {
@@ -146,4 +157,23 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 			t.Fatalf("Value for entry (%d) not correct: [%v] != [%v]", i, value, expected[i].value)
 		}
 	}
+}
+
+func init() {
+	goPath := os.Getenv("GOPATH")
+	if goPath == "" {
+		log.Panicf("GOPATH is empty")
+	}
+
+	assetsPath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
+
+	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
+
+	// Load test EXIF data.
+
+	filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
+
+	var err error
+	testExifData, err = ioutil.ReadFile(filepath)
+	log.PanicIf(err)
 }

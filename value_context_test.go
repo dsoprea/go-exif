@@ -2,7 +2,6 @@ package exif
 
 import (
 	"bytes"
-	"path"
 	"testing"
 
 	"github.com/dsoprea/go-logging"
@@ -16,9 +15,7 @@ func TestValueContext_ReadAscii(t *testing.T) {
 		}
 	}()
 
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
@@ -67,9 +64,7 @@ func TestValueContext_Undefined(t *testing.T) {
 		}
 	}()
 
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
+	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
 	im := NewIfdMapping()
