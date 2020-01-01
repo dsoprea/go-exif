@@ -160,12 +160,20 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 }
 
 func init() {
-	goPath := os.Getenv("GOPATH")
-	if goPath == "" {
-		log.Panicf("GOPATH is empty")
-	}
+	// This will only be executed when we're running tests in this package and
+	// not when this package is being imported from a subpackage.
 
-	assetsPath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
+	goPath := os.Getenv("GOPATH")
+	if goPath != "" {
+		assetsPath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
+	} else {
+		// Module-enabled context.
+
+		currentWd, err := os.Getwd()
+		log.PanicIf(err)
+
+		assetsPath = path.Join(currentWd, "assets")
+	}
 
 	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
 
