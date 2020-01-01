@@ -15,6 +15,10 @@ const (
 	UnparseableUnknownTagValuePlaceholder = "!UNKNOWN"
 )
 
+// TODO(dustin): Rename "unknown" in symbol names to "undefined" in the next release.
+//
+// See https://github.com/dsoprea/go-exif/issues/27 .
+
 const (
 	TagUnknownType_9298_UserComment_Encoding_ASCII     = iota
 	TagUnknownType_9298_UserComment_Encoding_JIS       = iota
@@ -75,15 +79,21 @@ var (
 	}
 )
 
+// TODO(dustin): Rename `UnknownTagValue` to `UndefinedTagValue`.
+
 type UnknownTagValue interface {
 	ValueBytes() ([]byte, error)
 }
+
+// TODO(dustin): Rename `TagUnknownType_GeneralString` to `TagUnknownType_GeneralString`.
 
 type TagUnknownType_GeneralString string
 
 func (gs TagUnknownType_GeneralString) ValueBytes() (value []byte, err error) {
 	return []byte(gs), nil
 }
+
+// TODO(dustin): Rename `TagUnknownType_9298_UserComment` to `TagUndefinedType_9298_UserComment`.
 
 type TagUnknownType_9298_UserComment struct {
 	EncodingType  int
@@ -116,6 +126,8 @@ func (uc TagUnknownType_9298_UserComment) ValueBytes() (value []byte, err error)
 	return value, nil
 }
 
+// TODO(dustin): Rename `TagUnknownType_927C_MakerNote` to `TagUndefinedType_927C_MakerNote`.
+
 type TagUnknownType_927C_MakerNote struct {
 	MakerNoteType  []byte
 	MakerNoteBytes []byte
@@ -141,6 +153,8 @@ func (uc TagUnknownType_927C_MakerNote) ValueBytes() (value []byte, err error) {
 	return uc.MakerNoteBytes, nil
 }
 
+// TODO(dustin): Rename `TagUnknownType_9101_ComponentsConfiguration` to `TagUndefinedType_9101_ComponentsConfiguration`.
+
 type TagUnknownType_9101_ComponentsConfiguration struct {
 	ConfigurationId    int
 	ConfigurationBytes []byte
@@ -153,6 +167,8 @@ func (cc TagUnknownType_9101_ComponentsConfiguration) String() string {
 func (uc TagUnknownType_9101_ComponentsConfiguration) ValueBytes() (value []byte, err error) {
 	return uc.ConfigurationBytes, nil
 }
+
+// TODO(dustin): Rename `EncodeUnknown_9286` to `EncodeUndefined_9286`.
 
 func EncodeUnknown_9286(uc TagUnknownType_9298_UserComment) (encoded []byte, err error) {
 	defer func() {
@@ -206,6 +222,8 @@ func EncodeUndefined(ifdPath string, tagId uint16, value interface{}) (ed Encode
 	// Never called.
 	return EncodedData{}, nil
 }
+
+// TODO(dustin): Rename `TagUnknownType_UnknownValue` to `TagUndefinedType_UnknownValue`.
 
 type TagUnknownType_UnknownValue []byte
 
@@ -309,7 +327,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 			// TODO(dustin): Doesn't work, but here as an example.
 			//             ie := NewIfdEnumerate(valueBytes, byteOrder)
 
-			// // TODO(dustin): !! Validate types (might have proprietary types, but it might be worth splitting the list between valid and not validate; maybe fail if a certain proportion are invalid, or maybe aren't less then a certain small integer)?
+			// // TODO(dustin): !! Validate types (might have proprietary types, but it might be worth splitting the list between valid and not valid; maybe fail if a certain proportion are invalid, or maybe aren't less then a certain small integer)?
 			//             ii, err := ie.Collect(0x0)
 
 			//             for _, entry := range ii.RootIfd.Entries {
