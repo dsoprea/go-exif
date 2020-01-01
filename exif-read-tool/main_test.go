@@ -146,11 +146,21 @@ func TestMainJson(t *testing.T) {
 
 func init() {
 	goPath := os.Getenv("GOPATH")
-	if goPath == "" {
-		log.Panicf("GOPATH is empty")
+
+	moduleRoot := ""
+	if goPath != "" {
+		moduleRoot = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif")
+	} else {
+		// Module-enabled context.
+
+		currentWd, err := os.Getwd()
+		log.PanicIf(err)
+
+		moduleRoot = path.Join(currentWd, "..")
 	}
 
-	assetsPath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
-	appFilepath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "exif-read-tool", "main.go")
+	assetsPath = path.Join(moduleRoot, "assets")
+	appFilepath = path.Join(moduleRoot, "exif-read-tool", "main.go")
+
 	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
 }
