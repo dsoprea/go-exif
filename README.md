@@ -4,17 +4,12 @@
 
 ## Overview
 
-This package provides native Go functionality to parse EXIF information out of images.
+This package provides native Go functionality to parse an existing EXIF block, update an existing EXIF block, or add a new EXIF block.
 
 
 ## *NOTICE*
 
-This implementation is in active development. The reader functionality is reasonably complete and there are unit-tests covering the core functionality.
-
-Remaining Tasks:
-
-- A couple of tags needing special handling still need to be implemented. Currently these will show "!DEFINED!" for their values. See [here](type.go#L688) for more information
-- Creating/updating tags.
+- A couple of undefined-type tags still need to be implemented. Currently these will show "!DEFINED!" for their values but actually be dropped in EXIF updates. See https://github.com/dsoprea/go-exif/issues/26 .
 
 
 ## Getting
@@ -211,11 +206,11 @@ log.PanicIf(err)
 
 ## *Contributing*
 
-EXIF has an excellently-documented structure but there are a lot of devices and manufacturers out there. There are only so many files that we can personally find to test against, and most of these are images that have been generated only in the past few years. JPEG, being the largest implementor of EXIF, has been around for even longer (but not much). Therefore, there is a lot of different kinds of compatibility to test for.
+EXIF has an excellently-documented structure but there are a lot of devices and manufacturers out there. There are only so many files that we can personally find to test against, and most of these are images that have been generated only in the past few years. JPEG, being the largest implementor of EXIF, has been around for even longer (but not much). Therefore, there is a lot of compatibility to test for.
 
-**If you are able to help, it would be deeply appreciated if you could run the included reader-tool against all of the EXIF-compatible files you have. This is mostly going to be JPEG files (but not all variations). If you are able to test a large number of files (thousands or millions), please post an issue no matter what. Mention how many files you tried, whether there were any failures, and, if you would be willing, give us access to the failed files.**
+**If you are able to help by running the included reader-tool against all of the EXIF-compatible files you have, it would be deeply appreciated. This is mostly going to be JPEG files (but not all variations). If you are able to test a large number of files (thousands or millions), please post an issue mentioning how many files you tried, whether there were any failures, and, if you would be willing, give us access to the failed files.**
 
-If you are able to test 1M+ files, I will give you credit on the project. The further back in time your images reach, the higher in the list your name/company will go.
+If you are able to test 100K+ files, I will give you credit on the project. The further back in time your images reach, the higher in the list your name/company will go.
 
 ## Contributors/Testing
 

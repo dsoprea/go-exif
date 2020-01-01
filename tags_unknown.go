@@ -390,6 +390,8 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 	// long: 0xa301, 0xa300
 	//
 	// 0xa40b is device-specific and unhandled.
+	//
+	// See https://github.com/dsoprea/go-exif/issues/26.
 
 	// We have no choice but to return the error. We have no way of knowing how
 	// much data there is without already knowing what data-type this tag is.
