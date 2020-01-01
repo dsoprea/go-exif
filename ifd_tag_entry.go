@@ -199,10 +199,17 @@ func (itevr *IfdTagEntryValueResolver) ValueBytes(ite *IfdTagEntry) (value []byt
 		}
 	}()
 
-	// TODO(dustin): This method is not necessary in light of itevr.Value().
+	// OBSOLETE(dustin): This is now redundant. Use `(*ValueContext).readRawEncoded()` instead of this method.
 
-	value, err = ite.ValueBytes(itevr.addressableData, itevr.byteOrder)
-	return value, err
+	valueContext := newValueContextFromTag(
+		ite,
+		itevr.addressableData,
+		itevr.byteOrder)
+
+	rawBytes, err := valueContext.readRawEncoded()
+	log.PanicIf(err)
+
+	return rawBytes, nil
 }
 
 func (itevr *IfdTagEntryValueResolver) Value(ite *IfdTagEntry) (value interface{}, err error) {
@@ -212,6 +219,15 @@ func (itevr *IfdTagEntryValueResolver) Value(ite *IfdTagEntry) (value interface{
 		}
 	}()
 
-	value, err = ite.Value(itevr.addressableData, itevr.byteOrder)
-	return value, err
+	// OBSOLETE(dustin): This is now redundant. Use `(*ValueContext).Values()` instead of this method.
+
+	valueContext := newValueContextFromTag(
+		ite,
+		itevr.addressableData,
+		itevr.byteOrder)
+
+	values, err := valueContext.Values()
+	log.PanicIf(err)
+
+	return values, nil
 }
