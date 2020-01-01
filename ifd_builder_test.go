@@ -1307,8 +1307,7 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
-	ib := NewIfdBuilderFromExistingChain(index.RootIfd, itevr)
+	ib := NewIfdBuilderFromExistingChain(index.RootIfd, nil)
 
 	actual := ib.DumpToStrings()
 
@@ -1414,8 +1413,7 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	ibe := NewIfdByteEncoder()
 
-	itevr := NewIfdTagEntryValueResolver(rawExif, originalIndex.RootIfd.ByteOrder)
-	rootIb := NewIfdBuilderFromExistingChain(originalIndex.RootIfd, itevr)
+	rootIb := NewIfdBuilderFromExistingChain(originalIndex.RootIfd, nil)
 
 	updatedExif, err := ibe.EncodeToExif(rootIb)
 	log.PanicIf(err)
@@ -1528,8 +1526,7 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 // 	ibe := NewIfdByteEncoder()
 
-// 	itevr := NewIfdTagEntryValueResolver(rawExif, originalIndex.RootIfd.ByteOrder)
-// 	rootIb := NewIfdBuilderFromExistingChain(originalIndex.RootIfd, itevr)
+// 	rootIb := NewIfdBuilderFromExistingChain(originalIndex.RootIfd, nil)
 
 // 	// Update a tag,.
 
@@ -1687,8 +1684,7 @@ func ExampleBuilderTag_SetValue() {
 
 	// Create builder.
 
-	itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
-	rootIb := NewIfdBuilderFromExistingChain(index.RootIfd, itevr)
+	rootIb := NewIfdBuilderFromExistingChain(index.RootIfd, nil)
 
 	// Find tag to update.
 
@@ -1745,8 +1741,7 @@ func ExampleIfdBuilder_SetStandardWithName() {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	itevr := NewIfdTagEntryValueResolver(rawExif, index.RootIfd.ByteOrder)
-	ib := NewIfdBuilderFromExistingChain(index.RootIfd, itevr)
+	ib := NewIfdBuilderFromExistingChain(index.RootIfd, nil)
 
 	// Read the IFD whose tag we want to change.
 

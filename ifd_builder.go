@@ -1111,10 +1111,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
 			var value *IfdBuilderTagValue
 
-			valueContext := newValueContextFromTag(
-				ite,
-				ifd.addressableData,
-				ifd.ByteOrder)
+			valueContext := ifd.GetValueContext(ite)
 
 			var rawBytes []byte
 

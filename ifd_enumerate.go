@@ -1010,6 +1010,13 @@ func (ifd *Ifd) EnumerateTagsRecursively(visitor ParsedTagVisitor) (err error) {
 	return nil
 }
 
+func (ifd *Ifd) GetValueContext(ite *IfdTagEntry) *ValueContext {
+	return newValueContextFromTag(
+		ite,
+		ifd.addressableData,
+		ifd.ByteOrder)
+}
+
 type QueuedIfd struct {
 	Name      string
 	IfdPath   string

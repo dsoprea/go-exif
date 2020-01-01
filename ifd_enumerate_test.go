@@ -89,108 +89,7 @@ func TestIfdTagEntry_ValueBytes_RealData(t *testing.T) {
 	}
 }
 
-func TestIfdTagEntry_Resolver_ValueBytes(t *testing.T) {
-	defer func() {
-		if state := recover(); state != nil {
-			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-		}
-	}()
-
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
-	log.PanicIf(err)
-
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
-	log.PanicIf(err)
-
-	ti := NewTagIndex()
-
-	eh, index, err := Collect(im, ti, rawExif)
-	log.PanicIf(err)
-
-	var ite *IfdTagEntry
-	for _, thisIte := range index.RootIfd.Entries {
-		if thisIte.TagId == 0x0110 {
-			ite = thisIte
-			break
-		}
-	}
-
-	if ite == nil {
-		t.Fatalf("Tag not found.")
-	}
-
-	itevr := NewIfdTagEntryValueResolver(rawExif, eh.ByteOrder)
-
-	decodedBytes, err := itevr.ValueBytes(ite)
-	log.PanicIf(err)
-
-	expected := []byte("Canon EOS 5D Mark III")
-	expected = append(expected, 0)
-
-	if len(decodedBytes) != int(ite.UnitCount) {
-		t.Fatalf("Decoded bytes not the right count.")
-	} else if bytes.Compare(decodedBytes, expected) != 0 {
-		t.Fatalf("Decoded bytes not correct.")
-	}
-}
-
-func TestIfdTagEntry_Resolver_ValueBytes__Unknown_Field_And_Nonroot_Ifd(t *testing.T) {
-	defer func() {
-		if state := recover(); state != nil {
-			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-		}
-	}()
-
-	filepath := path.Join(assetsPath, "NDM_8901.jpg")
-
-	rawExif, err := SearchFileAndExtractExif(filepath)
-	log.PanicIf(err)
-
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
-	log.PanicIf(err)
-
-	ti := NewTagIndex()
-
-	eh, index, err := Collect(im, ti, rawExif)
-	log.PanicIf(err)
-
-	ifdExif := index.Lookup[IfdPathStandardExif][0]
-
-	var ite *IfdTagEntry
-	for _, thisIte := range ifdExif.Entries {
-		if thisIte.TagId == 0x9000 {
-			ite = thisIte
-			break
-		}
-	}
-
-	if ite == nil {
-		t.Fatalf("Tag not found.")
-	}
-
-	itevr := NewIfdTagEntryValueResolver(rawExif, eh.ByteOrder)
-
-	decodedBytes, err := itevr.ValueBytes(ite)
-	log.PanicIf(err)
-
-	expected := []byte{'0', '2', '3', '0'}
-
-	if len(decodedBytes) != int(ite.UnitCount) {
-		t.Fatalf("Decoded bytes not the right count.")
-	} else if bytes.Compare(decodedBytes, expected) != 0 {
-		t.Fatalf("Recovered unknown value is not correct.")
-	}
-}
-
-func Test_Ifd_FindTagWithId_Hit(t *testing.T) {
+func TestIfd_FindTagWithId_Hit(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
@@ -216,7 +115,7 @@ func Test_Ifd_FindTagWithId_Hit(t *testing.T) {
 	}
 }
 
-func Test_Ifd_FindTagWithId_Miss(t *testing.T) {
+func TestIfd_FindTagWithId_Miss(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
@@ -242,7 +141,7 @@ func Test_Ifd_FindTagWithId_Miss(t *testing.T) {
 	}
 }
 
-func Test_Ifd_FindTagWithName_Hit(t *testing.T) {
+func TestIfd_FindTagWithName_Hit(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
@@ -268,7 +167,7 @@ func Test_Ifd_FindTagWithName_Hit(t *testing.T) {
 	}
 }
 
-func Test_Ifd_FindTagWithName_Miss(t *testing.T) {
+func TestIfd_FindTagWithName_Miss(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
@@ -294,7 +193,7 @@ func Test_Ifd_FindTagWithName_Miss(t *testing.T) {
 	}
 }
 
-func Test_Ifd_FindTagWithName_NonStandard(t *testing.T) {
+func TestIfd_FindTagWithName_NonStandard(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
@@ -320,7 +219,7 @@ func Test_Ifd_FindTagWithName_NonStandard(t *testing.T) {
 	}
 }
 
-func Test_Ifd_Thumbnail(t *testing.T) {
+func TestIfd_Thumbnail(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
