@@ -1,4 +1,0 @@
-- allow to import/export tags from structured data.
-- consider writing a couple of quick tools for GPS
-  - parsing GeJSON and GPX data and installing GPS tags to the EXIF
-  - writing GeJSON and GPX data *from* the EXIF
