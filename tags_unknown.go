@@ -390,6 +390,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 	// Return encapsulated data rather than an error so that we can at least
 	// print/profile the opaque data.
 
+	// TODO(dustin): This won't ever work. The unit-count isn't necessarily correct. Revert to returning an error.
 	valueContextPtr.SetUnknownValueType(TypeByte)
 
 	valueBytes, err := valueContextPtr.ReadBytes()

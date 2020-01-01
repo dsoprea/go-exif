@@ -1126,6 +1126,9 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				_, isUnknownUndefined := x.(TagUnknownType_UnknownValue)
 
 				if isUnknownUndefined == true {
+					// It's an undefined-type tag that we don't handle. If we
+					// don't know how to handle it, we can't know how many bytes
+					// it is and we must skip it.
 					continue
 				}
 
