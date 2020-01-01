@@ -7,7 +7,7 @@ import (
 	"github.com/dsoprea/go-logging"
 )
 
-func Test_IfdTagEntry_ValueString_Allocated(t *testing.T) {
+func TestIfdTagEntry_ValueString_Allocated(t *testing.T) {
 	ite := IfdTagEntry{
 		TagId:          0x1,
 		TagIndex:       0,
@@ -29,7 +29,7 @@ func Test_IfdTagEntry_ValueString_Allocated(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntry_ValueString_Embedded(t *testing.T) {
+func TestIfdTagEntry_ValueString_Embedded(t *testing.T) {
 	data := []byte{0x11, 0x22, 0x33, 0x44}
 
 	ite := IfdTagEntry{
@@ -51,7 +51,7 @@ func Test_IfdTagEntry_ValueString_Embedded(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntry_ValueString_Unknown(t *testing.T) {
+func TestIfdTagEntry_ValueString_Unknown(t *testing.T) {
 	data := []uint8{'0', '2', '3', '0'}
 
 	ite := IfdTagEntry{
@@ -73,7 +73,7 @@ func Test_IfdTagEntry_ValueString_Unknown(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntry_ValueBytes_Allocated(t *testing.T) {
+func TestIfdTagEntry_ValueBytes_Allocated(t *testing.T) {
 	ite := IfdTagEntry{
 		TagId:          0x1,
 		TagIndex:       0,
@@ -94,7 +94,7 @@ func Test_IfdTagEntry_ValueBytes_Allocated(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntry_ValueBytes_Embedded(t *testing.T) {
+func TestIfdTagEntry_ValueBytes_Embedded(t *testing.T) {
 	data := []byte{0x11, 0x22, 0x33, 0x44}
 
 	ite := IfdTagEntry{
@@ -115,7 +115,7 @@ func Test_IfdTagEntry_ValueBytes_Embedded(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntry_Value_Normal(t *testing.T) {
+func TestIfdTagEntry_Value_Normal(t *testing.T) {
 	data := []byte{0x11, 0x22, 0x33, 0x44}
 
 	ite := IfdTagEntry{
@@ -136,7 +136,7 @@ func Test_IfdTagEntry_Value_Normal(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntry_Value_Unknown(t *testing.T) {
+func TestIfdTagEntry_Value_Unknown(t *testing.T) {
 	data := []uint8{'0', '2', '3', '0'}
 
 	ite := IfdTagEntry{
@@ -162,7 +162,7 @@ func Test_IfdTagEntry_Value_Unknown(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntry_String(t *testing.T) {
+func TestIfdTagEntry_String(t *testing.T) {
 	ite := IfdTagEntry{
 		TagId:          0x1,
 		TagIndex:       0,
@@ -179,7 +179,7 @@ func Test_IfdTagEntry_String(t *testing.T) {
 	}
 }
 
-func Test_IfdTagEntryValueResolver_ValueBytes(t *testing.T) {
+func TestIfdTagEntryValueResolver_ValueBytes(t *testing.T) {
 	allocatedData := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
 
 	ite := IfdTagEntry{

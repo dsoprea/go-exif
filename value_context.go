@@ -295,7 +295,7 @@ func (vc *ValueContext) ReadSignedRationals() (value []SignedRational, err error
 // Since this method lacks the information to process unknown-type tags (e.g.
 // byte-order, tag-ID, IFD type), it will return an error if attempted. See
 // `Undefined()`.
-func (vc *ValueContext) Values() (value interface{}, err error) {
+func (vc *ValueContext) Values() (values interface{}, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -303,28 +303,28 @@ func (vc *ValueContext) Values() (value interface{}, err error) {
 	}()
 
 	if vc.tagType == TypeByte {
-		value, err = vc.ReadBytes()
+		values, err = vc.ReadBytes()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeAscii {
-		value, err = vc.ReadAscii()
+		values, err = vc.ReadAscii()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeAsciiNoNul {
-		value, err = vc.ReadAsciiNoNul()
+		values, err = vc.ReadAsciiNoNul()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeShort {
-		value, err = vc.ReadShorts()
+		values, err = vc.ReadShorts()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeLong {
-		value, err = vc.ReadLongs()
+		values, err = vc.ReadLongs()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeRational {
-		value, err = vc.ReadRationals()
+		values, err = vc.ReadRationals()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeSignedLong {
-		value, err = vc.ReadSignedLongs()
+		values, err = vc.ReadSignedLongs()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeSignedRational {
-		value, err = vc.ReadSignedRationals()
+		values, err = vc.ReadSignedRationals()
 		log.PanicIf(err)
 	} else if vc.tagType == TypeUndefined {
 		log.Panicf("will not parse undefined-type value")
@@ -338,7 +338,7 @@ func (vc *ValueContext) Values() (value interface{}, err error) {
 		return nil, nil
 	}
 
-	return value, nil
+	return values, nil
 }
 
 // Undefined attempts to identify and decode supported undefined-type fields.
