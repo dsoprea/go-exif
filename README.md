@@ -186,9 +186,13 @@ visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagTy
     valueString := ""
     if tagType.Type() == exif.TypeUndefined {
         value, err := exif.UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
-        log.PanicIf(err)
-
-        valueString = fmt.Sprintf("%v", value)
+        if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
+            valueString = "!UNDEFINED!"
+        } else if err != nil {
+            panic(err)
+        } else {
+            valueString = fmt.Sprintf("%v", value)
+        }
     } else {
         valueString, err = tagType.ResolveAsString(valueContext, true)
         if err != nil {

@@ -12,6 +12,10 @@ import (
 )
 
 const (
+	UnparseableUnknownTagValuePlaceholder = "!UNKNOWN"
+)
+
+const (
 	TagUnknownType_9298_UserComment_Encoding_ASCII     = iota
 	TagUnknownType_9298_UserComment_Encoding_JIS       = iota
 	TagUnknownType_9298_UserComment_Encoding_UNICODE   = iota
@@ -387,15 +391,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 	//
 	// 0xa40b is device-specific and unhandled.
 
-	// Return encapsulated data rather than an error so that we can at least
-	// print/profile the opaque data.
-
-	// TODO(dustin): This won't ever work. The unit-count isn't necessarily correct. Revert to returning an error.
-	valueContextPtr.SetUnknownValueType(TypeByte)
-
-	valueBytes, err := valueContextPtr.ReadBytes()
-	log.PanicIf(err)
-
-	tutuv := TagUnknownType_UnknownValue(valueBytes)
-	return tutuv, nil
+	// We have no choice but to return the error. We have no way of knowing how
+	// much data there is without already knowing what data-type this tag is.
+	return nil, ErrUnhandledUnknownTypedTag
 }

@@ -109,7 +109,13 @@ func main() {
 		if tagType.Type() == exif.TypeUndefined {
 			var err error
 			value, err = valueContext.Undefined()
-			log.PanicIf(err)
+			if err != nil {
+				if err == exif.ErrUnhandledUnknownTypedTag {
+					value = nil
+				} else {
+					log.Panic(err)
+				}
+			}
 
 			valueString = fmt.Sprintf("%v", value)
 		} else {

@@ -84,6 +84,11 @@ var (
     // ErrWrongType is used when we try to parse anything other than the
     // current type.
     ErrWrongType = errors.New("wrong type, can not parse")
+
+    // ErrUnhandledUnknownTag is used when we try to parse a tag that's
+    // recorded as an "unknown" type but not a documented tag (therefore
+    // leaving us not knowning how to read it).
+    ErrUnhandledUnknownTypedTag = errors.New("not a standard unknown-typed tag")
 )
 
 type Rational struct {

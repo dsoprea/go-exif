@@ -1119,20 +1119,19 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				// It's an undefined-type value. Try to process, or skip if
 				// we don't know how to.
 
-				x, err := valueContext.Undefined()
-				log.PanicIf(err)
+				undefinedInterface, err := valueContext.Undefined()
+				if err != nil {
+					if err == ErrUnhandledUnknownTypedTag {
+						// It's an undefined-type tag that we don't handle. If
+						// we don't know how to handle it, we can't know how
+						// many bytes it is and we must skip it.
+						continue
+					}
 
-				// TODO(dustin): !! Add test for this.
-				_, isUnknownUndefined := x.(TagUnknownType_UnknownValue)
-
-				if isUnknownUndefined == true {
-					// It's an undefined-type tag that we don't handle. If we
-					// don't know how to handle it, we can't know how many bytes
-					// it is and we must skip it.
-					continue
+					log.Panic(err)
 				}
 
-				undefined, ok := x.(UnknownTagValue)
+				undefined, ok := undefinedInterface.(UnknownTagValue)
 				if ok != true {
 					log.Panicf("unexpected value returned from undefined-value processor")
 				}
