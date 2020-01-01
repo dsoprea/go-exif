@@ -11,7 +11,7 @@ import (
 	"github.com/dsoprea/go-logging"
 )
 
-func TestAdd(t *testing.T) {
+func TestIfdBuilder_Add(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -103,7 +103,7 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestSetNextIb(t *testing.T) {
+func TestIfdBuilder_SetNextIb(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -128,7 +128,7 @@ func TestSetNextIb(t *testing.T) {
 	}
 }
 
-func TestAddChildIb(t *testing.T) {
+func TestIfdBuilder_AddChildIb(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -172,160 +172,120 @@ func TestAddChildIb(t *testing.T) {
 	}
 }
 
-func TestAddTagsFromExisting(t *testing.T) {
+func TestIfdBuilder_AddTagsFromExisting(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
+			log.PrintError(err)
+
+			t.Fatalf("Test failure.")
 		}
 	}()
 
+	exifData := getExifSimpleTestIbBytes()
+
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
 
-	entries := make([]*IfdTagEntry, 3)
-
-	entries[0] = &IfdTagEntry{
-		IfdPath:        IfdPathStandardExif,
-		TagId:          0x11,
-		TagType:        TypeByte,
-		UnitCount:      4,
-		RawValueOffset: []byte{0x12, 0, 0, 0},
-	}
-
-	entries[1] = &IfdTagEntry{
-		IfdPath:      IfdPathStandardExif,
-		TagId:        0x22,
-		TagType:      TypeLong,
-		ChildIfdPath: "some ifd",
-	}
-
-	entries[2] = &IfdTagEntry{
-		IfdPath:        IfdPathStandardExif,
-		TagId:          0x33,
-		TagType:        TypeByte,
-		UnitCount:      4,
-		RawValueOffset: []byte{0x34, 0, 0, 0},
-	}
-
-	ifd := &Ifd{
-		IfdPath:  IfdPathStandard,
-		Entries:  entries,
-		tagIndex: ti,
-	}
-
-	err = ib.AddTagsFromExisting(ifd, nil, nil, nil)
+	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	if ib.tags[0].tagId != 0x11 {
-		t.Fatalf("tag (0) not correct")
-	} else if ib.tags[1].tagId != 0x22 {
-		t.Fatalf("tag (1) not correct")
-	} else if ib.tags[2].tagId != 0x33 {
-		t.Fatalf("tag (2) not correct")
-	} else if len(ib.tags) != 3 {
-		t.Fatalf("tag count not correct")
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+
+	err = ib.AddTagsFromExisting(index.RootIfd, nil, nil, nil)
+	log.PanicIf(err)
+
+	expected := []uint16{
+		0x000b,
+		0x00ff,
+		0x0100,
+		0x013e,
+	}
+
+	if len(ib.tags) != len(expected) {
+		t.Fatalf("Tag count not correct: (%d) != (%d)", len(ib.tags), len(expected))
+	}
+
+	for i, tag := range ib.tags {
+		if tag.tagId != expected[i] {
+			t.Fatalf("Tag (%d) not correct: (0x%04x) != (0x%04x)", i, tag.tagId, expected[i])
+		}
 	}
 }
 
-func TestAddTagsFromExisting__Includes(t *testing.T) {
+func TestIfdBuilder_AddTagsFromExisting__Includes(t *testing.T) {
+	exifData := getExifSimpleTestIbBytes()
+
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
 
-	entries := make([]*IfdTagEntry, 3)
-
-	entries[0] = &IfdTagEntry{
-		IfdPath: IfdPathStandard,
-		TagType: TypeByte,
-		TagId:   0x11,
-	}
-
-	entries[1] = &IfdTagEntry{
-		IfdPath:      IfdPathStandard,
-		TagType:      TypeByte,
-		TagId:        0x22,
-		ChildIfdPath: "some ifd",
-	}
-
-	entries[2] = &IfdTagEntry{
-		IfdPath: IfdPathStandard,
-		TagType: TypeByte,
-		TagId:   0x33,
-	}
-
-	ifd := &Ifd{
-		IfdPath:  IfdPathStandard,
-		Entries:  entries,
-		tagIndex: ti,
-	}
-
-	err = ib.AddTagsFromExisting(ifd, nil, []uint16{0x33}, nil)
+	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	if ib.tags[0].tagId != 0x33 {
-		t.Fatalf("tag (1) not correct")
-	} else if len(ib.tags) != 1 {
-		t.Fatalf("tag count not correct")
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+
+	err = ib.AddTagsFromExisting(index.RootIfd, nil, []uint16{0x00ff}, nil)
+	log.PanicIf(err)
+
+	expected := []uint16{
+		0x00ff,
+	}
+
+	if len(ib.tags) != len(expected) {
+		t.Fatalf("Tag count not correct: (%d) != (%d)", len(ib.tags), len(expected))
+	}
+
+	for i, tag := range ib.tags {
+		if tag.tagId != expected[i] {
+			t.Fatalf("Tag (%d) not correct: (0x%04x) != (0x%04x)", i, tag.tagId, expected[i])
+		}
 	}
 }
 
-func TestAddTagsFromExisting__Excludes(t *testing.T) {
+func TestIfdBuilder_AddTagsFromExisting__Excludes(t *testing.T) {
+	exifData := getExifSimpleTestIbBytes()
+
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
 
-	entries := make([]*IfdTagEntry, 3)
-
-	entries[0] = &IfdTagEntry{
-		IfdPath: IfdPathStandard,
-		TagType: TypeByte,
-		TagId:   0x11,
-	}
-
-	entries[1] = &IfdTagEntry{
-		IfdPath:      IfdPathStandard,
-		TagType:      TypeByte,
-		TagId:        0x22,
-		ChildIfdPath: "some ifd",
-	}
-
-	entries[2] = &IfdTagEntry{
-		IfdPath: IfdPathStandard,
-		TagType: TypeByte,
-		TagId:   0x33,
-	}
-
-	ifd := &Ifd{
-		IfdPath:  IfdPathStandard,
-		Entries:  entries,
-		tagIndex: ti,
-	}
-
-	err = ib.AddTagsFromExisting(ifd, nil, nil, []uint16{0x11})
+	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	if ib.tags[0].tagId != 0x22 {
-		t.Fatalf("tag not correct")
-	} else if len(ib.tags) != 2 {
-		t.Fatalf("tag count not correct")
+	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+
+	err = ib.AddTagsFromExisting(index.RootIfd, nil, nil, []uint16{0xff})
+	log.PanicIf(err)
+
+	expected := []uint16{
+		0x000b,
+		0x0100,
+		0x013e,
+	}
+
+	if len(ib.tags) != len(expected) {
+		t.Fatalf("Tag count not correct: (%d) != (%d)", len(ib.tags), len(expected))
+	}
+
+	for i, tag := range ib.tags {
+		if tag.tagId != expected[i] {
+			t.Fatalf("Tag (%d) not correct: (0x%04x) != (0x%04x)", i, tag.tagId, expected[i])
+		}
 	}
 }
 
-func TestFindN_First_1(t *testing.T) {
+func TestIfdBuilder_FindN__First_1(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -381,7 +341,7 @@ func TestFindN_First_1(t *testing.T) {
 	}
 }
 
-func TestFindN_First_2_1Returned(t *testing.T) {
+func TestIfdBuilder_FindN__First_2_1Returned(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -437,7 +397,7 @@ func TestFindN_First_2_1Returned(t *testing.T) {
 	}
 }
 
-func TestFindN_First_2_2Returned(t *testing.T) {
+func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -520,7 +480,7 @@ func TestFindN_First_2_2Returned(t *testing.T) {
 	}
 }
 
-func TestFindN_Middle_WithDuplicates(t *testing.T) {
+func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -606,7 +566,7 @@ func TestFindN_Middle_WithDuplicates(t *testing.T) {
 	}
 }
 
-func TestFindN_Middle_NoDuplicates(t *testing.T) {
+func TestIfdBuilder_FindN__Middle_NoDuplicates(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -672,7 +632,7 @@ func TestFindN_Middle_NoDuplicates(t *testing.T) {
 	}
 }
 
-func TestFindN_Miss(t *testing.T) {
+func TestIfdBuilder_FindN__Miss(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -689,7 +649,7 @@ func TestFindN_Miss(t *testing.T) {
 	}
 }
 
-func TestFind_Hit(t *testing.T) {
+func TestIfdBuilder_Find__Hit(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -753,7 +713,7 @@ func TestFind_Hit(t *testing.T) {
 	}
 }
 
-func TestFind_Miss(t *testing.T) {
+func TestIfdBuilder_Find__Miss(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -810,7 +770,7 @@ func TestFind_Miss(t *testing.T) {
 	}
 }
 
-func TestReplace(t *testing.T) {
+func TestIfdBuilder_Replace(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -878,7 +838,7 @@ func TestReplace(t *testing.T) {
 	}
 }
 
-func TestReplaceN(t *testing.T) {
+func TestIfdBuilder_ReplaceN(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -946,7 +906,7 @@ func TestReplaceN(t *testing.T) {
 	}
 }
 
-func TestDeleteFirst(t *testing.T) {
+func TestIfdBuilder_DeleteFirst(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -1048,7 +1008,7 @@ func TestDeleteFirst(t *testing.T) {
 	}
 }
 
-func TestDeleteN(t *testing.T) {
+func TestIfdBuilder_DeleteN(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -1150,7 +1110,7 @@ func TestDeleteN(t *testing.T) {
 	}
 }
 
-func TestDeleteN_Two(t *testing.T) {
+func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -1236,7 +1196,7 @@ func TestDeleteN_Two(t *testing.T) {
 	}
 }
 
-func TestDeleteAll(t *testing.T) {
+func TestIfdBuilder_DeleteAll(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -1324,7 +1284,7 @@ func TestDeleteAll(t *testing.T) {
 	}
 }
 
-func Test_IfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
+func TestIfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
@@ -1427,7 +1387,7 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 
 // TODO(dustin): !! Test with an actual GPS-attached image.
 
-func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
+func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
@@ -1546,7 +1506,7 @@ func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	}
 }
 
-// func Test_IfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
+// func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
 // 	filepath := path.Join(assetsPath, "NDM_8901.jpg")
 
 // 	rawExif, err := SearchFileAndExtractExif(filepath)
@@ -1843,7 +1803,7 @@ func ExampleIfdBuilder_SetStandardWithName() {
 	// alternative software
 }
 
-func Test_IfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
+func TestIfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 	ti := NewTagIndex()
 
 	im := NewIfdMapping()
@@ -1884,7 +1844,7 @@ func Test_IfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 	}
 }
 
-func TestNewStandardBuilderTag_OneUnit(t *testing.T) {
+func TestNewStandardBuilderTag__OneUnit(t *testing.T) {
 	ti := NewTagIndex()
 
 	it, err := ti.Get(IfdPathStandardExif, uint16(0x8833))
@@ -1901,7 +1861,7 @@ func TestNewStandardBuilderTag_OneUnit(t *testing.T) {
 	}
 }
 
-func TestNewStandardBuilderTag_TwoUnits(t *testing.T) {
+func TestNewStandardBuilderTag__TwoUnits(t *testing.T) {
 	ti := NewTagIndex()
 
 	it, err := ti.Get(IfdPathStandardExif, uint16(0x8833))
@@ -1920,7 +1880,7 @@ func TestNewStandardBuilderTag_TwoUnits(t *testing.T) {
 	}
 }
 
-func TestAddStandardWithName(t *testing.T) {
+func TestIfdBuilder_AddStandardWithName(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -1951,7 +1911,7 @@ func TestAddStandardWithName(t *testing.T) {
 	}
 }
 
-func TestGetOrCreateIbFromRootIb_Noop(t *testing.T) {
+func TestGetOrCreateIbFromRootIb__Noop(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -1972,7 +1932,7 @@ func TestGetOrCreateIbFromRootIb_Noop(t *testing.T) {
 	}
 }
 
-func TestGetOrCreateIbFromRootIb_FqNoop(t *testing.T) {
+func TestGetOrCreateIbFromRootIb__FqNoop(t *testing.T) {
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -2010,7 +1970,7 @@ func TestGetOrCreateIbFromRootIb_InvalidChild(t *testing.T) {
 	}
 }
 
-func TestGetOrCreateIbFromRootIb_Child(t *testing.T) {
+func TestGetOrCreateIbFromRootIb__Child(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))

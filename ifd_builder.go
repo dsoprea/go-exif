@@ -222,8 +222,8 @@ type IfdBuilder struct {
 	byteOrder binary.ByteOrder
 
 	// Includes both normal tags and IFD tags (which point to child IFDs).
-	// TODO(dustin): Keep a separate list of children like with IFd.
-	// TODO(dustin): Either rename this or `Entries` in Ifd to be the same thing.
+	// TODO(dustin): Keep a separate list of children like with `Ifd`.
+	// TODO(dustin): Either rename this or `Entries` in `Ifd` to be the same thing.
 	tags []*BuilderTag
 
 	// existingOffset will be the offset that this IFD is currently found at if
@@ -312,7 +312,7 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 // NewIfdBuilderFromExistingChain creates a chain of IB instances from an
 // IFD chain generated from real data.
 func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolver) (firstIb *IfdBuilder) {
-	// TODO(dustin): !! When we actually write the code to flatten the IB to bytes, make sure to skip the tags that have a nil value (which will happen when we add-from-exsting without a resolver instance).
+	// OBSOLETE(dustin): Support for `itevr` is now obsolete. This parameter will be removed in the future.
 
 	var lastIb *IfdBuilder
 	i := 0
@@ -324,7 +324,7 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolve
 			lastIb.SetNextIb(newIb)
 		}
 
-		err := newIb.AddTagsFromExisting(thisExistingIfd, itevr, nil, nil)
+		err := newIb.AddTagsFromExisting(thisExistingIfd, nil, nil, nil)
 		log.PanicIf(err)
 
 		lastIb = newIb
@@ -1028,6 +1028,8 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 		}
 	}()
 
+	// OBSOLETE(dustin): Support for `itevr` is now obsolete. This parameter will be removed in the future.
+
 	thumbnailData, err := ifd.Thumbnail()
 	if err == nil {
 		err = ib.SetThumbnail(thumbnailData)
@@ -1078,104 +1080,75 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 			// If we want to add an IFD tag, we'll have to build it first and
 			// *then* add it via a different method.
 
-			if itevr == nil {
-				// We don't have any ability to resolve the structure of the
-				// child-IFD. Just install it as a normal tag rather than a
-				// fully-structured child-IFD. We're going to blank the value,
-				// though, since its original offset will no longer be valid
-				// (nor does it matter since this is just a temporary
-				// placeholder, in this situation).
-				value := NewIfdBuilderTagValueFromBytes([]byte{0, 0, 0, 0})
-				bt = NewBuilderTag(
-					ite.IfdPath,
-					ite.TagId,
-					ite.TagType,
-					value,
-					ib.byteOrder)
-			} else {
-				// Figure out which of the child-IFDs that are associated with
-				// this IFD represents this specific child IFD.
+			// Figure out which of the child-IFDs that are associated with
+			// this IFD represents this specific child IFD.
 
-				var childIfd *Ifd
-				for _, thisChildIfd := range ifd.Children {
-					if thisChildIfd.ParentTagIndex != i {
-						continue
-					} else if thisChildIfd.TagId != 0xffff && thisChildIfd.TagId != ite.TagId {
-						log.Panicf("child-IFD tag is not correct: TAG-POSITION=(%d) ITE=%s CHILD-IFD=%s", thisChildIfd.ParentTagIndex, ite, thisChildIfd)
-					}
-
-					childIfd = thisChildIfd
-					break
+			var childIfd *Ifd
+			for _, thisChildIfd := range ifd.Children {
+				if thisChildIfd.ParentTagIndex != i {
+					continue
+				} else if thisChildIfd.TagId != 0xffff && thisChildIfd.TagId != ite.TagId {
+					log.Panicf("child-IFD tag is not correct: TAG-POSITION=(%d) ITE=%s CHILD-IFD=%s", thisChildIfd.ParentTagIndex, ite, thisChildIfd)
 				}
 
-				if childIfd == nil {
-					childTagIds := make([]string, len(ifd.Children))
-					for j, childIfd := range ifd.Children {
-						childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
-					}
-
-					log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath, ite.TagId, i, childTagIds)
-				}
-
-				childIb := NewIfdBuilderFromExistingChain(childIfd, itevr)
-				bt = ib.NewBuilderTagFromBuilder(childIb)
+				childIfd = thisChildIfd
+				break
 			}
+
+			if childIfd == nil {
+				childTagIds := make([]string, len(ifd.Children))
+				for j, childIfd := range ifd.Children {
+					childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
+				}
+
+				log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath, ite.TagId, i, childTagIds)
+			}
+
+			childIb := NewIfdBuilderFromExistingChain(childIfd, nil)
+			bt = ib.NewBuilderTagFromBuilder(childIb)
 		} else {
 			// Non-IFD tag.
 
 			var value *IfdBuilderTagValue
 
-			// TODO(dustin): !! We should be able to dump (i.e. deimplement) the concept of itevr's and exclusively use ValueContext, now.
+			valueContext := newValueContextFromTag(
+				ite,
+				ifd.addressableData,
+				ifd.ByteOrder)
 
-			if itevr == nil {
-				// TODO(dustin): !! This might not make sense. The undefined-type data will just likely now have invalid value.
+			var rawBytes []byte
 
-				// rawValueOffsetCopy is our own private copy of the original data.
-				// It should always be four-bytes, but just copy whatever there is.
-				rawValueOffsetCopy := make([]byte, len(ite.RawValueOffset))
-				copy(rawValueOffsetCopy, ite.RawValueOffset)
+			if ite.TagType == TypeUndefined {
+				// It's an undefined-type value. Try to process, or skip if
+				// we don't know how to.
 
-				value = NewIfdBuilderTagValueFromBytes(rawValueOffsetCopy)
-			} else {
-				valueContext := newValueContextFromTag(
-					ite,
-					ifd.addressableData,
-					ifd.ByteOrder)
+				x, err := valueContext.Undefined()
+				log.PanicIf(err)
 
-				var rawBytes []byte
+				// TODO(dustin): !! Add test for this.
+				_, isUnknownUndefined := x.(TagUnknownType_UnknownValue)
 
-				if ite.TagType == TypeUndefined {
-					// It's an undefined-type value. Try to process, or skip if
-					// we don't know how to.
-
-					x, err := valueContext.Undefined()
-					log.PanicIf(err)
-
-					// TODO(dustin): !! Add test for this.
-					_, isUnknownUndefined := x.(TagUnknownType_UnknownValue)
-
-					if isUnknownUndefined == true {
-						continue
-					}
-
-					undefined, ok := x.(UnknownTagValue)
-					if ok != true {
-						log.Panicf("unexpected value returned from undefined-value processor")
-					}
-
-					rawBytes, err = undefined.ValueBytes()
-					log.PanicIf(err)
-				} else {
-					// It's a value with a standard type.
-
-					var err error
-
-					rawBytes, err = valueContext.readRawEncoded()
-					log.PanicIf(err)
+				if isUnknownUndefined == true {
+					continue
 				}
 
-				value = NewIfdBuilderTagValueFromBytes(rawBytes)
+				undefined, ok := x.(UnknownTagValue)
+				if ok != true {
+					log.Panicf("unexpected value returned from undefined-value processor")
+				}
+
+				rawBytes, err = undefined.ValueBytes()
+				log.PanicIf(err)
+			} else {
+				// It's a value with a standard type.
+
+				var err error
+
+				rawBytes, err = valueContext.readRawEncoded()
+				log.PanicIf(err)
 			}
+
+			value = NewIfdBuilderTagValueFromBytes(rawBytes)
 
 			bt = NewBuilderTag(
 				ifd.IfdPath,
