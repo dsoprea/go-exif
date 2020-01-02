@@ -1,0 +1,2492 @@
+<table class="table table-striped">
+<thead><tr>
+<th>Tag (hex)</th>
+<th>Tag (dec)</th>
+<th>IFD</th>
+<th>Key</th>
+<th>Type</th>
+<th>Tag description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>0x000b</td>
+<td>11</td>
+<td>Image</td>
+<td>Exif.Image.ProcessingSoftware</td>
+<td>Ascii</td>
+<td>The name and version of the software used to post-process the picture.</td>
+</tr>
+<tr>
+<td>0x00fe</td>
+<td>254</td>
+<td>Image</td>
+<td>Exif.Image.NewSubfileType</td>
+<td>Long</td>
+<td>A general indication of the kind of data contained in this subfile.</td>
+</tr>
+<tr>
+<td>0x00ff</td>
+<td>255</td>
+<td>Image</td>
+<td>Exif.Image.SubfileType</td>
+<td>Short</td>
+<td>A general indication of the kind of data contained in this subfile. This field is deprecated. The NewSubfileType field should be used instead.</td>
+</tr>
+<tr>
+<td>0x0100</td>
+<td>256</td>
+<td>Image</td>
+<td>Exif.Image.ImageWidth</td>
+<td>Long</td>
+<td>The number of columns of image data, equal to the number of pixels per row. In JPEG compressed data a JPEG marker is used instead of this tag.</td>
+</tr>
+<tr>
+<td>0x0101</td>
+<td>257</td>
+<td>Image</td>
+<td>Exif.Image.ImageLength</td>
+<td>Long</td>
+<td>The number of rows of image data. In JPEG compressed data a JPEG marker is used instead of this tag.</td>
+</tr>
+<tr>
+<td>0x0102</td>
+<td>258</td>
+<td>Image</td>
+<td>Exif.Image.BitsPerSample</td>
+<td>Short</td>
+<td>The number of bits per image component. In this standard each component of the image is 8 bits, so the value for this tag is 8. See also &lt;SamplesPerPixel&gt;. In JPEG compressed data a JPEG marker is used instead of this tag.</td>
+</tr>
+<tr>
+<td>0x0103</td>
+<td>259</td>
+<td>Image</td>
+<td>Exif.Image.Compression</td>
+<td>Short</td>
+<td>The compression scheme used for the image data. When a primary image is JPEG compressed, this designation is not necessary and is omitted. When thumbnails use JPEG compression, this tag value is set to 6.</td>
+</tr>
+<tr>
+<td>0x0106</td>
+<td>262</td>
+<td>Image</td>
+<td>Exif.Image.PhotometricInterpretation</td>
+<td>Short</td>
+<td>The pixel composition. In JPEG compressed data a JPEG marker is used instead of this tag.</td>
+</tr>
+<tr>
+<td>0x0107</td>
+<td>263</td>
+<td>Image</td>
+<td>Exif.Image.Thresholding</td>
+<td>Short</td>
+<td>For black and white TIFF files that represent shades of gray, the technique used to convert from gray to black and white pixels.</td>
+</tr>
+<tr>
+<td>0x0108</td>
+<td>264</td>
+<td>Image</td>
+<td>Exif.Image.CellWidth</td>
+<td>Short</td>
+<td>The width of the dithering or halftoning matrix used to create a dithered or halftoned bilevel file.</td>
+</tr>
+<tr>
+<td>0x0109</td>
+<td>265</td>
+<td>Image</td>
+<td>Exif.Image.CellLength</td>
+<td>Short</td>
+<td>The length of the dithering or halftoning matrix used to create a dithered or halftoned bilevel file.</td>
+</tr>
+<tr>
+<td>0x010a</td>
+<td>266</td>
+<td>Image</td>
+<td>Exif.Image.FillOrder</td>
+<td>Short</td>
+<td>The logical order of bits within a byte</td>
+</tr>
+<tr>
+<td>0x010d</td>
+<td>269</td>
+<td>Image</td>
+<td>Exif.Image.DocumentName</td>
+<td>Ascii</td>
+<td>The name of the document from which this image was scanned</td>
+</tr>
+<tr>
+<td>0x010e</td>
+<td>270</td>
+<td>Image</td>
+<td>Exif.Image.ImageDescription</td>
+<td>Ascii</td>
+<td>A character string giving the title of the image. It may be a comment such as "1988 company picnic" or the like. Two-bytes character codes cannot be used. When a 2-bytes code is necessary, the Exif Private tag &lt;UserComment&gt; is to be used.</td>
+</tr>
+<tr>
+<td>0x010f</td>
+<td>271</td>
+<td>Image</td>
+<td>Exif.Image.Make</td>
+<td>Ascii</td>
+<td>The manufacturer of the recording equipment. This is the manufacturer of the DSC, scanner, video digitizer or other equipment that generated the image. When the field is left blank, it is treated as unknown.</td>
+</tr>
+<tr>
+<td>0x0110</td>
+<td>272</td>
+<td>Image</td>
+<td>Exif.Image.Model</td>
+<td>Ascii</td>
+<td>The model name or model number of the equipment. This is the model name or number of the DSC, scanner, video digitizer or other equipment that generated the image. When the field is left blank, it is treated as unknown.</td>
+</tr>
+<tr>
+<td>0x0111</td>
+<td>273</td>
+<td>Image</td>
+<td>Exif.Image.StripOffsets</td>
+<td>Long</td>
+<td>For each strip, the byte offset of that strip. It is recommended that this be selected so the number of strip bytes does not exceed 64 Kbytes. With JPEG compressed data this designation is not needed and is omitted. See also &lt;RowsPerStrip&gt; and &lt;StripByteCounts&gt;.</td>
+</tr>
+<tr>
+<td>0x0112</td>
+<td>274</td>
+<td>Image</td>
+<td>Exif.Image.Orientation</td>
+<td>Short</td>
+<td>The image orientation viewed in terms of rows and columns.</td>
+</tr>
+<tr>
+<td>0x0115</td>
+<td>277</td>
+<td>Image</td>
+<td>Exif.Image.SamplesPerPixel</td>
+<td>Short</td>
+<td>The number of components per pixel. Since this standard applies to RGB and YCbCr images, the value set for this tag is 3. In JPEG compressed data a JPEG marker is used instead of this tag.</td>
+</tr>
+<tr>
+<td>0x0116</td>
+<td>278</td>
+<td>Image</td>
+<td>Exif.Image.RowsPerStrip</td>
+<td>Long</td>
+<td>The number of rows per strip. This is the number of rows in the image of one strip when an image is divided into strips. With JPEG compressed data this designation is not needed and is omitted. See also &lt;StripOffsets&gt; and &lt;StripByteCounts&gt;.</td>
+</tr>
+<tr>
+<td>0x0117</td>
+<td>279</td>
+<td>Image</td>
+<td>Exif.Image.StripByteCounts</td>
+<td>Long</td>
+<td>The total number of bytes in each strip. With JPEG compressed data this designation is not needed and is omitted.</td>
+</tr>
+<tr>
+<td>0x011a</td>
+<td>282</td>
+<td>Image</td>
+<td>Exif.Image.XResolution</td>
+<td>Rational</td>
+<td>The number of pixels per &lt;ResolutionUnit&gt; in the &lt;ImageWidth&gt; direction. When the image resolution is unknown, 72 [dpi] is designated.</td>
+</tr>
+<tr>
+<td>0x011b</td>
+<td>283</td>
+<td>Image</td>
+<td>Exif.Image.YResolution</td>
+<td>Rational</td>
+<td>The number of pixels per &lt;ResolutionUnit&gt; in the &lt;ImageLength&gt; direction. The same value as &lt;XResolution&gt; is designated.</td>
+</tr>
+<tr>
+<td>0x011c</td>
+<td>284</td>
+<td>Image</td>
+<td>Exif.Image.PlanarConfiguration</td>
+<td>Short</td>
+<td>Indicates whether pixel components are recorded in a chunky or planar format. In JPEG compressed files a JPEG marker is used instead of this tag. If this field does not exist, the TIFF default of 1 (chunky) is assumed.</td>
+</tr>
+<tr>
+<td>0x0122</td>
+<td>290</td>
+<td>Image</td>
+<td>Exif.Image.GrayResponseUnit</td>
+<td>Short</td>
+<td>The precision of the information contained in the GrayResponseCurve.</td>
+</tr>
+<tr>
+<td>0x0123</td>
+<td>291</td>
+<td>Image</td>
+<td>Exif.Image.GrayResponseCurve</td>
+<td>Short</td>
+<td>For grayscale data, the optical density of each possible pixel value.</td>
+</tr>
+<tr>
+<td>0x0124</td>
+<td>292</td>
+<td>Image</td>
+<td>Exif.Image.T4Options</td>
+<td>Long</td>
+<td>T.4-encoding options.</td>
+</tr>
+<tr>
+<td>0x0125</td>
+<td>293</td>
+<td>Image</td>
+<td>Exif.Image.T6Options</td>
+<td>Long</td>
+<td>T.6-encoding options.</td>
+</tr>
+<tr>
+<td>0x0128</td>
+<td>296</td>
+<td>Image</td>
+<td>Exif.Image.ResolutionUnit</td>
+<td>Short</td>
+<td>The unit for measuring &lt;XResolution&gt; and &lt;YResolution&gt;. The same unit is used for both &lt;XResolution&gt; and &lt;YResolution&gt;. If the image resolution is unknown, 2 (inches) is designated.</td>
+</tr>
+<tr>
+<td>0x0129</td>
+<td>297</td>
+<td>Image</td>
+<td>Exif.Image.PageNumber</td>
+<td>Short</td>
+<td>The page number of the page from which this image was scanned.</td>
+</tr>
+<tr>
+<td>0x012d</td>
+<td>301</td>
+<td>Image</td>
+<td>Exif.Image.TransferFunction</td>
+<td>Short</td>
+<td>A transfer function for the image, described in tabular style. Normally this tag is not necessary, since color space is specified in the color space information tag (&lt;ColorSpace&gt;).</td>
+</tr>
+<tr>
+<td>0x0131</td>
+<td>305</td>
+<td>Image</td>
+<td>Exif.Image.Software</td>
+<td>Ascii</td>
+<td>This tag records the name and version of the software or firmware of the camera or image input device used to generate the image. The detailed format is not specified, but it is recommended that the example shown below be followed. When the field is left blank, it is treated as unknown.</td>
+</tr>
+<tr>
+<td>0x0132</td>
+<td>306</td>
+<td>Image</td>
+<td>Exif.Image.DateTime</td>
+<td>Ascii</td>
+<td>The date and time of image creation. In Exif standard, it is the date and time the file was changed.</td>
+</tr>
+<tr>
+<td>0x013b</td>
+<td>315</td>
+<td>Image</td>
+<td>Exif.Image.Artist</td>
+<td>Ascii</td>
+<td>This tag records the name of the camera owner, photographer or image creator. The detailed format is not specified, but it is recommended that the information be written as in the example below for ease of Interoperability. When the field is left blank, it is treated as unknown. Ex.) "Camera owner, John Smith; Photographer, Michael Brown; Image creator, Ken James"</td>
+</tr>
+<tr>
+<td>0x013c</td>
+<td>316</td>
+<td>Image</td>
+<td>Exif.Image.HostComputer</td>
+<td>Ascii</td>
+<td>This tag records information about the host computer used to generate the image.</td>
+</tr>
+<tr>
+<td>0x013d</td>
+<td>317</td>
+<td>Image</td>
+<td>Exif.Image.Predictor</td>
+<td>Short</td>
+<td>A predictor is a mathematical operator that is applied to the image data before an encoding scheme is applied.</td>
+</tr>
+<tr>
+<td>0x013e</td>
+<td>318</td>
+<td>Image</td>
+<td>Exif.Image.WhitePoint</td>
+<td>Rational</td>
+<td>The chromaticity of the white point of the image. Normally this tag is not necessary, since color space is specified in the colorspace information tag (&lt;ColorSpace&gt;).</td>
+</tr>
+<tr>
+<td>0x013f</td>
+<td>319</td>
+<td>Image</td>
+<td>Exif.Image.PrimaryChromaticities</td>
+<td>Rational</td>
+<td>The chromaticity of the three primary colors of the image. Normally this tag is not necessary, since colorspace is specified in the colorspace information tag (&lt;ColorSpace&gt;).</td>
+</tr>
+<tr>
+<td>0x0140</td>
+<td>320</td>
+<td>Image</td>
+<td>Exif.Image.ColorMap</td>
+<td>Short</td>
+<td>A color map for palette color images. This field defines a Red-Green-Blue color map (often called a lookup table) for palette-color images. In a palette-color image, a pixel value is used to index into an RGB lookup table.</td>
+</tr>
+<tr>
+<td>0x0141</td>
+<td>321</td>
+<td>Image</td>
+<td>Exif.Image.HalftoneHints</td>
+<td>Short</td>
+<td>The purpose of the HalftoneHints field is to convey to the halftone function the range of gray levels within a colorimetrically-specified image that should retain tonal detail.</td>
+</tr>
+<tr>
+<td>0x0142</td>
+<td>322</td>
+<td>Image</td>
+<td>Exif.Image.TileWidth</td>
+<td>Short</td>
+<td>The tile width in pixels. This is the number of columns in each tile.</td>
+</tr>
+<tr>
+<td>0x0143</td>
+<td>323</td>
+<td>Image</td>
+<td>Exif.Image.TileLength</td>
+<td>Short</td>
+<td>The tile length (height) in pixels. This is the number of rows in each tile.</td>
+</tr>
+<tr>
+<td>0x0144</td>
+<td>324</td>
+<td>Image</td>
+<td>Exif.Image.TileOffsets</td>
+<td>Short</td>
+<td>For each tile, the byte offset of that tile, as compressed and stored on disk. The offset is specified with respect to the beginning of the TIFF file. Note that this implies that each tile has a location independent of the locations of other tiles.</td>
+</tr>
+<tr>
+<td>0x0145</td>
+<td>325</td>
+<td>Image</td>
+<td>Exif.Image.TileByteCounts</td>
+<td>Short</td>
+<td>For each tile, the number of (compressed) bytes in that tile. See TileOffsets for a description of how the byte counts are ordered.</td>
+</tr>
+<tr>
+<td>0x014a</td>
+<td>330</td>
+<td>Image</td>
+<td>Exif.Image.SubIFDs</td>
+<td>Long</td>
+<td>Defined by Adobe Corporation to enable TIFF Trees within a TIFF file.</td>
+</tr>
+<tr>
+<td>0x014c</td>
+<td>332</td>
+<td>Image</td>
+<td>Exif.Image.InkSet</td>
+<td>Short</td>
+<td>The set of inks used in a separated (PhotometricInterpretation=5) image.</td>
+</tr>
+<tr>
+<td>0x014d</td>
+<td>333</td>
+<td>Image</td>
+<td>Exif.Image.InkNames</td>
+<td>Ascii</td>
+<td>The name of each ink used in a separated (PhotometricInterpretation=5) image.</td>
+</tr>
+<tr>
+<td>0x014e</td>
+<td>334</td>
+<td>Image</td>
+<td>Exif.Image.NumberOfInks</td>
+<td>Short</td>
+<td>The number of inks. Usually equal to SamplesPerPixel, unless there are extra samples.</td>
+</tr>
+<tr>
+<td>0x0150</td>
+<td>336</td>
+<td>Image</td>
+<td>Exif.Image.DotRange</td>
+<td>Byte</td>
+<td>The component values that correspond to a 0% dot and 100% dot.</td>
+</tr>
+<tr>
+<td>0x0151</td>
+<td>337</td>
+<td>Image</td>
+<td>Exif.Image.TargetPrinter</td>
+<td>Ascii</td>
+<td>A description of the printing environment for which this separation is intended.</td>
+</tr>
+<tr>
+<td>0x0152</td>
+<td>338</td>
+<td>Image</td>
+<td>Exif.Image.ExtraSamples</td>
+<td>Short</td>
+<td>Specifies that each pixel has m extra components whose interpretation is defined by one of the values listed below.</td>
+</tr>
+<tr>
+<td>0x0153</td>
+<td>339</td>
+<td>Image</td>
+<td>Exif.Image.SampleFormat</td>
+<td>Short</td>
+<td>This field specifies how to interpret each data sample in a pixel.</td>
+</tr>
+<tr>
+<td>0x0154</td>
+<td>340</td>
+<td>Image</td>
+<td>Exif.Image.SMinSampleValue</td>
+<td>Short</td>
+<td>This field specifies the minimum sample value.</td>
+</tr>
+<tr>
+<td>0x0155</td>
+<td>341</td>
+<td>Image</td>
+<td>Exif.Image.SMaxSampleValue</td>
+<td>Short</td>
+<td>This field specifies the maximum sample value.</td>
+</tr>
+<tr>
+<td>0x0156</td>
+<td>342</td>
+<td>Image</td>
+<td>Exif.Image.TransferRange</td>
+<td>Short</td>
+<td>Expands the range of the TransferFunction</td>
+</tr>
+<tr>
+<td>0x0157</td>
+<td>343</td>
+<td>Image</td>
+<td>Exif.Image.ClipPath</td>
+<td>Byte</td>
+<td>A TIFF ClipPath is intended to mirror the essentials of PostScript's path creation functionality.</td>
+</tr>
+<tr>
+<td>0x0158</td>
+<td>344</td>
+<td>Image</td>
+<td>Exif.Image.XClipPathUnits</td>
+<td>SShort</td>
+<td>The number of units that span the width of the image, in terms of integer ClipPath coordinates.</td>
+</tr>
+<tr>
+<td>0x0159</td>
+<td>345</td>
+<td>Image</td>
+<td>Exif.Image.YClipPathUnits</td>
+<td>SShort</td>
+<td>The number of units that span the height of the image, in terms of integer ClipPath coordinates.</td>
+</tr>
+<tr>
+<td>0x015a</td>
+<td>346</td>
+<td>Image</td>
+<td>Exif.Image.Indexed</td>
+<td>Short</td>
+<td>Indexed images are images where the 'pixels' do not represent color values, but rather an index (usually 8-bit) into a separate color table, the ColorMap.</td>
+</tr>
+<tr>
+<td>0x015b</td>
+<td>347</td>
+<td>Image</td>
+<td>Exif.Image.JPEGTables</td>
+<td>Undefined</td>
+<td>This optional tag may be used to encode the JPEG quantization and Huffman tables for subsequent use by the JPEG decompression process.</td>
+</tr>
+<tr>
+<td>0x015f</td>
+<td>351</td>
+<td>Image</td>
+<td>Exif.Image.OPIProxy</td>
+<td>Short</td>
+<td>OPIProxy gives information concerning whether this image is a low-resolution proxy of a high-resolution image (Adobe OPI).</td>
+</tr>
+<tr>
+<td>0x0200</td>
+<td>512</td>
+<td>Image</td>
+<td>Exif.Image.JPEGProc</td>
+<td>Long</td>
+<td>This field indicates the process used to produce the compressed data</td>
+</tr>
+<tr>
+<td>0x0201</td>
+<td>513</td>
+<td>Image</td>
+<td>Exif.Image.JPEGInterchangeFormat</td>
+<td>Long</td>
+<td>The offset to the start byte (SOI) of JPEG compressed thumbnail data. This is not used for primary image JPEG data.</td>
+</tr>
+<tr>
+<td>0x0202</td>
+<td>514</td>
+<td>Image</td>
+<td>Exif.Image.JPEGInterchangeFormatLength</td>
+<td>Long</td>
+<td>The number of bytes of JPEG compressed thumbnail data. This is not used for primary image JPEG data. JPEG thumbnails are not divided but are recorded as a continuous JPEG bitstream from SOI to EOI. Appn and COM markers should not be recorded. Compressed thumbnails must be recorded in no more than 64 Kbytes, including all other data to be recorded in APP1.</td>
+</tr>
+<tr>
+<td>0x0203</td>
+<td>515</td>
+<td>Image</td>
+<td>Exif.Image.JPEGRestartInterval</td>
+<td>Short</td>
+<td>This Field indicates the length of the restart interval used in the compressed image data.</td>
+</tr>
+<tr>
+<td>0x0205</td>
+<td>517</td>
+<td>Image</td>
+<td>Exif.Image.JPEGLosslessPredictors</td>
+<td>Short</td>
+<td>This Field points to a list of lossless predictor-selection values, one per component.</td>
+</tr>
+<tr>
+<td>0x0206</td>
+<td>518</td>
+<td>Image</td>
+<td>Exif.Image.JPEGPointTransforms</td>
+<td>Short</td>
+<td>This Field points to a list of point transform values, one per component.</td>
+</tr>
+<tr>
+<td>0x0207</td>
+<td>519</td>
+<td>Image</td>
+<td>Exif.Image.JPEGQTables</td>
+<td>Long</td>
+<td>This Field points to a list of offsets to the quantization tables, one per component.</td>
+</tr>
+<tr>
+<td>0x0208</td>
+<td>520</td>
+<td>Image</td>
+<td>Exif.Image.JPEGDCTables</td>
+<td>Long</td>
+<td>This Field points to a list of offsets to the DC Huffman tables or the lossless Huffman tables, one per component.</td>
+</tr>
+<tr>
+<td>0x0209</td>
+<td>521</td>
+<td>Image</td>
+<td>Exif.Image.JPEGACTables</td>
+<td>Long</td>
+<td>This Field points to a list of offsets to the Huffman AC tables, one per component.</td>
+</tr>
+<tr>
+<td>0x0211</td>
+<td>529</td>
+<td>Image</td>
+<td>Exif.Image.YCbCrCoefficients</td>
+<td>Rational</td>
+<td>The matrix coefficients for transformation from RGB to YCbCr image data. No default is given in TIFF; but here the value given in Appendix E, "Color Space Guidelines", is used as the default. The color space is declared in a color space information tag, with the default being the value that gives the optimal image characteristics Interoperability this condition.</td>
+</tr>
+<tr>
+<td>0x0212</td>
+<td>530</td>
+<td>Image</td>
+<td>Exif.Image.YCbCrSubSampling</td>
+<td>Short</td>
+<td>The sampling ratio of chrominance components in relation to the luminance component. In JPEG compressed data a JPEG marker is used instead of this tag.</td>
+</tr>
+<tr>
+<td>0x0213</td>
+<td>531</td>
+<td>Image</td>
+<td>Exif.Image.YCbCrPositioning</td>
+<td>Short</td>
+<td>The position of chrominance components in relation to the luminance component. This field is designated only for JPEG compressed data or uncompressed YCbCr data. The TIFF default is 1 (centered); but when Y:Cb:Cr = 4:2:2 it is recommended in this standard that 2 (co-sited) be used to record data, in order to improve the image quality when viewed on TV systems. When this field does not exist, the reader shall assume the TIFF default. In the case of Y:Cb:Cr = 4:2:0, the TIFF default (centered) is recommended. If the reader does not have the capability of supporting both kinds of &lt;YCbCrPositioning&gt;, it shall follow the TIFF default regardless of the value in this field. It is preferable that readers be able to support both centered and co-sited positioning.</td>
+</tr>
+<tr>
+<td>0x0214</td>
+<td>532</td>
+<td>Image</td>
+<td>Exif.Image.ReferenceBlackWhite</td>
+<td>Rational</td>
+<td>The reference black point value and reference white point value. No defaults are given in TIFF, but the values below are given as defaults here. The color space is declared in a color space information tag, with the default being the value that gives the optimal image characteristics Interoperability these conditions.</td>
+</tr>
+<tr>
+<td>0x02bc</td>
+<td>700</td>
+<td>Image</td>
+<td>Exif.Image.XMLPacket</td>
+<td>Byte</td>
+<td>XMP Metadata (Adobe technote 9-14-02)</td>
+</tr>
+<tr>
+<td>0x4746</td>
+<td>18246</td>
+<td>Image</td>
+<td>Exif.Image.Rating</td>
+<td>Short</td>
+<td>Rating tag used by Windows</td>
+</tr>
+<tr>
+<td>0x4749</td>
+<td>18249</td>
+<td>Image</td>
+<td>Exif.Image.RatingPercent</td>
+<td>Short</td>
+<td>Rating tag used by Windows, value in percent</td>
+</tr>
+<tr>
+<td>0x800d</td>
+<td>32781</td>
+<td>Image</td>
+<td>Exif.Image.ImageID</td>
+<td>Ascii</td>
+<td>ImageID is the full pathname of the original, high-resolution image, or any other identifying string that uniquely identifies the original image (Adobe OPI).</td>
+</tr>
+<tr>
+<td>0x828d</td>
+<td>33421</td>
+<td>Image</td>
+<td>Exif.Image.CFARepeatPatternDim</td>
+<td>Short</td>
+<td>Contains two values representing the minimum rows and columns to define the repeating patterns of the color filter array</td>
+</tr>
+<tr>
+<td>0x828e</td>
+<td>33422</td>
+<td>Image</td>
+<td>Exif.Image.CFAPattern</td>
+<td>Byte</td>
+<td>Indicates the color filter array (CFA) geometric pattern of the image sensor when a one-chip color area sensor is used. It does not apply to all sensing methods</td>
+</tr>
+<tr>
+<td>0x828f</td>
+<td>33423</td>
+<td>Image</td>
+<td>Exif.Image.BatteryLevel</td>
+<td>Rational</td>
+<td>Contains a value of the battery level as a fraction or string</td>
+</tr>
+<tr>
+<td>0x8298</td>
+<td>33432</td>
+<td>Image</td>
+<td>Exif.Image.Copyright</td>
+<td>Ascii</td>
+<td>Copyright information. In this standard the tag is used to indicate both the photographer and editor copyrights. It is the copyright notice of the person or organization claiming rights to the image. The Interoperability copyright statement including date and rights should be written in this field; e.g., "Copyright, John Smith, 19xx. All rights reserved.". In this standard the field records both the photographer and editor copyrights, with each recorded in a separate part of the statement. When there is a clear distinction between the photographer and editor copyrights, these are to be written in the order of photographer followed by editor copyright, separated by NULL (in this case since the statement also ends with a NULL, there are two NULL codes). When only the photographer copyright is given, it is terminated by one NULL code. When only the editor copyright is given, the photographer copyright part consists of one space followed by a terminating NULL code, then the editor copyright is given. When the field is left blank, it is treated as unknown.</td>
+</tr>
+<tr>
+<td>0x829a</td>
+<td>33434</td>
+<td>Image</td>
+<td>Exif.Image.ExposureTime</td>
+<td>Rational</td>
+<td>Exposure time, given in seconds.</td>
+</tr>
+<tr>
+<td>0x829d</td>
+<td>33437</td>
+<td>Image</td>
+<td>Exif.Image.FNumber</td>
+<td>Rational</td>
+<td>The F number.</td>
+</tr>
+<tr>
+<td>0x83bb</td>
+<td>33723</td>
+<td>Image</td>
+<td>Exif.Image.IPTCNAA</td>
+<td>Long</td>
+<td>Contains an IPTC/NAA record</td>
+</tr>
+<tr>
+<td>0x8649</td>
+<td>34377</td>
+<td>Image</td>
+<td>Exif.Image.ImageResources</td>
+<td>Byte</td>
+<td>Contains information embedded by the Adobe Photoshop application</td>
+</tr>
+<tr>
+<td>0x8769</td>
+<td>34665</td>
+<td>Image</td>
+<td>Exif.Image.ExifTag</td>
+<td>Long</td>
+<td>A pointer to the Exif IFD. Interoperability, Exif IFD has the same structure as that of the IFD specified in TIFF. ordinarily, however, it does not contain image data as in the case of TIFF.</td>
+</tr>
+<tr>
+<td>0x8773</td>
+<td>34675</td>
+<td>Image</td>
+<td>Exif.Image.InterColorProfile</td>
+<td>Undefined</td>
+<td>Contains an InterColor Consortium (ICC) format color space characterization/profile</td>
+</tr>
+<tr>
+<td>0x8822</td>
+<td>34850</td>
+<td>Image</td>
+<td>Exif.Image.ExposureProgram</td>
+<td>Short</td>
+<td>The class of the program used by the camera to set exposure when the picture is taken.</td>
+</tr>
+<tr>
+<td>0x8824</td>
+<td>34852</td>
+<td>Image</td>
+<td>Exif.Image.SpectralSensitivity</td>
+<td>Ascii</td>
+<td>Indicates the spectral sensitivity of each channel of the camera used.</td>
+</tr>
+<tr>
+<td>0x8825</td>
+<td>34853</td>
+<td>Image</td>
+<td>Exif.Image.GPSTag</td>
+<td>Long</td>
+<td>A pointer to the GPS Info IFD. The Interoperability structure of the GPS Info IFD, like that of Exif IFD, has no image data.</td>
+</tr>
+<tr>
+<td>0x8827</td>
+<td>34855</td>
+<td>Image</td>
+<td>Exif.Image.ISOSpeedRatings</td>
+<td>Short</td>
+<td>Indicates the ISO Speed and ISO Latitude of the camera or input device as specified in ISO 12232.</td>
+</tr>
+<tr>
+<td>0x8828</td>
+<td>34856</td>
+<td>Image</td>
+<td>Exif.Image.OECF</td>
+<td>Undefined</td>
+<td>Indicates the Opto-Electric Conversion Function (OECF) specified in ISO 14524.</td>
+</tr>
+<tr>
+<td>0x8829</td>
+<td>34857</td>
+<td>Image</td>
+<td>Exif.Image.Interlace</td>
+<td>Short</td>
+<td>Indicates the field number of multifield images.</td>
+</tr>
+<tr>
+<td>0x882a</td>
+<td>34858</td>
+<td>Image</td>
+<td>Exif.Image.TimeZoneOffset</td>
+<td>SShort</td>
+<td>This optional tag encodes the time zone of the camera clock (relativeto Greenwich Mean Time) used to create the DataTimeOriginal tag-valuewhen the picture was taken. It may also contain the time zone offsetof the clock used to create the DateTime tag-value when the image wasmodified.</td>
+</tr>
+<tr>
+<td>0x882b</td>
+<td>34859</td>
+<td>Image</td>
+<td>Exif.Image.SelfTimerMode</td>
+<td>Short</td>
+<td>Number of seconds image capture was delayed from button press.</td>
+</tr>
+<tr>
+<td>0x9003</td>
+<td>36867</td>
+<td>Image</td>
+<td>Exif.Image.DateTimeOriginal</td>
+<td>Ascii</td>
+<td>The date and time when the original image data was generated.</td>
+</tr>
+<tr>
+<td>0x9102</td>
+<td>37122</td>
+<td>Image</td>
+<td>Exif.Image.CompressedBitsPerPixel</td>
+<td>Rational</td>
+<td>Specific to compressed data; states the compressed bits per pixel.</td>
+</tr>
+<tr>
+<td>0x9201</td>
+<td>37377</td>
+<td>Image</td>
+<td>Exif.Image.ShutterSpeedValue</td>
+<td>SRational</td>
+<td>Shutter speed.</td>
+</tr>
+<tr>
+<td>0x9202</td>
+<td>37378</td>
+<td>Image</td>
+<td>Exif.Image.ApertureValue</td>
+<td>Rational</td>
+<td>The lens aperture.</td>
+</tr>
+<tr>
+<td>0x9203</td>
+<td>37379</td>
+<td>Image</td>
+<td>Exif.Image.BrightnessValue</td>
+<td>SRational</td>
+<td>The value of brightness.</td>
+</tr>
+<tr>
+<td>0x9204</td>
+<td>37380</td>
+<td>Image</td>
+<td>Exif.Image.ExposureBiasValue</td>
+<td>SRational</td>
+<td>The exposure bias.</td>
+</tr>
+<tr>
+<td>0x9205</td>
+<td>37381</td>
+<td>Image</td>
+<td>Exif.Image.MaxApertureValue</td>
+<td>Rational</td>
+<td>The smallest F number of the lens.</td>
+</tr>
+<tr>
+<td>0x9206</td>
+<td>37382</td>
+<td>Image</td>
+<td>Exif.Image.SubjectDistance</td>
+<td>SRational</td>
+<td>The distance to the subject, given in meters.</td>
+</tr>
+<tr>
+<td>0x9207</td>
+<td>37383</td>
+<td>Image</td>
+<td>Exif.Image.MeteringMode</td>
+<td>Short</td>
+<td>The metering mode.</td>
+</tr>
+<tr>
+<td>0x9208</td>
+<td>37384</td>
+<td>Image</td>
+<td>Exif.Image.LightSource</td>
+<td>Short</td>
+<td>The kind of light source.</td>
+</tr>
+<tr>
+<td>0x9209</td>
+<td>37385</td>
+<td>Image</td>
+<td>Exif.Image.Flash</td>
+<td>Short</td>
+<td>Indicates the status of flash when the image was shot.</td>
+</tr>
+<tr>
+<td>0x920a</td>
+<td>37386</td>
+<td>Image</td>
+<td>Exif.Image.FocalLength</td>
+<td>Rational</td>
+<td>The actual focal length of the lens, in mm.</td>
+</tr>
+<tr>
+<td>0x920b</td>
+<td>37387</td>
+<td>Image</td>
+<td>Exif.Image.FlashEnergy</td>
+<td>Rational</td>
+<td>Amount of flash energy (BCPS).</td>
+</tr>
+<tr>
+<td>0x920c</td>
+<td>37388</td>
+<td>Image</td>
+<td>Exif.Image.SpatialFrequencyResponse</td>
+<td>Undefined</td>
+<td>SFR of the camera.</td>
+</tr>
+<tr>
+<td>0x920d</td>
+<td>37389</td>
+<td>Image</td>
+<td>Exif.Image.Noise</td>
+<td>Undefined</td>
+<td>Noise measurement values.</td>
+</tr>
+<tr>
+<td>0x920e</td>
+<td>37390</td>
+<td>Image</td>
+<td>Exif.Image.FocalPlaneXResolution</td>
+<td>Rational</td>
+<td>Number of pixels per FocalPlaneResolutionUnit (37392) in ImageWidth direction for main image.</td>
+</tr>
+<tr>
+<td>0x920f</td>
+<td>37391</td>
+<td>Image</td>
+<td>Exif.Image.FocalPlaneYResolution</td>
+<td>Rational</td>
+<td>Number of pixels per FocalPlaneResolutionUnit (37392) in ImageLength direction for main image.</td>
+</tr>
+<tr>
+<td>0x9210</td>
+<td>37392</td>
+<td>Image</td>
+<td>Exif.Image.FocalPlaneResolutionUnit</td>
+<td>Short</td>
+<td>Unit of measurement for FocalPlaneXResolution(37390) and FocalPlaneYResolution(37391).</td>
+</tr>
+<tr>
+<td>0x9211</td>
+<td>37393</td>
+<td>Image</td>
+<td>Exif.Image.ImageNumber</td>
+<td>Long</td>
+<td>Number assigned to an image, e.g., in a chained image burst.</td>
+</tr>
+<tr>
+<td>0x9212</td>
+<td>37394</td>
+<td>Image</td>
+<td>Exif.Image.SecurityClassification</td>
+<td>Ascii</td>
+<td>Security classification assigned to the image.</td>
+</tr>
+<tr>
+<td>0x9213</td>
+<td>37395</td>
+<td>Image</td>
+<td>Exif.Image.ImageHistory</td>
+<td>Ascii</td>
+<td>Record of what has been done to the image.</td>
+</tr>
+<tr>
+<td>0x9214</td>
+<td>37396</td>
+<td>Image</td>
+<td>Exif.Image.SubjectLocation</td>
+<td>Short</td>
+<td>Indicates the location and area of the main subject in the overall scene.</td>
+</tr>
+<tr>
+<td>0x9215</td>
+<td>37397</td>
+<td>Image</td>
+<td>Exif.Image.ExposureIndex</td>
+<td>Rational</td>
+<td>Encodes the camera exposure index setting when image was captured.</td>
+</tr>
+<tr>
+<td>0x9216</td>
+<td>37398</td>
+<td>Image</td>
+<td>Exif.Image.TIFFEPStandardID</td>
+<td>Byte</td>
+<td>Contains four ASCII characters representing the TIFF/EP standard version of a TIFF/EP file, eg '1', '0', '0', '0'</td>
+</tr>
+<tr>
+<td>0x9217</td>
+<td>37399</td>
+<td>Image</td>
+<td>Exif.Image.SensingMethod</td>
+<td>Short</td>
+<td>Type of image sensor.</td>
+</tr>
+<tr>
+<td>0x9c9b</td>
+<td>40091</td>
+<td>Image</td>
+<td>Exif.Image.XPTitle</td>
+<td>Byte</td>
+<td>Title tag used by Windows, encoded in UCS2</td>
+</tr>
+<tr>
+<td>0x9c9c</td>
+<td>40092</td>
+<td>Image</td>
+<td>Exif.Image.XPComment</td>
+<td>Byte</td>
+<td>Comment tag used by Windows, encoded in UCS2</td>
+</tr>
+<tr>
+<td>0x9c9d</td>
+<td>40093</td>
+<td>Image</td>
+<td>Exif.Image.XPAuthor</td>
+<td>Byte</td>
+<td>Author tag used by Windows, encoded in UCS2</td>
+</tr>
+<tr>
+<td>0x9c9e</td>
+<td>40094</td>
+<td>Image</td>
+<td>Exif.Image.XPKeywords</td>
+<td>Byte</td>
+<td>Keywords tag used by Windows, encoded in UCS2</td>
+</tr>
+<tr>
+<td>0x9c9f</td>
+<td>40095</td>
+<td>Image</td>
+<td>Exif.Image.XPSubject</td>
+<td>Byte</td>
+<td>Subject tag used by Windows, encoded in UCS2</td>
+</tr>
+<tr>
+<td>0xc4a5</td>
+<td>50341</td>
+<td>Image</td>
+<td>Exif.Image.PrintImageMatching</td>
+<td>Undefined</td>
+<td>Print Image Matching, description needed.</td>
+</tr>
+<tr>
+<td>0xc612</td>
+<td>50706</td>
+<td>Image</td>
+<td>Exif.Image.DNGVersion</td>
+<td>Byte</td>
+<td>This tag encodes the DNG four-tier version number. For files compliant with version 1.1.0.0 of the DNG specification, this tag should contain the bytes: 1, 1, 0, 0.</td>
+</tr>
+<tr>
+<td>0xc613</td>
+<td>50707</td>
+<td>Image</td>
+<td>Exif.Image.DNGBackwardVersion</td>
+<td>Byte</td>
+<td>This tag specifies the oldest version of the Digital Negative specification for which a file is compatible. Readers shouldnot attempt to read a file if this tag specifies a version number that is higher than the version number of the specification the reader was based on.  In addition to checking the version tags, readers should, for all tags, check the types, counts, and values, to verify it is able to correctly read the file.</td>
+</tr>
+<tr>
+<td>0xc614</td>
+<td>50708</td>
+<td>Image</td>
+<td>Exif.Image.UniqueCameraModel</td>
+<td>Ascii</td>
+<td>Defines a unique, non-localized name for the camera model that created the image in the raw file. This name should include the manufacturer's name to avoid conflicts, and should not be localized, even if the camera name itself is localized for different markets (see LocalizedCameraModel). This string may be used by reader software to index into per-model preferences and replacement profiles.</td>
+</tr>
+<tr>
+<td>0xc615</td>
+<td>50709</td>
+<td>Image</td>
+<td>Exif.Image.LocalizedCameraModel</td>
+<td>Byte</td>
+<td>Similar to the UniqueCameraModel field, except the name can be localized for different markets to match the localization of the camera name.</td>
+</tr>
+<tr>
+<td>0xc616</td>
+<td>50710</td>
+<td>Image</td>
+<td>Exif.Image.CFAPlaneColor</td>
+<td>Byte</td>
+<td>Provides a mapping between the values in the CFAPattern tag and the plane numbers in LinearRaw space. This is a required tag for non-RGB CFA images.</td>
+</tr>
+<tr>
+<td>0xc617</td>
+<td>50711</td>
+<td>Image</td>
+<td>Exif.Image.CFALayout</td>
+<td>Short</td>
+<td>Describes the spatial layout of the CFA.</td>
+</tr>
+<tr>
+<td>0xc618</td>
+<td>50712</td>
+<td>Image</td>
+<td>Exif.Image.LinearizationTable</td>
+<td>Short</td>
+<td>Describes a lookup table that maps stored values into linear values. This tag is typically used to increase compression ratios by storing the raw data in a non-linear, more visually uniform space with fewer total encoding levels. If SamplesPerPixel is not equal to one, this single table applies to all the samples for each pixel.</td>
+</tr>
+<tr>
+<td>0xc619</td>
+<td>50713</td>
+<td>Image</td>
+<td>Exif.Image.BlackLevelRepeatDim</td>
+<td>Short</td>
+<td>Specifies repeat pattern size for the BlackLevel tag.</td>
+</tr>
+<tr>
+<td>0xc61a</td>
+<td>50714</td>
+<td>Image</td>
+<td>Exif.Image.BlackLevel</td>
+<td>Rational</td>
+<td>Specifies the zero light (a.k.a. thermal black or black current) encoding level, as a repeating pattern. The origin of this pattern is the top-left corner of the ActiveArea rectangle. The values are stored in row-column-sample scan order.</td>
+</tr>
+<tr>
+<td>0xc61b</td>
+<td>50715</td>
+<td>Image</td>
+<td>Exif.Image.BlackLevelDeltaH</td>
+<td>SRational</td>
+<td>If the zero light encoding level is a function of the image column, BlackLevelDeltaH specifies the difference between the zero light encoding level for each column and the baseline zero light encoding level. If SamplesPerPixel is not equal to one, this single table applies to all the samples for each pixel.</td>
+</tr>
+<tr>
+<td>0xc61c</td>
+<td>50716</td>
+<td>Image</td>
+<td>Exif.Image.BlackLevelDeltaV</td>
+<td>SRational</td>
+<td>If the zero light encoding level is a function of the image row, this tag specifies the difference between the zero light encoding level for each row and the baseline zero light encoding level. If SamplesPerPixel is not equal to one, this single table applies to all the samples for each pixel.</td>
+</tr>
+<tr>
+<td>0xc61d</td>
+<td>50717</td>
+<td>Image</td>
+<td>Exif.Image.WhiteLevel</td>
+<td>Short</td>
+<td>This tag specifies the fully saturated encoding level for the raw sample values. Saturation is caused either by the sensor itself becoming highly non-linear in response, or by the camera's analog to digital converter clipping.</td>
+</tr>
+<tr>
+<td>0xc61e</td>
+<td>50718</td>
+<td>Image</td>
+<td>Exif.Image.DefaultScale</td>
+<td>Rational</td>
+<td>DefaultScale is required for cameras with non-square pixels. It specifies the default scale factors for each direction to convert the image to square pixels. Typically these factors are selected to approximately preserve total pixel count. For CFA images that use CFALayout equal to 2, 3, 4, or 5, such as the Fujifilm SuperCCD, these two values should usually differ by a factor of 2.0.</td>
+</tr>
+<tr>
+<td>0xc61f</td>
+<td>50719</td>
+<td>Image</td>
+<td>Exif.Image.DefaultCropOrigin</td>
+<td>Short</td>
+<td>Raw images often store extra pixels around the edges of the final image. These extra pixels help prevent interpolation artifacts near the edges of the final image. DefaultCropOrigin specifies the origin of the final image area, in raw image coordinates (i.e., before the DefaultScale has been applied), relative to the top-left corner of the ActiveArea rectangle.</td>
+</tr>
+<tr>
+<td>0xc620</td>
+<td>50720</td>
+<td>Image</td>
+<td>Exif.Image.DefaultCropSize</td>
+<td>Short</td>
+<td>Raw images often store extra pixels around the edges of the final image. These extra pixels help prevent interpolation artifacts near the edges of the final image. DefaultCropSize specifies the size of the final image area, in raw image coordinates (i.e., before the DefaultScale has been applied).</td>
+</tr>
+<tr>
+<td>0xc621</td>
+<td>50721</td>
+<td>Image</td>
+<td>Exif.Image.ColorMatrix1</td>
+<td>SRational</td>
+<td>ColorMatrix1 defines a transformation matrix that converts XYZ values to reference camera native color space values, under the first calibration illuminant. The matrix values are stored in row scan order. The ColorMatrix1 tag is required for all non-monochrome DNG files.</td>
+</tr>
+<tr>
+<td>0xc622</td>
+<td>50722</td>
+<td>Image</td>
+<td>Exif.Image.ColorMatrix2</td>
+<td>SRational</td>
+<td>ColorMatrix2 defines a transformation matrix that converts XYZ values to reference camera native color space values, under the second calibration illuminant. The matrix values are stored in row scan order.</td>
+</tr>
+<tr>
+<td>0xc623</td>
+<td>50723</td>
+<td>Image</td>
+<td>Exif.Image.CameraCalibration1</td>
+<td>SRational</td>
+<td>CameraCalibration1 defines a calibration matrix that transforms reference camera native space values to individual camera native space values under the first calibration illuminant. The matrix is stored in row scan order. This matrix is stored separately from the matrix specified by the ColorMatrix1 tag to allow raw converters to swap in replacement color matrices based on UniqueCameraModel tag, while still taking advantage of any per-individual camera calibration performed by the camera manufacturer.</td>
+</tr>
+<tr>
+<td>0xc624</td>
+<td>50724</td>
+<td>Image</td>
+<td>Exif.Image.CameraCalibration2</td>
+<td>SRational</td>
+<td>CameraCalibration2 defines a calibration matrix that transforms reference camera native space values to individual camera native space values under the second calibration illuminant. The matrix is stored in row scan order. This matrix is stored separately from the matrix specified by the ColorMatrix2 tag to allow raw converters to swap in replacement color matrices based on UniqueCameraModel tag, while still taking advantage of any per-individual camera calibration performed by the camera manufacturer.</td>
+</tr>
+<tr>
+<td>0xc625</td>
+<td>50725</td>
+<td>Image</td>
+<td>Exif.Image.ReductionMatrix1</td>
+<td>SRational</td>
+<td>ReductionMatrix1 defines a dimensionality reduction matrix for use as the first stage in converting color camera native space values to XYZ values, under the first calibration illuminant. This tag may only be used if ColorPlanes is greater than 3. The matrix is stored in row scan order.</td>
+</tr>
+<tr>
+<td>0xc626</td>
+<td>50726</td>
+<td>Image</td>
+<td>Exif.Image.ReductionMatrix2</td>
+<td>SRational</td>
+<td>ReductionMatrix2 defines a dimensionality reduction matrix for use as the first stage in converting color camera native space values to XYZ values, under the second calibration illuminant. This tag may only be used if ColorPlanes is greater than 3. The matrix is stored in row scan order.</td>
+</tr>
+<tr>
+<td>0xc627</td>
+<td>50727</td>
+<td>Image</td>
+<td>Exif.Image.AnalogBalance</td>
+<td>Rational</td>
+<td>Normally the stored raw values are not white balanced, since any digital white balancing will reduce the dynamic range of the final image if the user decides to later adjust the white balance; however, if camera hardware is capable of white balancing the color channels before the signal is digitized, it can improve the dynamic range of the final image. AnalogBalance defines the gain, either analog (recommended) or digital (not recommended) that has been applied the stored raw values.</td>
+</tr>
+<tr>
+<td>0xc628</td>
+<td>50728</td>
+<td>Image</td>
+<td>Exif.Image.AsShotNeutral</td>
+<td>Short</td>
+<td>Specifies the selected white balance at time of capture, encoded as the coordinates of a perfectly neutral color in linear reference space values. The inclusion of this tag precludes the inclusion of the AsShotWhiteXY tag.</td>
+</tr>
+<tr>
+<td>0xc629</td>
+<td>50729</td>
+<td>Image</td>
+<td>Exif.Image.AsShotWhiteXY</td>
+<td>Rational</td>
+<td>Specifies the selected white balance at time of capture, encoded as x-y chromaticity coordinates. The inclusion of this tag precludes the inclusion of the AsShotNeutral tag.</td>
+</tr>
+<tr>
+<td>0xc62a</td>
+<td>50730</td>
+<td>Image</td>
+<td>Exif.Image.BaselineExposure</td>
+<td>SRational</td>
+<td>Camera models vary in the trade-off they make between highlight headroom and shadow noise. Some leave a significant amount of highlight headroom during a normal exposure. This allows significant negative exposure compensation to be applied during raw conversion, but also means normal exposures will contain more shadow noise. Other models leave less headroom during normal exposures. This allows for less negative exposure compensation, but results in lower shadow noise for normal exposures. Because of these differences, a raw converter needs to vary the zero point of its exposure compensation control from model to model. BaselineExposure specifies by how much (in EV units) to move the zero point. Positive values result in brighter default results, while negative values result in darker default results.</td>
+</tr>
+<tr>
+<td>0xc62b</td>
+<td>50731</td>
+<td>Image</td>
+<td>Exif.Image.BaselineNoise</td>
+<td>Rational</td>
+<td>Specifies the relative noise level of the camera model at a baseline ISO value of 100, compared to a reference camera model. Since noise levels tend to vary approximately with the square root of the ISO value, a raw converter can use this value, combined with the current ISO, to estimate the relative noise level of the current image.</td>
+</tr>
+<tr>
+<td>0xc62c</td>
+<td>50732</td>
+<td>Image</td>
+<td>Exif.Image.BaselineSharpness</td>
+<td>Rational</td>
+<td>Specifies the relative amount of sharpening required for this camera model, compared to a reference camera model. Camera models vary in the strengths of their anti-aliasing filters. Cameras with weak or no filters require less sharpening than cameras with strong anti-aliasing filters.</td>
+</tr>
+<tr>
+<td>0xc62d</td>
+<td>50733</td>
+<td>Image</td>
+<td>Exif.Image.BayerGreenSplit</td>
+<td>Long</td>
+<td>Only applies to CFA images using a Bayer pattern filter array. This tag specifies, in arbitrary units, how closely the values of the green pixels in the blue/green rows track the values of the green pixels in the red/green rows. A value of zero means the two kinds of green pixels track closely, while a non-zero value means they sometimes diverge. The useful range for this tag is from 0 (no divergence) to about 5000 (quite large divergence).</td>
+</tr>
+<tr>
+<td>0xc62e</td>
+<td>50734</td>
+<td>Image</td>
+<td>Exif.Image.LinearResponseLimit</td>
+<td>Rational</td>
+<td>Some sensors have an unpredictable non-linearity in their response as they near the upper limit of their encoding range. This non-linearity results in color shifts in the highlight areas of the resulting image unless the raw converter compensates for this effect. LinearResponseLimit specifies the fraction of the encoding range above which the response may become significantly non-linear.</td>
+</tr>
+<tr>
+<td>0xc62f</td>
+<td>50735</td>
+<td>Image</td>
+<td>Exif.Image.CameraSerialNumber</td>
+<td>Ascii</td>
+<td>CameraSerialNumber contains the serial number of the camera or camera body that captured the image.</td>
+</tr>
+<tr>
+<td>0xc630</td>
+<td>50736</td>
+<td>Image</td>
+<td>Exif.Image.LensInfo</td>
+<td>Rational</td>
+<td>Contains information about the lens that captured the image. If the minimum f-stops are unknown, they should be encoded as 0/0.</td>
+</tr>
+<tr>
+<td>0xc631</td>
+<td>50737</td>
+<td>Image</td>
+<td>Exif.Image.ChromaBlurRadius</td>
+<td>Rational</td>
+<td>ChromaBlurRadius provides a hint to the DNG reader about how much chroma blur should be applied to the image. If this tag is omitted, the reader will use its default amount of chroma blurring. Normally this tag is only included for non-CFA images, since the amount of chroma blur required for mosaic images is highly dependent on the de-mosaic algorithm, in which case the DNG reader's default value is likely optimized for its particular de-mosaic algorithm.</td>
+</tr>
+<tr>
+<td>0xc632</td>
+<td>50738</td>
+<td>Image</td>
+<td>Exif.Image.AntiAliasStrength</td>
+<td>Rational</td>
+<td>Provides a hint to the DNG reader about how strong the camera's anti-alias filter is. A value of 0.0 means no anti-alias filter (i.e., the camera is prone to aliasing artifacts with some subjects), while a value of 1.0 means a strong anti-alias filter (i.e., the camera almost never has aliasing artifacts).</td>
+</tr>
+<tr>
+<td>0xc633</td>
+<td>50739</td>
+<td>Image</td>
+<td>Exif.Image.ShadowScale</td>
+<td>SRational</td>
+<td>This tag is used by Adobe Camera Raw to control the sensitivity of its 'Shadows' slider.</td>
+</tr>
+<tr>
+<td>0xc634</td>
+<td>50740</td>
+<td>Image</td>
+<td>Exif.Image.DNGPrivateData</td>
+<td>Byte</td>
+<td>Provides a way for camera manufacturers to store private data in the DNG file for use by their own raw converters, and to have that data preserved by programs that edit DNG files.</td>
+</tr>
+<tr>
+<td>0xc635</td>
+<td>50741</td>
+<td>Image</td>
+<td>Exif.Image.MakerNoteSafety</td>
+<td>Short</td>
+<td>MakerNoteSafety lets the DNG reader know whether the EXIF MakerNote tag is safe to preserve along with the rest of the EXIF data. File browsers and other image management software processing an image with a preserved MakerNote should be aware that any thumbnail image embedded in the MakerNote may be stale, and may not reflect the current state of the full size image.</td>
+</tr>
+<tr>
+<td>0xc65a</td>
+<td>50778</td>
+<td>Image</td>
+<td>Exif.Image.CalibrationIlluminant1</td>
+<td>Short</td>
+<td>The illuminant used for the first set of color calibration tags (ColorMatrix1, CameraCalibration1, ReductionMatrix1). The legal values for this tag are the same as the legal values for the LightSource EXIF tag.</td>
+</tr>
+<tr>
+<td>0xc65b</td>
+<td>50779</td>
+<td>Image</td>
+<td>Exif.Image.CalibrationIlluminant2</td>
+<td>Short</td>
+<td>The illuminant used for an optional second set of color calibration tags (ColorMatrix2, CameraCalibration2, ReductionMatrix2). The legal values for this tag are the same as the legal values for the CalibrationIlluminant1 tag; however, if both are included, neither is allowed to have a value of 0 (unknown).</td>
+</tr>
+<tr>
+<td>0xc65c</td>
+<td>50780</td>
+<td>Image</td>
+<td>Exif.Image.BestQualityScale</td>
+<td>Rational</td>
+<td>For some cameras, the best possible image quality is not achieved by preserving the total pixel count during conversion. For example, Fujifilm SuperCCD images have maximum detail when their total pixel count is doubled. This tag specifies the amount by which the values of the DefaultScale tag need to be multiplied to achieve the best quality image size.</td>
+</tr>
+<tr>
+<td>0xc65d</td>
+<td>50781</td>
+<td>Image</td>
+<td>Exif.Image.RawDataUniqueID</td>
+<td>Byte</td>
+<td>This tag contains a 16-byte unique identifier for the raw image data in the DNG file. DNG readers can use this tag to recognize a particular raw image, even if the file's name or the metadata contained in the file has been changed. If a DNG writer creates such an identifier, it should do so using an algorithm that will ensure that it is very unlikely two different images will end up having the same identifier.</td>
+</tr>
+<tr>
+<td>0xc68b</td>
+<td>50827</td>
+<td>Image</td>
+<td>Exif.Image.OriginalRawFileName</td>
+<td>Byte</td>
+<td>If the DNG file was converted from a non-DNG raw file, then this tag contains the file name of that original raw file.</td>
+</tr>
+<tr>
+<td>0xc68c</td>
+<td>50828</td>
+<td>Image</td>
+<td>Exif.Image.OriginalRawFileData</td>
+<td>Undefined</td>
+<td>If the DNG file was converted from a non-DNG raw file, then this tag contains the compressed contents of that original raw file. The contents of this tag always use the big-endian byte order. The tag contains a sequence of data blocks. Future versions of the DNG specification may define additional data blocks, so DNG readers should ignore extra bytes when parsing this tag. DNG readers should also detect the case where data blocks are missing from the end of the sequence, and should assume a default value for all the missing blocks. There are no padding or alignment bytes between data blocks.</td>
+</tr>
+<tr>
+<td>0xc68d</td>
+<td>50829</td>
+<td>Image</td>
+<td>Exif.Image.ActiveArea</td>
+<td>Short</td>
+<td>This rectangle defines the active (non-masked) pixels of the sensor. The order of the rectangle coordinates is: top, left, bottom, right.</td>
+</tr>
+<tr>
+<td>0xc68e</td>
+<td>50830</td>
+<td>Image</td>
+<td>Exif.Image.MaskedAreas</td>
+<td>Short</td>
+<td>This tag contains a list of non-overlapping rectangle coordinates of fully masked pixels, which can be optionally used by DNG readers to measure the black encoding level. The order of each rectangle's coordinates is: top, left, bottom, right. If the raw image data has already had its black encoding level subtracted, then this tag should not be used, since the masked pixels are no longer useful.</td>
+</tr>
+<tr>
+<td>0xc68f</td>
+<td>50831</td>
+<td>Image</td>
+<td>Exif.Image.AsShotICCProfile</td>
+<td>Undefined</td>
+<td>This tag contains an ICC profile that, in conjunction with the AsShotPreProfileMatrix tag, provides the camera manufacturer with a way to specify a default color rendering from camera color space coordinates (linear reference values) into the ICC profile connection space. The ICC profile connection space is an output referred colorimetric space, whereas the other color calibration tags in DNG specify a conversion into a scene referred colorimetric space. This means that the rendering in this profile should include any desired tone and gamut mapping needed to convert between scene referred values and output referred values.</td>
+</tr>
+<tr>
+<td>0xc690</td>
+<td>50832</td>
+<td>Image</td>
+<td>Exif.Image.AsShotPreProfileMatrix</td>
+<td>SRational</td>
+<td>This tag is used in conjunction with the AsShotICCProfile tag. It specifies a matrix that should be applied to the camera color space coordinates before processing the values through the ICC profile specified in the AsShotICCProfile tag. The matrix is stored in the row scan order. If ColorPlanes is greater than three, then this matrix can (but is not required to) reduce the dimensionality of the color data down to three components, in which case the AsShotICCProfile should have three rather than ColorPlanes input components.</td>
+</tr>
+<tr>
+<td>0xc691</td>
+<td>50833</td>
+<td>Image</td>
+<td>Exif.Image.CurrentICCProfile</td>
+<td>Undefined</td>
+<td>This tag is used in conjunction with the CurrentPreProfileMatrix tag. The CurrentICCProfile and CurrentPreProfileMatrix tags have the same purpose and usage as the AsShotICCProfile and AsShotPreProfileMatrix tag pair, except they are for use by raw file editors rather than camera manufacturers.</td>
+</tr>
+<tr>
+<td>0xc692</td>
+<td>50834</td>
+<td>Image</td>
+<td>Exif.Image.CurrentPreProfileMatrix</td>
+<td>SRational</td>
+<td>This tag is used in conjunction with the CurrentICCProfile tag. The CurrentICCProfile and CurrentPreProfileMatrix tags have the same purpose and usage as the AsShotICCProfile and AsShotPreProfileMatrix tag pair, except they are for use by raw file editors rather than camera manufacturers.</td>
+</tr>
+<tr>
+<td>0xc6bf</td>
+<td>50879</td>
+<td>Image</td>
+<td>Exif.Image.ColorimetricReference</td>
+<td>Short</td>
+<td>The DNG color model documents a transform between camera colors and CIE XYZ values. This tag describes the colorimetric reference for the CIE XYZ values. 0 = The XYZ values are scene-referred. 1 = The XYZ values are output-referred, using the ICC profile perceptual dynamic range. This tag allows output-referred data to be stored in DNG files and still processed correctly by DNG readers.</td>
+</tr>
+<tr>
+<td>0xc6f3</td>
+<td>50931</td>
+<td>Image</td>
+<td>Exif.Image.CameraCalibrationSignature</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string associated with the CameraCalibration1 and CameraCalibration2 tags. The CameraCalibration1 and CameraCalibration2 tags should only be used in the DNG color transform if the string stored in the CameraCalibrationSignature tag exactly matches the string stored in the ProfileCalibrationSignature tag for the selected camera profile.</td>
+</tr>
+<tr>
+<td>0xc6f4</td>
+<td>50932</td>
+<td>Image</td>
+<td>Exif.Image.ProfileCalibrationSignature</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string associated with the camera profile tags. The CameraCalibration1 and CameraCalibration2 tags should only be used in the DNG color transfer if the string stored in the CameraCalibrationSignature tag exactly matches the string stored in the ProfileCalibrationSignature tag for the selected camera profile.</td>
+</tr>
+<tr>
+<td>0xc6f6</td>
+<td>50934</td>
+<td>Image</td>
+<td>Exif.Image.AsShotProfileName</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string containing the name of the "as shot" camera profile, if any.</td>
+</tr>
+<tr>
+<td>0xc6f7</td>
+<td>50935</td>
+<td>Image</td>
+<td>Exif.Image.NoiseReductionApplied</td>
+<td>Rational</td>
+<td>This tag indicates how much noise reduction has been applied to the raw data on a scale of 0.0 to 1.0. A 0.0 value indicates that no noise reduction has been applied. A 1.0 value indicates that the "ideal" amount of noise reduction has been applied, i.e. that the DNG reader should not apply additional noise reduction by default. A value of 0/0 indicates that this parameter is unknown.</td>
+</tr>
+<tr>
+<td>0xc6f8</td>
+<td>50936</td>
+<td>Image</td>
+<td>Exif.Image.ProfileName</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string containing the name of the camera profile. This tag is optional if there is only a single camera profile stored in the file but is required for all camera profiles if there is more than one camera profile stored in the file.</td>
+</tr>
+<tr>
+<td>0xc6f9</td>
+<td>50937</td>
+<td>Image</td>
+<td>Exif.Image.ProfileHueSatMapDims</td>
+<td>Long</td>
+<td>This tag specifies the number of input samples in each dimension of the hue/saturation/value mapping tables. The data for these tables are stored in ProfileHueSatMapData1 and ProfileHueSatMapData2 tags. The most common case has ValueDivisions equal to 1, so only hue and saturation are used as inputs to the mapping table.</td>
+</tr>
+<tr>
+<td>0xc6fa</td>
+<td>50938</td>
+<td>Image</td>
+<td>Exif.Image.ProfileHueSatMapData1</td>
+<td>Float</td>
+<td>This tag contains the data for the first hue/saturation/value mapping table. Each entry of the table contains three 32-bit IEEE floating-point values. The first entry is hue shift in degrees; the second entry is saturation scale factor; and the third entry is a value scale factor. The table entries are stored in the tag in nested loop order, with the value divisions in the outer loop, the hue divisions in the middle loop, and the saturation divisions in the inner loop. All zero input saturation entries are required to have a value scale factor of 1.0.</td>
+</tr>
+<tr>
+<td>0xc6fb</td>
+<td>50939</td>
+<td>Image</td>
+<td>Exif.Image.ProfileHueSatMapData2</td>
+<td>Float</td>
+<td>This tag contains the data for the second hue/saturation/value mapping table. Each entry of the table contains three 32-bit IEEE floating-point values. The first entry is hue shift in degrees; the second entry is a saturation scale factor; and the third entry is a value scale factor. The table entries are stored in the tag in nested loop order, with the value divisions in the outer loop, the hue divisions in the middle loop, and the saturation divisions in the inner loop. All zero input saturation entries are required to have a value scale factor of 1.0.</td>
+</tr>
+<tr>
+<td>0xc6fc</td>
+<td>50940</td>
+<td>Image</td>
+<td>Exif.Image.ProfileToneCurve</td>
+<td>Float</td>
+<td>This tag contains a default tone curve that can be applied while processing the image as a starting point for user adjustments. The curve is specified as a list of 32-bit IEEE floating-point value pairs in linear gamma. Each sample has an input value in the range of 0.0 to 1.0, and an output value in the range of 0.0 to 1.0. The first sample is required to be (0.0, 0.0), and the last sample is required to be (1.0, 1.0). Interpolated the curve using a cubic spline.</td>
+</tr>
+<tr>
+<td>0xc6fd</td>
+<td>50941</td>
+<td>Image</td>
+<td>Exif.Image.ProfileEmbedPolicy</td>
+<td>Long</td>
+<td>This tag contains information about the usage rules for the associated camera profile.</td>
+</tr>
+<tr>
+<td>0xc6fe</td>
+<td>50942</td>
+<td>Image</td>
+<td>Exif.Image.ProfileCopyright</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string containing the copyright information for the camera profile. This string always should be preserved along with the other camera profile tags.</td>
+</tr>
+<tr>
+<td>0xc714</td>
+<td>50964</td>
+<td>Image</td>
+<td>Exif.Image.ForwardMatrix1</td>
+<td>SRational</td>
+<td>This tag defines a matrix that maps white balanced camera colors to XYZ D50 colors.</td>
+</tr>
+<tr>
+<td>0xc715</td>
+<td>50965</td>
+<td>Image</td>
+<td>Exif.Image.ForwardMatrix2</td>
+<td>SRational</td>
+<td>This tag defines a matrix that maps white balanced camera colors to XYZ D50 colors.</td>
+</tr>
+<tr>
+<td>0xc716</td>
+<td>50966</td>
+<td>Image</td>
+<td>Exif.Image.PreviewApplicationName</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string containing the name of the application that created the preview stored in the IFD.</td>
+</tr>
+<tr>
+<td>0xc717</td>
+<td>50967</td>
+<td>Image</td>
+<td>Exif.Image.PreviewApplicationVersion</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string containing the version number of the application that created the preview stored in the IFD.</td>
+</tr>
+<tr>
+<td>0xc718</td>
+<td>50968</td>
+<td>Image</td>
+<td>Exif.Image.PreviewSettingsName</td>
+<td>Byte</td>
+<td>A UTF-8 encoded string containing the name of the conversion settings (for example, snapshot name) used for the preview stored in the IFD.</td>
+</tr>
+<tr>
+<td>0xc719</td>
+<td>50969</td>
+<td>Image</td>
+<td>Exif.Image.PreviewSettingsDigest</td>
+<td>Byte</td>
+<td>A unique ID of the conversion settings (for example, MD5 digest) used to render the preview stored in the IFD.</td>
+</tr>
+<tr>
+<td>0xc71a</td>
+<td>50970</td>
+<td>Image</td>
+<td>Exif.Image.PreviewColorSpace</td>
+<td>Long</td>
+<td>This tag specifies the color space in which the rendered preview in this IFD is stored. The default value for this tag is sRGB for color previews and Gray Gamma 2.2 for monochrome previews.</td>
+</tr>
+<tr>
+<td>0xc71b</td>
+<td>50971</td>
+<td>Image</td>
+<td>Exif.Image.PreviewDateTime</td>
+<td>Ascii</td>
+<td>This tag is an ASCII string containing the name of the date/time at which the preview stored in the IFD was rendered. The date/time is encoded using ISO 8601 format.</td>
+</tr>
+<tr>
+<td>0xc71c</td>
+<td>50972</td>
+<td>Image</td>
+<td>Exif.Image.RawImageDigest</td>
+<td>Undefined</td>
+<td>This tag is an MD5 digest of the raw image data. All pixels in the image are processed in row-scan order. Each pixel is zero padded to 16 or 32 bits deep (16-bit for data less than or equal to 16 bits deep, 32-bit otherwise). The data for each pixel is processed in little-endian byte order.</td>
+</tr>
+<tr>
+<td>0xc71d</td>
+<td>50973</td>
+<td>Image</td>
+<td>Exif.Image.OriginalRawFileDigest</td>
+<td>Undefined</td>
+<td>This tag is an MD5 digest of the data stored in the OriginalRawFileData tag.</td>
+</tr>
+<tr>
+<td>0xc71e</td>
+<td>50974</td>
+<td>Image</td>
+<td>Exif.Image.SubTileBlockSize</td>
+<td>Long</td>
+<td>Normally, the pixels within a tile are stored in simple row-scan order. This tag specifies that the pixels within a tile should be grouped first into rectangular blocks of the specified size. These blocks are stored in row-scan order. Within each block, the pixels are stored in row-scan order. The use of a non-default value for this tag requires setting the DNGBackwardVersion tag to at least 1.2.0.0.</td>
+</tr>
+<tr>
+<td>0xc71f</td>
+<td>50975</td>
+<td>Image</td>
+<td>Exif.Image.RowInterleaveFactor</td>
+<td>Long</td>
+<td>This tag specifies that rows of the image are stored in interleaved order. The value of the tag specifies the number of interleaved fields. The use of a non-default value for this tag requires setting the DNGBackwardVersion tag to at least 1.2.0.0.</td>
+</tr>
+<tr>
+<td>0xc725</td>
+<td>50981</td>
+<td>Image</td>
+<td>Exif.Image.ProfileLookTableDims</td>
+<td>Long</td>
+<td>This tag specifies the number of input samples in each dimension of a default "look" table. The data for this table is stored in the ProfileLookTableData tag.</td>
+</tr>
+<tr>
+<td>0xc726</td>
+<td>50982</td>
+<td>Image</td>
+<td>Exif.Image.ProfileLookTableData</td>
+<td>Float</td>
+<td>This tag contains a default "look" table that can be applied while processing the image as a starting point for user adjustment. This table uses the same format as the tables stored in the ProfileHueSatMapData1 and ProfileHueSatMapData2 tags, and is applied in the same color space. However, it should be applied later in the processing pipe, after any exposure compensation and/or fill light stages, but before any tone curve stage. Each entry of the table contains three 32-bit IEEE floating-point values. The first entry is hue shift in degrees, the second entry is a saturation scale factor, and the third entry is a value scale factor. The table entries are stored in the tag in nested loop order, with the value divisions in the outer loop, the hue divisions in the middle loop, and the saturation divisions in the inner loop. All zero input saturation entries are required to have a value scale factor of 1.0.</td>
+</tr>
+<tr>
+<td>0xc740</td>
+<td>51008</td>
+<td>Image</td>
+<td>Exif.Image.OpcodeList1</td>
+<td>Undefined</td>
+<td>Specifies the list of opcodes that should be applied to the raw image, as read directly from the file.</td>
+</tr>
+<tr>
+<td>0xc741</td>
+<td>51009</td>
+<td>Image</td>
+<td>Exif.Image.OpcodeList2</td>
+<td>Undefined</td>
+<td>Specifies the list of opcodes that should be applied to the raw image, just after it has been mapped to linear reference values.</td>
+</tr>
+<tr>
+<td>0xc74e</td>
+<td>51022</td>
+<td>Image</td>
+<td>Exif.Image.OpcodeList3</td>
+<td>Undefined</td>
+<td>Specifies the list of opcodes that should be applied to the raw image, just after it has been demosaiced.</td>
+</tr>
+<tr>
+<td>0xc761</td>
+<td>51041</td>
+<td>Image</td>
+<td>Exif.Image.NoiseProfile</td>
+<td>Double</td>
+<td>NoiseProfile describes the amount of noise in a raw image. Specifically, this tag models the amount of signal-dependent photon (shot) noise and signal-independent sensor readout noise, two common sources of noise in raw images. The model assumes that the noise is white and spatially independent, ignoring fixed pattern effects and other sources of noise (e.g., pixel response non-uniformity, spatially-dependent thermal effects, etc.).</td>
+</tr>
+<tr>
+<td>0x829a</td>
+<td>33434</td>
+<td>Photo</td>
+<td>Exif.Photo.ExposureTime</td>
+<td>Rational</td>
+<td>Exposure time, given in seconds (sec).</td>
+</tr>
+<tr>
+<td>0x829d</td>
+<td>33437</td>
+<td>Photo</td>
+<td>Exif.Photo.FNumber</td>
+<td>Rational</td>
+<td>The F number.</td>
+</tr>
+<tr>
+<td>0x8822</td>
+<td>34850</td>
+<td>Photo</td>
+<td>Exif.Photo.ExposureProgram</td>
+<td>Short</td>
+<td>The class of the program used by the camera to set exposure when the picture is taken.</td>
+</tr>
+<tr>
+<td>0x8824</td>
+<td>34852</td>
+<td>Photo</td>
+<td>Exif.Photo.SpectralSensitivity</td>
+<td>Ascii</td>
+<td>Indicates the spectral sensitivity of each channel of the camera used. The tag value is an ASCII string compatible with the standard developed by the ASTM Technical Committee.</td>
+</tr>
+<tr>
+<td>0x8827</td>
+<td>34855</td>
+<td>Photo</td>
+<td>Exif.Photo.ISOSpeedRatings</td>
+<td>Short</td>
+<td>Indicates the ISO Speed and ISO Latitude of the camera or input device as specified in ISO 12232.</td>
+</tr>
+<tr>
+<td>0x8828</td>
+<td>34856</td>
+<td>Photo</td>
+<td>Exif.Photo.OECF</td>
+<td>Undefined</td>
+<td>Indicates the Opto-Electoric Conversion Function (OECF) specified in ISO 14524. &lt;OECF&gt; is the relationship between the camera optical input and the image values.</td>
+</tr>
+<tr>
+<td>0x8830</td>
+<td>34864</td>
+<td>Photo</td>
+<td>Exif.Photo.SensitivityType</td>
+<td>Short</td>
+<td>The SensitivityType tag indicates which one of the parameters of ISO12232 is the PhotographicSensitivity tag. Although it is an optional tag, it should be recorded when a PhotographicSensitivity tag is recorded. Value = 4, 5, 6, or 7 may be used in case that the values of plural parameters are the same.</td>
+</tr>
+<tr>
+<td>0x8831</td>
+<td>34865</td>
+<td>Photo</td>
+<td>Exif.Photo.StandardOutputSensitivity</td>
+<td>Long</td>
+<td>This tag indicates the standard output sensitivity value of a camera or input device defined in ISO 12232. When recording this tag, the PhotographicSensitivity and SensitivityType tags shall also be recorded.</td>
+</tr>
+<tr>
+<td>0x8832</td>
+<td>34866</td>
+<td>Photo</td>
+<td>Exif.Photo.RecommendedExposureIndex</td>
+<td>Long</td>
+<td>This tag indicates the recommended exposure index value of a camera or input device defined in ISO 12232. When recording this tag, the PhotographicSensitivity and SensitivityType tags shall also be recorded.</td>
+</tr>
+<tr>
+<td>0x8833</td>
+<td>34867</td>
+<td>Photo</td>
+<td>Exif.Photo.ISOSpeed</td>
+<td>Long</td>
+<td>This tag indicates the ISO speed value of a camera or input device that is defined in ISO 12232. When recording this tag, the PhotographicSensitivity and SensitivityType tags shall also be recorded.</td>
+</tr>
+<tr>
+<td>0x8834</td>
+<td>34868</td>
+<td>Photo</td>
+<td>Exif.Photo.ISOSpeedLatitudeyyy</td>
+<td>Long</td>
+<td>This tag indicates the ISO speed latitude yyy value of a camera or input device that is defined in ISO 12232. However, this tag shall not be recorded without ISOSpeed and ISOSpeedLatitudezzz.</td>
+</tr>
+<tr>
+<td>0x8835</td>
+<td>34869</td>
+<td>Photo</td>
+<td>Exif.Photo.ISOSpeedLatitudezzz</td>
+<td>Long</td>
+<td>This tag indicates the ISO speed latitude zzz value of a camera or input device that is defined in ISO 12232. However, this tag shall not be recorded without ISOSpeed and ISOSpeedLatitudeyyy.</td>
+</tr>
+<tr>
+<td>0x9000</td>
+<td>36864</td>
+<td>Photo</td>
+<td>Exif.Photo.ExifVersion</td>
+<td>Undefined</td>
+<td>The version of this standard supported. Nonexistence of this field is taken to mean nonconformance to the standard.</td>
+</tr>
+<tr>
+<td>0x9003</td>
+<td>36867</td>
+<td>Photo</td>
+<td>Exif.Photo.DateTimeOriginal</td>
+<td>Ascii</td>
+<td>The date and time when the original image data was generated. For a digital still camera the date and time the picture was taken are recorded.</td>
+</tr>
+<tr>
+<td>0x9004</td>
+<td>36868</td>
+<td>Photo</td>
+<td>Exif.Photo.DateTimeDigitized</td>
+<td>Ascii</td>
+<td>The date and time when the image was stored as digital data.</td>
+</tr>
+<tr>
+<td>0x9101</td>
+<td>37121</td>
+<td>Photo</td>
+<td>Exif.Photo.ComponentsConfiguration</td>
+<td>Undefined</td>
+<td>Information specific to compressed data. The channels of each component are arranged in order from the 1st component to the 4th. For uncompressed data the data arrangement is given in the &lt;PhotometricInterpretation&gt; tag. However, since &lt;PhotometricInterpretation&gt; can only express the order of Y, Cb and Cr, this tag is provided for cases when compressed data uses components other than Y, Cb, and Cr and to enable support of other sequences.</td>
+</tr>
+<tr>
+<td>0x9102</td>
+<td>37122</td>
+<td>Photo</td>
+<td>Exif.Photo.CompressedBitsPerPixel</td>
+<td>Rational</td>
+<td>Information specific to compressed data. The compression mode used for a compressed image is indicated in unit bits per pixel.</td>
+</tr>
+<tr>
+<td>0x9201</td>
+<td>37377</td>
+<td>Photo</td>
+<td>Exif.Photo.ShutterSpeedValue</td>
+<td>SRational</td>
+<td>Shutter speed. The unit is the APEX (Additive System of Photographic Exposure) setting.</td>
+</tr>
+<tr>
+<td>0x9202</td>
+<td>37378</td>
+<td>Photo</td>
+<td>Exif.Photo.ApertureValue</td>
+<td>Rational</td>
+<td>The lens aperture. The unit is the APEX value.</td>
+</tr>
+<tr>
+<td>0x9203</td>
+<td>37379</td>
+<td>Photo</td>
+<td>Exif.Photo.BrightnessValue</td>
+<td>SRational</td>
+<td>The value of brightness. The unit is the APEX value. Ordinarily it is given in the range of -99.99 to 99.99.</td>
+</tr>
+<tr>
+<td>0x9204</td>
+<td>37380</td>
+<td>Photo</td>
+<td>Exif.Photo.ExposureBiasValue</td>
+<td>SRational</td>
+<td>The exposure bias. The units is the APEX value. Ordinarily it is given in the range of -99.99 to 99.99.</td>
+</tr>
+<tr>
+<td>0x9205</td>
+<td>37381</td>
+<td>Photo</td>
+<td>Exif.Photo.MaxApertureValue</td>
+<td>Rational</td>
+<td>The smallest F number of the lens. The unit is the APEX value. Ordinarily it is given in the range of 00.00 to 99.99, but it is not limited to this range.</td>
+</tr>
+<tr>
+<td>0x9206</td>
+<td>37382</td>
+<td>Photo</td>
+<td>Exif.Photo.SubjectDistance</td>
+<td>Rational</td>
+<td>The distance to the subject, given in meters.</td>
+</tr>
+<tr>
+<td>0x9207</td>
+<td>37383</td>
+<td>Photo</td>
+<td>Exif.Photo.MeteringMode</td>
+<td>Short</td>
+<td>The metering mode.</td>
+</tr>
+<tr>
+<td>0x9208</td>
+<td>37384</td>
+<td>Photo</td>
+<td>Exif.Photo.LightSource</td>
+<td>Short</td>
+<td>The kind of light source.</td>
+</tr>
+<tr>
+<td>0x9209</td>
+<td>37385</td>
+<td>Photo</td>
+<td>Exif.Photo.Flash</td>
+<td>Short</td>
+<td>This tag is recorded when an image is taken using a strobe light (flash).</td>
+</tr>
+<tr>
+<td>0x920a</td>
+<td>37386</td>
+<td>Photo</td>
+<td>Exif.Photo.FocalLength</td>
+<td>Rational</td>
+<td>The actual focal length of the lens, in mm. Conversion is not made to the focal length of a 35 mm film camera.</td>
+</tr>
+<tr>
+<td>0x9214</td>
+<td>37396</td>
+<td>Photo</td>
+<td>Exif.Photo.SubjectArea</td>
+<td>Short</td>
+<td>This tag indicates the location and area of the main subject in the overall scene.</td>
+</tr>
+<tr>
+<td>0x927c</td>
+<td>37500</td>
+<td>Photo</td>
+<td>Exif.Photo.MakerNote</td>
+<td>Undefined</td>
+<td>A tag for manufacturers of Exif writers to record any desired information. The contents are up to the manufacturer.</td>
+</tr>
+<tr>
+<td>0x9286</td>
+<td>37510</td>
+<td>Photo</td>
+<td>Exif.Photo.UserComment</td>
+<td>Comment</td>
+<td>A tag for Exif users to write keywords or comments on the image besides those in &lt;ImageDescription&gt;, and without the character code limitations of the &lt;ImageDescription&gt; tag.</td>
+</tr>
+<tr>
+<td>0x9290</td>
+<td>37520</td>
+<td>Photo</td>
+<td>Exif.Photo.SubSecTime</td>
+<td>Ascii</td>
+<td>A tag used to record fractions of seconds for the &lt;DateTime&gt; tag.</td>
+</tr>
+<tr>
+<td>0x9291</td>
+<td>37521</td>
+<td>Photo</td>
+<td>Exif.Photo.SubSecTimeOriginal</td>
+<td>Ascii</td>
+<td>A tag used to record fractions of seconds for the &lt;DateTimeOriginal&gt; tag.</td>
+</tr>
+<tr>
+<td>0x9292</td>
+<td>37522</td>
+<td>Photo</td>
+<td>Exif.Photo.SubSecTimeDigitized</td>
+<td>Ascii</td>
+<td>A tag used to record fractions of seconds for the &lt;DateTimeDigitized&gt; tag.</td>
+</tr>
+<tr>
+<td>0xa000</td>
+<td>40960</td>
+<td>Photo</td>
+<td>Exif.Photo.FlashpixVersion</td>
+<td>Undefined</td>
+<td>The FlashPix format version supported by a FPXR file.</td>
+</tr>
+<tr>
+<td>0xa001</td>
+<td>40961</td>
+<td>Photo</td>
+<td>Exif.Photo.ColorSpace</td>
+<td>Short</td>
+<td>The color space information tag is always recorded as the color space specifier. Normally sRGB is used to define the color space based on the PC monitor conditions and environment. If a color space other than sRGB is used, Uncalibrated is set. Image data recorded as Uncalibrated can be treated as sRGB when it is converted to FlashPix.</td>
+</tr>
+<tr>
+<td>0xa002</td>
+<td>40962</td>
+<td>Photo</td>
+<td>Exif.Photo.PixelXDimension</td>
+<td>Long</td>
+<td>Information specific to compressed data. When a compressed file is recorded, the valid width of the meaningful image must be recorded in this tag, whether or not there is padding data or a restart marker. This tag should not exist in an uncompressed file.</td>
+</tr>
+<tr>
+<td>0xa003</td>
+<td>40963</td>
+<td>Photo</td>
+<td>Exif.Photo.PixelYDimension</td>
+<td>Long</td>
+<td>Information specific to compressed data. When a compressed file is recorded, the valid height of the meaningful image must be recorded in this tag, whether or not there is padding data or a restart marker. This tag should not exist in an uncompressed file. Since data padding is unnecessary in the vertical direction, the number of lines recorded in this valid image height tag will in fact be the same as that recorded in the SOF.</td>
+</tr>
+<tr>
+<td>0xa004</td>
+<td>40964</td>
+<td>Photo</td>
+<td>Exif.Photo.RelatedSoundFile</td>
+<td>Ascii</td>
+<td>This tag is used to record the name of an audio file related to the image data. The only relational information recorded here is the Exif audio file name and extension (an ASCII string consisting of 8 characters + '.' + 3 characters). The path is not recorded.</td>
+</tr>
+<tr>
+<td>0xa005</td>
+<td>40965</td>
+<td>Photo</td>
+<td>Exif.Photo.InteroperabilityTag</td>
+<td>Long</td>
+<td>Interoperability IFD is composed of tags which stores the information to ensure the Interoperability and pointed by the following tag located in Exif IFD. The Interoperability structure of Interoperability IFD is the same as TIFF defined IFD structure but does not contain the image data characteristically compared with normal TIFF IFD.</td>
+</tr>
+<tr>
+<td>0xa20b</td>
+<td>41483</td>
+<td>Photo</td>
+<td>Exif.Photo.FlashEnergy</td>
+<td>Rational</td>
+<td>Indicates the strobe energy at the time the image is captured, as measured in Beam Candle Power Seconds (BCPS).</td>
+</tr>
+<tr>
+<td>0xa20c</td>
+<td>41484</td>
+<td>Photo</td>
+<td>Exif.Photo.SpatialFrequencyResponse</td>
+<td>Undefined</td>
+<td>This tag records the camera or input device spatial frequency table and SFR values in the direction of image width, image height, and diagonal direction, as specified in ISO 12233.</td>
+</tr>
+<tr>
+<td>0xa20e</td>
+<td>41486</td>
+<td>Photo</td>
+<td>Exif.Photo.FocalPlaneXResolution</td>
+<td>Rational</td>
+<td>Indicates the number of pixels in the image width (X) direction per &lt;FocalPlaneResolutionUnit&gt; on the camera focal plane.</td>
+</tr>
+<tr>
+<td>0xa20f</td>
+<td>41487</td>
+<td>Photo</td>
+<td>Exif.Photo.FocalPlaneYResolution</td>
+<td>Rational</td>
+<td>Indicates the number of pixels in the image height (V) direction per &lt;FocalPlaneResolutionUnit&gt; on the camera focal plane.</td>
+</tr>
+<tr>
+<td>0xa210</td>
+<td>41488</td>
+<td>Photo</td>
+<td>Exif.Photo.FocalPlaneResolutionUnit</td>
+<td>Short</td>
+<td>Indicates the unit for measuring &lt;FocalPlaneXResolution&gt; and &lt;FocalPlaneYResolution&gt;. This value is the same as the &lt;ResolutionUnit&gt;.</td>
+</tr>
+<tr>
+<td>0xa214</td>
+<td>41492</td>
+<td>Photo</td>
+<td>Exif.Photo.SubjectLocation</td>
+<td>Short</td>
+<td>Indicates the location of the main subject in the scene. The value of this tag represents the pixel at the center of the main subject relative to the left edge, prior to rotation processing as per the &lt;Rotation&gt; tag. The first value indicates the X column number and second indicates the Y row number.</td>
+</tr>
+<tr>
+<td>0xa215</td>
+<td>41493</td>
+<td>Photo</td>
+<td>Exif.Photo.ExposureIndex</td>
+<td>Rational</td>
+<td>Indicates the exposure index selected on the camera or input device at the time the image is captured.</td>
+</tr>
+<tr>
+<td>0xa217</td>
+<td>41495</td>
+<td>Photo</td>
+<td>Exif.Photo.SensingMethod</td>
+<td>Short</td>
+<td>Indicates the image sensor type on the camera or input device.</td>
+</tr>
+<tr>
+<td>0xa300</td>
+<td>41728</td>
+<td>Photo</td>
+<td>Exif.Photo.FileSource</td>
+<td>Undefined</td>
+<td>Indicates the image source. If a DSC recorded the image, this tag value of this tag always be set to 3, indicating that the image was recorded on a DSC.</td>
+</tr>
+<tr>
+<td>0xa301</td>
+<td>41729</td>
+<td>Photo</td>
+<td>Exif.Photo.SceneType</td>
+<td>Undefined</td>
+<td>Indicates the type of scene. If a DSC recorded the image, this tag value must always be set to 1, indicating that the image was directly photographed.</td>
+</tr>
+<tr>
+<td>0xa302</td>
+<td>41730</td>
+<td>Photo</td>
+<td>Exif.Photo.CFAPattern</td>
+<td>Undefined</td>
+<td>Indicates the color filter array (CFA) geometric pattern of the image sensor when a one-chip color area sensor is used. It does not apply to all sensing methods.</td>
+</tr>
+<tr>
+<td>0xa401</td>
+<td>41985</td>
+<td>Photo</td>
+<td>Exif.Photo.CustomRendered</td>
+<td>Short</td>
+<td>This tag indicates the use of special processing on image data, such as rendering geared to output. When special processing is performed, the reader is expected to disable or minimize any further processing.</td>
+</tr>
+<tr>
+<td>0xa402</td>
+<td>41986</td>
+<td>Photo</td>
+<td>Exif.Photo.ExposureMode</td>
+<td>Short</td>
+<td>This tag indicates the exposure mode set when the image was shot. In auto-bracketing mode, the camera shoots a series of frames of the same scene at different exposure settings.</td>
+</tr>
+<tr>
+<td>0xa403</td>
+<td>41987</td>
+<td>Photo</td>
+<td>Exif.Photo.WhiteBalance</td>
+<td>Short</td>
+<td>This tag indicates the white balance mode set when the image was shot.</td>
+</tr>
+<tr>
+<td>0xa404</td>
+<td>41988</td>
+<td>Photo</td>
+<td>Exif.Photo.DigitalZoomRatio</td>
+<td>Rational</td>
+<td>This tag indicates the digital zoom ratio when the image was shot. If the numerator of the recorded value is 0, this indicates that digital zoom was not used.</td>
+</tr>
+<tr>
+<td>0xa405</td>
+<td>41989</td>
+<td>Photo</td>
+<td>Exif.Photo.FocalLengthIn35mmFilm</td>
+<td>Short</td>
+<td>This tag indicates the equivalent focal length assuming a 35mm film camera, in mm. A value of 0 means the focal length is unknown. Note that this tag differs from the &lt;FocalLength&gt; tag.</td>
+</tr>
+<tr>
+<td>0xa406</td>
+<td>41990</td>
+<td>Photo</td>
+<td>Exif.Photo.SceneCaptureType</td>
+<td>Short</td>
+<td>This tag indicates the type of scene that was shot. It can also be used to record the mode in which the image was shot. Note that this differs from the &lt;SceneType&gt; tag.</td>
+</tr>
+<tr>
+<td>0xa407</td>
+<td>41991</td>
+<td>Photo</td>
+<td>Exif.Photo.GainControl</td>
+<td>Short</td>
+<td>This tag indicates the degree of overall image gain adjustment.</td>
+</tr>
+<tr>
+<td>0xa408</td>
+<td>41992</td>
+<td>Photo</td>
+<td>Exif.Photo.Contrast</td>
+<td>Short</td>
+<td>This tag indicates the direction of contrast processing applied by the camera when the image was shot.</td>
+</tr>
+<tr>
+<td>0xa409</td>
+<td>41993</td>
+<td>Photo</td>
+<td>Exif.Photo.Saturation</td>
+<td>Short</td>
+<td>This tag indicates the direction of saturation processing applied by the camera when the image was shot.</td>
+</tr>
+<tr>
+<td>0xa40a</td>
+<td>41994</td>
+<td>Photo</td>
+<td>Exif.Photo.Sharpness</td>
+<td>Short</td>
+<td>This tag indicates the direction of sharpness processing applied by the camera when the image was shot.</td>
+</tr>
+<tr>
+<td>0xa40b</td>
+<td>41995</td>
+<td>Photo</td>
+<td>Exif.Photo.DeviceSettingDescription</td>
+<td>Undefined</td>
+<td>This tag indicates information on the picture-taking conditions of a particular camera model. The tag is used only to indicate the picture-taking conditions in the reader.</td>
+</tr>
+<tr>
+<td>0xa40c</td>
+<td>41996</td>
+<td>Photo</td>
+<td>Exif.Photo.SubjectDistanceRange</td>
+<td>Short</td>
+<td>This tag indicates the distance to the subject.</td>
+</tr>
+<tr>
+<td>0xa420</td>
+<td>42016</td>
+<td>Photo</td>
+<td>Exif.Photo.ImageUniqueID</td>
+<td>Ascii</td>
+<td>This tag indicates an identifier assigned uniquely to each image. It is recorded as an ASCII string equivalent to hexadecimal notation and 128-bit fixed length.</td>
+</tr>
+<tr>
+<td>0xa430</td>
+<td>42032</td>
+<td>Photo</td>
+<td>Exif.Photo.CameraOwnerName</td>
+<td>Ascii</td>
+<td>This tag records the owner of a camera used in photography as an ASCII string.</td>
+</tr>
+<tr>
+<td>0xa431</td>
+<td>42033</td>
+<td>Photo</td>
+<td>Exif.Photo.BodySerialNumber</td>
+<td>Ascii</td>
+<td>This tag records the serial number of the body of the camera that was used in photography as an ASCII string.</td>
+</tr>
+<tr>
+<td>0xa432</td>
+<td>42034</td>
+<td>Photo</td>
+<td>Exif.Photo.LensSpecification</td>
+<td>Rational</td>
+<td>This tag notes minimum focal length, maximum focal length, minimum F number in the minimum focal length, and minimum F number in the maximum focal length, which are specification information for the lens that was used in photography. When the minimum F number is unknown, the notation is 0/0</td>
+</tr>
+<tr>
+<td>0xa433</td>
+<td>42035</td>
+<td>Photo</td>
+<td>Exif.Photo.LensMake</td>
+<td>Ascii</td>
+<td>This tag records the lens manufactor as an ASCII string.</td>
+</tr>
+<tr>
+<td>0xa434</td>
+<td>42036</td>
+<td>Photo</td>
+<td>Exif.Photo.LensModel</td>
+<td>Ascii</td>
+<td>This tag records the lens's model name and model number as an ASCII string.</td>
+</tr>
+<tr>
+<td>0xa435</td>
+<td>42037</td>
+<td>Photo</td>
+<td>Exif.Photo.LensSerialNumber</td>
+<td>Ascii</td>
+<td>This tag records the serial number of the interchangeable lens that was used in photography as an ASCII string.</td>
+</tr>
+<tr>
+<td>0x0001</td>
+<td>1</td>
+<td>Iop</td>
+<td>Exif.Iop.InteroperabilityIndex</td>
+<td>Ascii</td>
+<td>Indicates the identification of the Interoperability rule. Use "R98" for stating ExifR98 Rules. Four bytes used including the termination code (NULL). see the separate volume of Recommended Exif Interoperability Rules (ExifR98) for other tags used for ExifR98.</td>
+</tr>
+<tr>
+<td>0x0002</td>
+<td>2</td>
+<td>Iop</td>
+<td>Exif.Iop.InteroperabilityVersion</td>
+<td>Undefined</td>
+<td>Interoperability version</td>
+</tr>
+<tr>
+<td>0x1000</td>
+<td>4096</td>
+<td>Iop</td>
+<td>Exif.Iop.RelatedImageFileFormat</td>
+<td>Ascii</td>
+<td>File format of image file</td>
+</tr>
+<tr>
+<td>0x1001</td>
+<td>4097</td>
+<td>Iop</td>
+<td>Exif.Iop.RelatedImageWidth</td>
+<td>Long</td>
+<td>Image width</td>
+</tr>
+<tr>
+<td>0x1002</td>
+<td>4098</td>
+<td>Iop</td>
+<td>Exif.Iop.RelatedImageLength</td>
+<td>Long</td>
+<td>Image height</td>
+</tr>
+<tr>
+<td>0x0000</td>
+<td>0</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSVersionID</td>
+<td>Byte</td>
+<td>Indicates the version of &lt;GPSInfoIFD&gt;. The version is given as 2.0.0.0. This tag is mandatory when &lt;GPSInfo&gt; tag is present. (Note: The &lt;GPSVersionID&gt; tag is given in bytes, unlike the &lt;ExifVersion&gt; tag. When the version is 2.0.0.0, the tag value is 02000000.H).</td>
+</tr>
+<tr>
+<td>0x0001</td>
+<td>1</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSLatitudeRef</td>
+<td>Ascii</td>
+<td>Indicates whether the latitude is north or south latitude. The ASCII value 'N' indicates north latitude, and 'S' is south latitude.</td>
+</tr>
+<tr>
+<td>0x0002</td>
+<td>2</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSLatitude</td>
+<td>Rational</td>
+<td>Indicates the latitude. The latitude is expressed as three RATIONAL values giving the degrees, minutes, and seconds, respectively. When degrees, minutes and seconds are expressed, the format is dd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two decimal places, the format is dd/1,mmmm/100,0/1.</td>
+</tr>
+<tr>
+<td>0x0003</td>
+<td>3</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSLongitudeRef</td>
+<td>Ascii</td>
+<td>Indicates whether the longitude is east or west longitude. ASCII 'E' indicates east longitude, and 'W' is west longitude.</td>
+</tr>
+<tr>
+<td>0x0004</td>
+<td>4</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSLongitude</td>
+<td>Rational</td>
+<td>Indicates the longitude. The longitude is expressed as three RATIONAL values giving the degrees, minutes, and seconds, respectively. When degrees, minutes and seconds are expressed, the format is ddd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two decimal places, the format is ddd/1,mmmm/100,0/1.</td>
+</tr>
+<tr>
+<td>0x0005</td>
+<td>5</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSAltitudeRef</td>
+<td>Byte</td>
+<td>Indicates the altitude used as the reference altitude. If the reference is sea level and the altitude is above sea level, 0 is given. If the altitude is below sea level, a value of 1 is given and the altitude is indicated as an absolute value in the GSPAltitude tag. The reference unit is meters. Note that this tag is BYTE type, unlike other reference tags.</td>
+</tr>
+<tr>
+<td>0x0006</td>
+<td>6</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSAltitude</td>
+<td>Rational</td>
+<td>Indicates the altitude based on the reference in GPSAltitudeRef. Altitude is expressed as one RATIONAL value. The reference unit is meters.</td>
+</tr>
+<tr>
+<td>0x0007</td>
+<td>7</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSTimeStamp</td>
+<td>Rational</td>
+<td>Indicates the time as UTC (Coordinated Universal Time). &lt;TimeStamp&gt; is expressed as three RATIONAL values giving the hour, minute, and second (atomic clock).</td>
+</tr>
+<tr>
+<td>0x0008</td>
+<td>8</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSSatellites</td>
+<td>Ascii</td>
+<td>Indicates the GPS satellites used for measurements. This tag can be used to describe the number of satellites, their ID number, angle of elevation, azimuth, SNR and other information in ASCII notation. The format is not specified. If the GPS receiver is incapable of taking measurements, value of the tag is set to NULL.</td>
+</tr>
+<tr>
+<td>0x0009</td>
+<td>9</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSStatus</td>
+<td>Ascii</td>
+<td>Indicates the status of the GPS receiver when the image is recorded. "A" means measurement is in progress, and "V" means the measurement is Interoperability.</td>
+</tr>
+<tr>
+<td>0x000a</td>
+<td>10</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSMeasureMode</td>
+<td>Ascii</td>
+<td>Indicates the GPS measurement mode. "2" means two-dimensional measurement and "3" means three-dimensional measurement is in progress.</td>
+</tr>
+<tr>
+<td>0x000b</td>
+<td>11</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDOP</td>
+<td>Rational</td>
+<td>Indicates the GPS DOP (data degree of precision). An HDOP value is written during two-dimensional measurement, and PDOP during three-dimensional measurement.</td>
+</tr>
+<tr>
+<td>0x000c</td>
+<td>12</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSSpeedRef</td>
+<td>Ascii</td>
+<td>Indicates the unit used to express the GPS receiver speed of movement. "K" "M" and "N" represents kilometers per hour, miles per hour, and knots.</td>
+</tr>
+<tr>
+<td>0x000d</td>
+<td>13</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSSpeed</td>
+<td>Rational</td>
+<td>Indicates the speed of GPS receiver movement.</td>
+</tr>
+<tr>
+<td>0x000e</td>
+<td>14</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSTrackRef</td>
+<td>Ascii</td>
+<td>Indicates the reference for giving the direction of GPS receiver movement. "T" denotes true direction and "M" is magnetic direction.</td>
+</tr>
+<tr>
+<td>0x000f</td>
+<td>15</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSTrack</td>
+<td>Rational</td>
+<td>Indicates the direction of GPS receiver movement. The range of values is from 0.00 to 359.99.</td>
+</tr>
+<tr>
+<td>0x0010</td>
+<td>16</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSImgDirectionRef</td>
+<td>Ascii</td>
+<td>Indicates the reference for giving the direction of the image when it is captured. "T" denotes true direction and "M" is magnetic direction.</td>
+</tr>
+<tr>
+<td>0x0011</td>
+<td>17</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSImgDirection</td>
+<td>Rational</td>
+<td>Indicates the direction of the image when it was captured. The range of values is from 0.00 to 359.99.</td>
+</tr>
+<tr>
+<td>0x0012</td>
+<td>18</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSMapDatum</td>
+<td>Ascii</td>
+<td>Indicates the geodetic survey data used by the GPS receiver. If the survey data is restricted to Japan, the value of this tag is "TOKYO" or "WGS-84".</td>
+</tr>
+<tr>
+<td>0x0013</td>
+<td>19</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestLatitudeRef</td>
+<td>Ascii</td>
+<td>Indicates whether the latitude of the destination point is north or south latitude. The ASCII value "N" indicates north latitude, and "S" is south latitude.</td>
+</tr>
+<tr>
+<td>0x0014</td>
+<td>20</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestLatitude</td>
+<td>Rational</td>
+<td>Indicates the latitude of the destination point. The latitude is expressed as three RATIONAL values giving the degrees, minutes, and seconds, respectively. If latitude is expressed as degrees, minutes and seconds, a typical format would be dd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two decimal places, the format would be dd/1,mmmm/100,0/1.</td>
+</tr>
+<tr>
+<td>0x0015</td>
+<td>21</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestLongitudeRef</td>
+<td>Ascii</td>
+<td>Indicates whether the longitude of the destination point is east or west longitude. ASCII "E" indicates east longitude, and "W" is west longitude.</td>
+</tr>
+<tr>
+<td>0x0016</td>
+<td>22</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestLongitude</td>
+<td>Rational</td>
+<td>Indicates the longitude of the destination point. The longitude is expressed as three RATIONAL values giving the degrees, minutes, and seconds, respectively. If longitude is expressed as degrees, minutes and seconds, a typical format would be ddd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two decimal places, the format would be ddd/1,mmmm/100,0/1.</td>
+</tr>
+<tr>
+<td>0x0017</td>
+<td>23</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestBearingRef</td>
+<td>Ascii</td>
+<td>Indicates the reference used for giving the bearing to the destination point. "T" denotes true direction and "M" is magnetic direction.</td>
+</tr>
+<tr>
+<td>0x0018</td>
+<td>24</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestBearing</td>
+<td>Rational</td>
+<td>Indicates the bearing to the destination point. The range of values is from 0.00 to 359.99.</td>
+</tr>
+<tr>
+<td>0x0019</td>
+<td>25</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestDistanceRef</td>
+<td>Ascii</td>
+<td>Indicates the unit used to express the distance to the destination point. "K", "M" and "N" represent kilometers, miles and knots.</td>
+</tr>
+<tr>
+<td>0x001a</td>
+<td>26</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDestDistance</td>
+<td>Rational</td>
+<td>Indicates the distance to the destination point.</td>
+</tr>
+<tr>
+<td>0x001b</td>
+<td>27</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSProcessingMethod</td>
+<td>Undefined</td>
+<td>A character string recording the name of the method used for location finding. The first byte indicates the character code used, and this is followed by the name of the method.</td>
+</tr>
+<tr>
+<td>0x001c</td>
+<td>28</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSAreaInformation</td>
+<td>Undefined</td>
+<td>A character string recording the name of the GPS area. The first byte indicates the character code used, and this is followed by the name of the GPS area.</td>
+</tr>
+<tr>
+<td>0x001d</td>
+<td>29</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDateStamp</td>
+<td>Ascii</td>
+<td>A character string recording date and time information relative to UTC (Coordinated Universal Time). The format is "YYYY:MM:DD.".</td>
+</tr>
+<tr>
+<td>0x001e</td>
+<td>30</td>
+<td>GPSInfo</td>
+<td>Exif.GPSInfo.GPSDifferential</td>
+<td>Short</td>
+<td>Indicates whether differential correction is applied to the GPS receiver.</td>
+</tr>
+</tbody>
+</table>
