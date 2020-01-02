@@ -351,7 +351,13 @@ func (vc *ValueContext) Undefined() (value interface{}, err error) {
 	}()
 
 	value, err = UndefinedValue(vc.ifdPath, vc.tagId, vc, vc.byteOrder)
-	log.PanicIf(err)
+	if err != nil {
+		if err == ErrUnhandledUnknownTypedTag {
+			return nil, err
+		}
+
+		log.Panic(err)
+	}
 
 	return value, nil
 }
