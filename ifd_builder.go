@@ -1109,8 +1109,6 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 		} else {
 			// Non-IFD tag.
 
-			var value *IfdBuilderTagValue
-
 			valueContext := ifd.GetValueContext(ite)
 
 			var rawBytes []byte
@@ -1147,7 +1145,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				log.PanicIf(err)
 			}
 
-			value = NewIfdBuilderTagValueFromBytes(rawBytes)
+			value := NewIfdBuilderTagValueFromBytes(rawBytes)
 
 			bt = NewBuilderTag(
 				ifd.IfdPath,
