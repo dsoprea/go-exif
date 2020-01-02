@@ -29,12 +29,6 @@ const (
 var (
 	exifLogger = log.NewLogger("exif.exif")
 
-	// EncodeDefaultByteOrder is the default byte-order for encoding operations.
-	EncodeDefaultByteOrder = binary.BigEndian
-
-	// Default byte order for tests.
-	TestDefaultByteOrder = binary.BigEndian
-
 	BigEndianBoBytes    = [2]byte{'M', 'M'}
 	LittleEndianBoBytes = [2]byte{'I', 'I'}
 

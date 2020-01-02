@@ -1,4 +1,4 @@
-package exif
+package exifcommon
 
 import (
     "errors"

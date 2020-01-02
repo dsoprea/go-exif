@@ -1,4 +1,4 @@
-package exif
+package exifcommon
 
 import (
     "bytes"
@@ -213,49 +213,6 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
         log.PanicIf(err)
     default:
         log.Panicf("value not encodable: [%s] [%v]", reflect.TypeOf(value), value)
-    }
-
-    return ed, nil
-}
-
-// EncodeWithType returns bytes for the given value, using the given `TagType`
-// value to determine how to encode. This supports `TypeAsciiNoNul`.
-func (ve *ValueEncoder) EncodeWithType(tt TagType, value interface{}) (ed EncodedData, err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    // TODO(dustin): This is redundant with Encode. Refactor one to use the other.
-
-    switch tt.Type() {
-    case TypeByte:
-        ed, err = ve.encodeBytes(value.([]byte))
-        log.PanicIf(err)
-    case TypeAscii:
-        ed, err = ve.encodeAscii(value.(string))
-        log.PanicIf(err)
-    case TypeAsciiNoNul:
-        ed, err = ve.encodeAsciiNoNul(value.(string))
-        log.PanicIf(err)
-    case TypeShort:
-        ed, err = ve.encodeShorts(value.([]uint16))
-        log.PanicIf(err)
-    case TypeLong:
-        ed, err = ve.encodeLongs(value.([]uint32))
-        log.PanicIf(err)
-    case TypeRational:
-        ed, err = ve.encodeRationals(value.([]Rational))
-        log.PanicIf(err)
-    case TypeSignedLong:
-        ed, err = ve.encodeSignedLongs(value.([]int32))
-        log.PanicIf(err)
-    case TypeSignedRational:
-        ed, err = ve.encodeSignedRationals(value.([]SignedRational))
-        log.PanicIf(err)
-    default:
-        log.Panicf("value not encodable (with type): %v [%v]", tt, value)
     }
 
     return ed, nil

@@ -1,10 +1,10 @@
-package exif
+package exifcommon
 
 import (
-    "testing"
     "bytes"
     "fmt"
     "reflect"
+    "testing"
 
     "github.com/dsoprea/go-logging"
 )
@@ -12,7 +12,7 @@ import (
 func TestTagType_EncodeDecode_Byte(t *testing.T) {
     tt := NewTagType(TypeByte, TestDefaultByteOrder)
 
-    data := []byte { 0x11, 0x22, 0x33, 0x44, 0x55 }
+    data := []byte{0x11, 0x22, 0x33, 0x44, 0x55}
 
     encoded, err := tt.Encode(data)
     log.PanicIf(err)
@@ -52,12 +52,12 @@ func TestTagType_EncodeDecode_Ascii(t *testing.T) {
 func TestTagType_EncodeDecode_Shorts(t *testing.T) {
     tt := NewTagType(TypeShort, TestDefaultByteOrder)
 
-    data := []uint16 { 0x11, 0x22, 0x33 }
+    data := []uint16{0x11, 0x22, 0x33}
 
     encoded, err := tt.Encode(data)
     log.PanicIf(err)
 
-    if bytes.Compare(encoded, []byte { 0x00, 0x11, 0x00, 0x22, 0x00, 0x33 }) != 0 {
+    if bytes.Compare(encoded, []byte{0x00, 0x11, 0x00, 0x22, 0x00, 0x33}) != 0 {
         t.Fatalf("Data not encoded correctly.")
     }
 
@@ -72,12 +72,12 @@ func TestTagType_EncodeDecode_Shorts(t *testing.T) {
 func TestTagType_EncodeDecode_Long(t *testing.T) {
     tt := NewTagType(TypeLong, TestDefaultByteOrder)
 
-    data := []uint32 { 0x11, 0x22, 0x33 }
+    data := []uint32{0x11, 0x22, 0x33}
 
     encoded, err := tt.Encode(data)
     log.PanicIf(err)
 
-    if bytes.Compare(encoded, []byte { 0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33 }) != 0 {
+    if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33}) != 0 {
         t.Fatalf("Data not encoded correctly.")
     }
 
@@ -92,15 +92,15 @@ func TestTagType_EncodeDecode_Long(t *testing.T) {
 func TestTagType_EncodeDecode_Rational(t *testing.T) {
     tt := NewTagType(TypeRational, TestDefaultByteOrder)
 
-    data := []Rational {
-        Rational{ Numerator: 0x11, Denominator: 0x22 },
-        Rational{ Numerator: 0x33, Denominator: 0x44 },
+    data := []Rational{
+        Rational{Numerator: 0x11, Denominator: 0x22},
+        Rational{Numerator: 0x33, Denominator: 0x44},
     }
 
     encoded, err := tt.Encode(data)
     log.PanicIf(err)
 
-    if bytes.Compare(encoded, []byte { 0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44 }) != 0 {
+    if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44}) != 0 {
         t.Fatalf("Data not encoded correctly.")
     }
 
@@ -115,12 +115,12 @@ func TestTagType_EncodeDecode_Rational(t *testing.T) {
 func TestTagType_EncodeDecode_SignedLong(t *testing.T) {
     tt := NewTagType(TypeSignedLong, TestDefaultByteOrder)
 
-    data := []int32 { 0x11, 0x22, 0x33 }
+    data := []int32{0x11, 0x22, 0x33}
 
     encoded, err := tt.Encode(data)
     log.PanicIf(err)
 
-    if bytes.Compare(encoded, []byte { 0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33 }) != 0 {
+    if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33}) != 0 {
         t.Fatalf("Data not encoded correctly.")
     }
 
@@ -135,15 +135,15 @@ func TestTagType_EncodeDecode_SignedLong(t *testing.T) {
 func TestTagType_EncodeDecode_SignedRational(t *testing.T) {
     tt := NewTagType(TypeSignedRational, TestDefaultByteOrder)
 
-    data := []SignedRational {
-        SignedRational{ Numerator: 0x11, Denominator: 0x22 },
-        SignedRational{ Numerator: 0x33, Denominator: 0x44 },
+    data := []SignedRational{
+        SignedRational{Numerator: 0x11, Denominator: 0x22},
+        SignedRational{Numerator: 0x33, Denominator: 0x44},
     }
 
     encoded, err := tt.Encode(data)
     log.PanicIf(err)
 
-    if bytes.Compare(encoded, []byte { 0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44 }) != 0 {
+    if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44}) != 0 {
         t.Fatalf("Data not encoded correctly.")
     }
 
@@ -204,7 +204,7 @@ func TestTagType_FromString_Byte(t *testing.T) {
     value, err := tt.FromString("abc")
     log.PanicIf(err)
 
-    if reflect.DeepEqual(value, []byte { 'a', 'b', 'c' }) != true {
+    if reflect.DeepEqual(value, []byte{'a', 'b', 'c'}) != true {
         t.Fatalf("byte value not correct")
     }
 }
@@ -249,7 +249,7 @@ func TestTagType_FromString_Rational(t *testing.T) {
     log.PanicIf(err)
 
     expected := Rational{
-        Numerator: 12,
+        Numerator:   12,
         Denominator: 34,
     }
 
@@ -276,7 +276,7 @@ func TestTagType_FromString_SignedRational(t *testing.T) {
     log.PanicIf(err)
 
     expected := SignedRational{
-        Numerator: -12,
+        Numerator:   -12,
         Denominator: 34,
     }
 

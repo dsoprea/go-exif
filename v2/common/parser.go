@@ -1,4 +1,4 @@
-package exif
+package exifcommon
 
 import (
 	"bytes"
@@ -18,6 +18,8 @@ func (p *Parser) ParseBytes(data []byte, unitCount uint32) (value []uint8, err e
 		}
 	}()
 
+	// TODO(dustin): Add test
+
 	count := int(unitCount)
 
 	if len(data) < (TypeByte.Size() * count) {
@@ -36,6 +38,8 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	// TODO(dustin): Add test
 
 	count := int(unitCount)
 
@@ -65,6 +69,8 @@ func (p *Parser) ParseAsciiNoNul(data []byte, unitCount uint32) (value string, e
 		}
 	}()
 
+	// TODO(dustin): Add test
+
 	count := int(unitCount)
 
 	if len(data) < (TypeAscii.Size() * count) {
@@ -80,6 +86,8 @@ func (p *Parser) ParseShorts(data []byte, unitCount uint32, byteOrder binary.Byt
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	// TODO(dustin): Add test
 
 	count := int(unitCount)
 
@@ -102,6 +110,8 @@ func (p *Parser) ParseLongs(data []byte, unitCount uint32, byteOrder binary.Byte
 		}
 	}()
 
+	// TODO(dustin): Add test
+
 	count := int(unitCount)
 
 	if len(data) < (TypeLong.Size() * count) {
@@ -122,6 +132,8 @@ func (p *Parser) ParseRationals(data []byte, unitCount uint32, byteOrder binary.
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	// TODO(dustin): Add test
 
 	count := int(unitCount)
 
@@ -144,6 +156,8 @@ func (p *Parser) ParseSignedLongs(data []byte, unitCount uint32, byteOrder binar
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	// TODO(dustin): Add test
 
 	count := int(unitCount)
 
@@ -168,6 +182,8 @@ func (p *Parser) ParseSignedRationals(data []byte, unitCount uint32, byteOrder b
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	// TODO(dustin): Add test
 
 	count := int(unitCount)
 
