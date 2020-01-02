@@ -15,8 +15,10 @@ var (
 
 // EncodedData encapsulates the compound output of an encoding operation.
 type EncodedData struct {
-    Type      TagTypePrimitive
-    Encoded   []byte
+    Type    TagTypePrimitive
+    Encoded []byte
+
+    // TODO(dustin): Is this really necessary? We might have this just to correlate to the incoming stream format (raw bytes and a unit-count both for incoming and outgoing).
     UnitCount uint32
 }
 
@@ -185,6 +187,8 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
         }
     }()
 
+    // TODO(dustin): This is redundant with EncodeWithType. Refactor one to use the other.
+
     switch value.(type) {
     case []byte:
         ed, err = ve.encodeBytes(value.([]byte))
@@ -222,6 +226,8 @@ func (ve *ValueEncoder) EncodeWithType(tt TagType, value interface{}) (ed Encode
             err = log.Wrap(state.(error))
         }
     }()
+
+    // TODO(dustin): This is redundant with Encode. Refactor one to use the other.
 
     switch tt.Type() {
     case TypeByte:
