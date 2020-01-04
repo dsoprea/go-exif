@@ -16,7 +16,7 @@ func (Codec9000ExifVersion) Decode(valueContext *exifcommon.ValueContext) (value
 		}
 	}()
 
-	valueContext.SetUnknownValueType(exifcommon.TypeAsciiNoNul)
+	valueContext.SetUndefinedValueType(exifcommon.TypeAsciiNoNul)
 
 	valueString, err := valueContext.ReadAsciiNoNul()
 	log.PanicIf(err)

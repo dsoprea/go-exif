@@ -60,7 +60,7 @@ func (CodecA302CfaPattern) Decode(valueContext *exifcommon.ValueContext) (value 
 
 	// TODO(dustin): Add test using known good data.
 
-	valueContext.SetUnknownValueType(exifcommon.TypeByte)
+	valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
 	valueBytes, err := valueContext.ReadBytes()
 	log.PanicIf(err)

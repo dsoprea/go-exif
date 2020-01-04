@@ -46,7 +46,7 @@ func (CodecExifA301SceneType) Decode(valueContext *exifcommon.ValueContext) (val
 		}
 	}()
 
-	valueContext.SetUnknownValueType(exifcommon.TypeLong)
+	valueContext.SetUndefinedValueType(exifcommon.TypeLong)
 
 	valueLongs, err := valueContext.ReadLongs()
 	log.PanicIf(err)

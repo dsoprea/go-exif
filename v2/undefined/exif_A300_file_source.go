@@ -49,7 +49,7 @@ func (CodecExifA300FileSource) Decode(valueContext *exifcommon.ValueContext) (va
 		}
 	}()
 
-	valueContext.SetUnknownValueType(exifcommon.TypeLong)
+	valueContext.SetUndefinedValueType(exifcommon.TypeLong)
 
 	valueLongs, err := valueContext.ReadLongs()
 	log.PanicIf(err)

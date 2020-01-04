@@ -80,7 +80,7 @@ func (CodecA20CSpatialFrequencyResponse) Decode(valueContext *exifcommon.ValueCo
 
 	byteOrder := valueContext.ByteOrder()
 
-	valueContext.SetUnknownValueType(exifcommon.TypeByte)
+	valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
 	valueBytes, err := valueContext.ReadBytes()
 	log.PanicIf(err)

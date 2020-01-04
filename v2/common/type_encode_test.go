@@ -7,7 +7,7 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
-func TestByteCycle(t *testing.T) {
+func TestValueEncoder_encodeBytes__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -28,15 +28,15 @@ func TestByteCycle(t *testing.T) {
         t.Fatalf("Unit-count not correct.")
     }
 
-    tt := NewTagType(ed.Type, byteOrder)
-    recovered, err := tt.ParseBytes(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseBytes(ed.Encoded, ed.UnitCount)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, original) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestAsciiCycle(t *testing.T) {
+func TestValueEncoder_encodeAscii__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -61,15 +61,15 @@ func TestAsciiCycle(t *testing.T) {
     // Check that the string was recovered correctly and with the trailing NUL
     // character autostripped.
 
-    tt := NewTagType(TypeAscii, byteOrder)
-    recovered, err := tt.ParseAscii(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseAscii(ed.Encoded, ed.UnitCount)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, original) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestAsciiNoNulCycle(t *testing.T) {
+func TestValueEncoder_encodeAsciiNoNul__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -93,15 +93,15 @@ func TestAsciiNoNulCycle(t *testing.T) {
     // Check that the string was recovered correctly and with the trailing NUL
     // character ignored (because not expected in the context of that type).
 
-    tt := NewTagType(TypeAsciiNoNul, byteOrder)
-    recovered, err := tt.ParseAsciiNoNul(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseAsciiNoNul(ed.Encoded, ed.UnitCount)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, string(expected)) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestShortCycle(t *testing.T) {
+func TestValueEncoder_encodeShorts__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -128,15 +128,15 @@ func TestShortCycle(t *testing.T) {
         t.Fatalf("Unit-count not correct.")
     }
 
-    tt := NewTagType(ed.Type, byteOrder)
-    recovered, err := tt.ParseShorts(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseShorts(ed.Encoded, ed.UnitCount, byteOrder)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, original) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestLongCycle(t *testing.T) {
+func TestValueEncoder_encodeLongs__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -163,15 +163,15 @@ func TestLongCycle(t *testing.T) {
         t.Fatalf("Unit-count not correct.")
     }
 
-    tt := NewTagType(ed.Type, byteOrder)
-    recovered, err := tt.ParseLongs(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseLongs(ed.Encoded, ed.UnitCount, byteOrder)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, original) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestRationalCycle(t *testing.T) {
+func TestValueEncoder_encodeRationals__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -224,15 +224,15 @@ func TestRationalCycle(t *testing.T) {
         t.Fatalf("Unit-count not correct.")
     }
 
-    tt := NewTagType(ed.Type, byteOrder)
-    recovered, err := tt.ParseRationals(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseRationals(ed.Encoded, ed.UnitCount, byteOrder)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, original) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestSignedLongCycle(t *testing.T) {
+func TestValueEncoder_encodeSignedLongs__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -259,15 +259,15 @@ func TestSignedLongCycle(t *testing.T) {
         t.Fatalf("Unit-count not correct.")
     }
 
-    tt := NewTagType(ed.Type, byteOrder)
-    recovered, err := tt.ParseSignedLongs(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseSignedLongs(ed.Encoded, ed.UnitCount, byteOrder)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, original) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestSignedRationalCycle(t *testing.T) {
+func TestValueEncoder_encodeSignedRationals__Cycle(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -320,15 +320,15 @@ func TestSignedRationalCycle(t *testing.T) {
         t.Fatalf("Unit-count not correct.")
     }
 
-    tt := NewTagType(ed.Type, byteOrder)
-    recovered, err := tt.ParseSignedRationals(ed.Encoded, ed.UnitCount)
+    recovered, err := parser.ParseSignedRationals(ed.Encoded, ed.UnitCount, byteOrder)
+    log.PanicIf(err)
 
     if reflect.DeepEqual(recovered, original) != true {
         t.Fatalf("Value not recovered correctly.")
     }
 }
 
-func TestEncode_Byte(t *testing.T) {
+func TestValueEncoder_Encode__Byte(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -350,7 +350,7 @@ func TestEncode_Byte(t *testing.T) {
     }
 }
 
-func TestEncode_Ascii(t *testing.T) {
+func TestValueEncoder_Encode__Ascii(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -373,7 +373,7 @@ func TestEncode_Ascii(t *testing.T) {
     }
 }
 
-func TestEncode_Short(t *testing.T) {
+func TestValueEncoder_Encode__Short(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -401,7 +401,7 @@ func TestEncode_Short(t *testing.T) {
     }
 }
 
-func TestEncode_Long(t *testing.T) {
+func TestValueEncoder_Encode__Long(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -429,7 +429,7 @@ func TestEncode_Long(t *testing.T) {
     }
 }
 
-func TestEncode_Rational(t *testing.T) {
+func TestValueEncoder_Encode__Rational(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -483,7 +483,7 @@ func TestEncode_Rational(t *testing.T) {
     }
 }
 
-func TestEncode_SignedLong(t *testing.T) {
+func TestValueEncoder_Encode__SignedLong(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 
@@ -511,7 +511,7 @@ func TestEncode_SignedLong(t *testing.T) {
     }
 }
 
-func TestEncode_SignedRational(t *testing.T) {
+func TestValueEncoder_Encode__SignedRational(t *testing.T) {
     byteOrder := TestDefaultByteOrder
     ve := NewValueEncoder(byteOrder)
 

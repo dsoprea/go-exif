@@ -92,7 +92,7 @@ func (Codec9286UserComment) Decode(valueContext *exifcommon.ValueContext) (value
         }
     }()
 
-    valueContext.SetUnknownValueType(exifcommon.TypeByte)
+    valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
     valueBytes, err := valueContext.ReadBytes()
     log.PanicIf(err)

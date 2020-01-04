@@ -159,21 +159,35 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 	}
 }
 
-func init() {
-	// This will only be executed when we're running tests in this package and
-	// not when this package is being imported from a subpackage.
+func getModuleRootPath() string {
+	currentWd, err := os.Getwd()
+	log.PanicIf(err)
 
-	goPath := os.Getenv("GOPATH")
-	if goPath != "" {
-		assetsPath = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif", "assets")
-	} else {
-		// Module-enabled context.
+	currentPath := currentWd
 
-		currentWd, err := os.Getwd()
-		log.PanicIf(err)
+	for {
+		tryStampFilepath := path.Join(currentPath, ".MODULE_ROOT")
 
-		assetsPath = path.Join(currentWd, "assets")
+		f, err := os.Open(tryStampFilepath)
+		if err != nil && err != os.ErrNotExist {
+			log.Panic(err)
+		} else if err == nil {
+			f.Close()
+			break
+		}
+
+		currentPath := path.Dir(currentPath)
+		if currentPath == "/" {
+			log.Panicf("could not find module-root")
+		}
 	}
+
+	return currentPath
+}
+
+func init() {
+	moduleRootPath := getModuleRootPath()
+	assetsPath = path.Join(moduleRootPath, "assets")
 
 	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
 

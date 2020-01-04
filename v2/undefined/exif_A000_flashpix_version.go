@@ -16,7 +16,7 @@ func (CodecA000FlashpixVersion) Decode(valueContext *exifcommon.ValueContext) (v
 		}
 	}()
 
-	valueContext.SetUnknownValueType(exifcommon.TypeAsciiNoNul)
+	valueContext.SetUndefinedValueType(exifcommon.TypeAsciiNoNul)
 
 	valueString, err := valueContext.ReadAsciiNoNul()
 	log.PanicIf(err)

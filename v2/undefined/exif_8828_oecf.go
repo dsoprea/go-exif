@@ -25,7 +25,7 @@ func (Codec8828Oecf) Decode(valueContext *exifcommon.ValueContext) (value interf
 
 	// TODO(dustin): Add test using known good data.
 
-	valueContext.SetUnknownValueType(exifcommon.TypeByte)
+	valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
 	valueBytes, err := valueContext.ReadBytes()
 	log.PanicIf(err)

@@ -64,7 +64,7 @@ func (Codec927CMakerNote) Decode(valueContext *exifcommon.ValueContext) (value i
     // TODO(dustin): !! This is the Wild Wild West. This very well might be a child IFD, but any and all OEM's define their own formats. If we're going to be writing changes and this is complete EXIF (which may not have the first eight bytes), it might be fine. However, if these are just IFDs they'll be relative to the main EXIF, this will invalidate the MakerNote data for IFDs and any other implementations that use offsets unless we can interpret them all. It be best to return to this later and just exclude this from being written for now, though means a loss of a wealth of image metadata.
     //                  -> We can also just blindly try to interpret as an IFD and just validate that it's looks good (maybe it will even have a 'next ifd' pointer that we can validate is 0x0).
 
-    valueContext.SetUnknownValueType(exifcommon.TypeByte)
+    valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
     valueBytes, err := valueContext.ReadBytes()
     log.PanicIf(err)

@@ -16,7 +16,7 @@ func (Codec001BGPSProcessingMethod) Decode(valueContext *exifcommon.ValueContext
 		}
 	}()
 
-	valueContext.SetUnknownValueType(exifcommon.TypeAsciiNoNul)
+	valueContext.SetUndefinedValueType(exifcommon.TypeAsciiNoNul)
 
 	valueString, err := valueContext.ReadAsciiNoNul()
 	log.PanicIf(err)

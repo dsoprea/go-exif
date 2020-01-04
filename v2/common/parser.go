@@ -8,6 +8,7 @@ import (
 	"github.com/dsoprea/go-logging"
 )
 
+// Parser knows how to parse all well-defined, encoded EXIF types.
 type Parser struct {
 }
 
@@ -31,7 +32,8 @@ func (p *Parser) ParseBytes(data []byte, unitCount uint32) (value []uint8, err e
 	return value, nil
 }
 
-// ParseAscii returns a string and auto-strips the trailing NUL character.
+// ParseAscii returns a string and auto-strips the trailing NUL character that
+// should be at the end of the encoding.
 func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -80,6 +82,7 @@ func (p *Parser) ParseAsciiNoNul(data []byte, unitCount uint32) (value string, e
 	return string(data[:count]), nil
 }
 
+// ParseShorts knows how to parse an encoded list of shorts.
 func (p *Parser) ParseShorts(data []byte, unitCount uint32, byteOrder binary.ByteOrder) (value []uint16, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -103,6 +106,7 @@ func (p *Parser) ParseShorts(data []byte, unitCount uint32, byteOrder binary.Byt
 	return value, nil
 }
 
+// ParseLongs knows how to encode an encoded list of unsigned longs.
 func (p *Parser) ParseLongs(data []byte, unitCount uint32, byteOrder binary.ByteOrder) (value []uint32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -126,6 +130,7 @@ func (p *Parser) ParseLongs(data []byte, unitCount uint32, byteOrder binary.Byte
 	return value, nil
 }
 
+// ParseRationals knows how to parse an encoded list of unsigned rationals.
 func (p *Parser) ParseRationals(data []byte, unitCount uint32, byteOrder binary.ByteOrder) (value []Rational, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -150,6 +155,7 @@ func (p *Parser) ParseRationals(data []byte, unitCount uint32, byteOrder binary.
 	return value, nil
 }
 
+// ParseSignedLongs knows how to parse an encoded list of signed longs.
 func (p *Parser) ParseSignedLongs(data []byte, unitCount uint32, byteOrder binary.ByteOrder) (value []int32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -176,6 +182,8 @@ func (p *Parser) ParseSignedLongs(data []byte, unitCount uint32, byteOrder binar
 	return value, nil
 }
 
+// ParseSignedRationals knows how to parse an encoded list of signed
+// rationals.
 func (p *Parser) ParseSignedRationals(data []byte, unitCount uint32, byteOrder binary.ByteOrder) (value []SignedRational, err error) {
 	defer func() {
 		if state := recover(); state != nil {

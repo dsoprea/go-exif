@@ -86,7 +86,7 @@ func (CodecExif9101ComponentsConfiguration) Decode(valueContext *exifcommon.Valu
 		}
 	}()
 
-	valueContext.SetUnknownValueType(exifcommon.TypeByte)
+	valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
 	valueBytes, err := valueContext.ReadBytes()
 	log.PanicIf(err)
