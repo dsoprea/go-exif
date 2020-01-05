@@ -50,10 +50,8 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 	}
 
 	if len(data) == 0 || data[count-1] != 0 {
-		s := string(data[:count])
-		typeLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
-
-		return s, nil
+		log.Panicf("ascii not terminated with nul as expected")
+		return "", nil
 	} else {
 		// Auto-strip the NUL from the end. It serves no purpose outside of
 		// encoding semantics.
