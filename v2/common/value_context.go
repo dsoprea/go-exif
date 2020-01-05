@@ -165,7 +165,7 @@ func (vc *ValueContext) Format() (value string, err error) {
 	rawBytes, err := vc.readRawEncoded()
 	log.PanicIf(err)
 
-	phrase, err := Format(rawBytes, vc.effectiveValueType(), false, vc.byteOrder)
+	phrase, err := FormatFromBytes(rawBytes, vc.effectiveValueType(), false, vc.byteOrder)
 	log.PanicIf(err)
 
 	return phrase, nil
@@ -183,7 +183,7 @@ func (vc *ValueContext) FormatFirst() (value string, err error) {
 	rawBytes, err := vc.readRawEncoded()
 	log.PanicIf(err)
 
-	phrase, err := Format(rawBytes, vc.tagType, true, vc.byteOrder)
+	phrase, err := FormatFromBytes(rawBytes, vc.tagType, true, vc.byteOrder)
 	log.PanicIf(err)
 
 	return phrase, nil

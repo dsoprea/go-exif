@@ -105,7 +105,7 @@ func TestTypeSignedRational_Size(t *testing.T) {
 func TestFormat__Byte(t *testing.T) {
 	r := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 
-	s, err := Format(r, TypeByte, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeByte, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "01 02 03 04 05 06 07 08" {
@@ -116,7 +116,7 @@ func TestFormat__Byte(t *testing.T) {
 func TestFormat__Ascii(t *testing.T) {
 	r := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 0}
 
-	s, err := Format(r, TypeAscii, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeAscii, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "abcdefg" {
@@ -127,7 +127,7 @@ func TestFormat__Ascii(t *testing.T) {
 func TestFormat__AsciiNoNul(t *testing.T) {
 	r := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'}
 
-	s, err := Format(r, TypeAsciiNoNul, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeAsciiNoNul, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "abcdefgh" {
@@ -138,7 +138,7 @@ func TestFormat__AsciiNoNul(t *testing.T) {
 func TestFormat__Short(t *testing.T) {
 	r := []byte{0, 1, 0, 2}
 
-	s, err := Format(r, TypeShort, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeShort, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "[1 2]" {
@@ -149,7 +149,7 @@ func TestFormat__Short(t *testing.T) {
 func TestFormat__Long(t *testing.T) {
 	r := []byte{0, 0, 0, 1, 0, 0, 0, 2}
 
-	s, err := Format(r, TypeLong, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeLong, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "[1 2]" {
@@ -163,7 +163,7 @@ func TestFormat__Rational(t *testing.T) {
 		0, 0, 0, 3, 0, 0, 0, 4,
 	}
 
-	s, err := Format(r, TypeRational, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeRational, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "[1/2 3/4]" {
@@ -174,7 +174,7 @@ func TestFormat__Rational(t *testing.T) {
 func TestFormat__SignedLong(t *testing.T) {
 	r := []byte{0, 0, 0, 1, 0, 0, 0, 2}
 
-	s, err := Format(r, TypeSignedLong, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeSignedLong, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "[1 2]" {
@@ -188,7 +188,7 @@ func TestFormat__SignedRational(t *testing.T) {
 		0, 0, 0, 3, 0, 0, 0, 4,
 	}
 
-	s, err := Format(r, TypeSignedRational, false, TestDefaultByteOrder)
+	s, err := FormatFromBytes(r, TypeSignedRational, false, TestDefaultByteOrder)
 	log.PanicIf(err)
 
 	if s != "[1/2 3/4]" {
@@ -199,7 +199,7 @@ func TestFormat__SignedRational(t *testing.T) {
 func TestFormat__Undefined(t *testing.T) {
 	r := []byte{'a', 'b'}
 
-	_, err := Format(r, TypeUndefined, false, TestDefaultByteOrder)
+	_, err := FormatFromBytes(r, TypeUndefined, false, TestDefaultByteOrder)
 	if err == nil {
 		t.Fatalf("Expected error.")
 	} else if err.Error() != "can not determine tag-value size for type (7): [UNDEFINED]" {

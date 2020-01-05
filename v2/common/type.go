@@ -256,11 +256,9 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
     }
 }
 
-// TODO(dustin): Rename Format() to FormatFromBytes()
-
 // Format returns a stringified value for the given encoding. Automatically
 // parses. Automatically calculates count based on type size.
-func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder binary.ByteOrder) (phrase string, err error) {
+func FormatFromBytes(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder binary.ByteOrder) (phrase string, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
