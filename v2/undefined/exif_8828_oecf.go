@@ -1,7 +1,10 @@
 package exifundefined
 
 import (
+	"bytes"
 	"fmt"
+
+	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
 
@@ -24,6 +27,47 @@ func (oecf Tag8828Oecf) EncoderName() string {
 }
 
 type Codec8828Oecf struct {
+}
+
+func (Codec8828Oecf) Encode(value interface{}, byteOrder binary.ByteOrder) (encoded []byte, unitCount uint32, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	// TODO(dustin): Add test
+
+	oecf, ok := value.(Tag8828Oecf)
+	if ok == false {
+		log.Panicf("can only encode a Tag8828Oecf")
+	}
+
+	b := new(bytes.Buffer)
+
+	err = binary.Write(b, byteOrder, oecf.Columns)
+	log.PanicIf(err)
+
+	err = binary.Write(b, byteOrder, oecf.Rows)
+	log.PanicIf(err)
+
+	for _, name := range oecf.ColumnNames {
+		_, err := b.Write([]byte(name))
+		log.PanicIf(err)
+
+		_, err = b.Write([]byte{0})
+		log.PanicIf(err)
+	}
+
+	ve := exifcommon.NewValueEncoder(byteOrder)
+
+	ed, err := ve.Encode(oecf.Values)
+	log.PanicIf(err)
+
+	_, err = b.Write(ed.Encoded)
+	log.PanicIf(err)
+
+	return b.Bytes(), uint32(b.Len()), nil
 }
 
 func (Codec8828Oecf) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
