@@ -148,25 +148,25 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (ite *IfdTagEnumerato
 	return ite
 }
 
-func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagEnumerator, resolveValue bool) (tag *IfdTagEntry, err error) {
+func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, enumerator *IfdTagEnumerator, resolveValue bool) (ite *IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	tagId, _, err := ite.getUint16()
+	tagId, _, err := enumerator.getUint16()
 	log.PanicIf(err)
 
-	tagTypeRaw, _, err := ite.getUint16()
+	tagTypeRaw, _, err := enumerator.getUint16()
 	log.PanicIf(err)
 
 	tagType := exifcommon.TagTypePrimitive(tagTypeRaw)
 
-	unitCount, _, err := ite.getUint32()
+	unitCount, _, err := enumerator.getUint32()
 	log.PanicIf(err)
 
-	valueOffset, rawValueOffset, err := ite.getUint32()
+	valueOffset, rawValueOffset, err := enumerator.getUint32()
 	log.PanicIf(err)
 
 	if tagType.IsValid() == false {
@@ -176,7 +176,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	ifdPath, err := ie.ifdMapping.StripPathPhraseIndices(fqIfdPath)
 	log.PanicIf(err)
 
-	tag = &IfdTagEntry{
+	ite = &IfdTagEntry{
 		IfdPath:        ifdPath,
 		TagId:          tagId,
 		TagIndex:       tagPosition,
@@ -187,11 +187,30 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	}
 
 	if resolveValue == true {
-		value, isUnhandledUnknown, err := ie.resolveTagValue(tag)
-		log.PanicIf(err)
+		valueContext := ie.GetValueContext(ite)
 
-		tag.value = value
-		tag.isUnhandledUnknown = isUnhandledUnknown
+		if ite.TagType == exifcommon.TypeUndefined {
+			value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, ie.byteOrder)
+			if err != nil {
+				if err == exifcommon.ErrUnhandledUnknownTypedTag {
+					ite.isUnhandledUnknown = true
+				} else {
+					log.Panic(err)
+				}
+			} else {
+				encodeable := value.(exifundefined.EncodeableValue)
+
+				var err error
+
+				ite.value, _, err = exifundefined.Encode(encodeable, ie.byteOrder)
+				log.PanicIf(err)
+			}
+		} else {
+			var err error
+
+			ite.value, err = valueContext.ReadRawEncoded()
+			log.PanicIf(err)
+		}
 	}
 
 	// If it's an IFD but not a standard one, it'll just be seen as a LONG
@@ -199,9 +218,9 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	// [likely] not even in the standard list of known tags.
 	mi, err := ie.ifdMapping.GetChild(ifdPath, tagId)
 	if err == nil {
-		tag.ChildIfdName = mi.Name
-		tag.ChildIfdPath = mi.PathPhrase()
-		tag.ChildFqIfdPath = fmt.Sprintf("%s/%s", fqIfdPath, mi.Name)
+		ite.ChildIfdName = mi.Name
+		ite.ChildIfdPath = mi.PathPhrase()
+		ite.ChildFqIfdPath = fmt.Sprintf("%s/%s", fqIfdPath, mi.Name)
 
 		// We also need to set `tag.ChildFqIfdPath` but can't do it here
 		// because we don't have the IFD index.
@@ -209,7 +228,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 		log.Panic(err)
 	}
 
-	return tag, nil
+	return ite, nil
 }
 
 func (ie *IfdEnumerate) GetValueContext(ite *IfdTagEntry) *exifcommon.ValueContext {
@@ -222,44 +241,6 @@ func (ie *IfdEnumerate) GetValueContext(ite *IfdTagEntry) *exifcommon.ValueConte
 		ite,
 		addressableData,
 		ie.byteOrder)
-}
-
-func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, isUnhandledUnknown bool, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
-
-	valueContext := ie.GetValueContext(ite)
-
-	// Return the exact bytes of the unknown-type value. Returning a string
-	// (`ValueString`) is easy because we can just pass everything to
-	// `Sprintf()`. Returning the raw, typed value (`Value`) is easy
-	// (obviously). However, here, in order to produce the list of bytes, we
-	// need to coerce whatever `Undefined()` returns.
-	if ite.TagType == exifcommon.TypeUndefined {
-		value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, ie.byteOrder)
-		if err != nil {
-			if err == exifcommon.ErrUnhandledUnknownTypedTag {
-				return nil, true, nil
-			}
-
-			log.Panic(err)
-		}
-
-		encodeable := value.(exifundefined.EncodeableValue)
-
-		valueBytes, _, err = exifundefined.Encode(encodeable, ie.byteOrder)
-		log.PanicIf(err)
-	} else {
-		var err error
-
-		valueBytes, err = valueContext.ReadRawEncoded()
-		log.PanicIf(err)
-	}
-
-	return valueBytes, false, nil
 }
 
 // RawTagWalk is an optional callback that can get hit for every tag we parse
