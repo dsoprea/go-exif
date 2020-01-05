@@ -188,33 +188,3 @@ func TestIfdTagEntry_String(t *testing.T) {
 		t.Fatalf("string representation not expected: [%s] != [%s]", ite.String(), expected)
 	}
 }
-
-func TestIfdTagEntryValueResolver_ValueBytes(t *testing.T) {
-	allocatedData := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
-
-	ite := IfdTagEntry{
-		TagId:          0x1,
-		TagIndex:       0,
-		TagType:        exifcommon.TypeByte,
-		UnitCount:      uint32(len(allocatedData)),
-		ValueOffset:    0x8,
-		RawValueOffset: []byte{0x0, 0x0, 0x0, 0x0},
-		IfdPath:        exifcommon.IfdPathStandard,
-	}
-
-	headerBytes, err := BuildExifHeader(exifcommon.TestDefaultByteOrder, uint32(0))
-	log.PanicIf(err)
-
-	exifData := make([]byte, len(headerBytes)+len(allocatedData))
-	copy(exifData[0:], headerBytes)
-	copy(exifData[len(headerBytes):], allocatedData)
-
-	itevr := NewIfdTagEntryValueResolver(exifData, exifcommon.TestDefaultByteOrder)
-
-	value, err := itevr.ValueBytes(&ite)
-	log.PanicIf(err)
-
-	if bytes.Compare(value, allocatedData) != 0 {
-		t.Fatalf("bytes not expected: %v != %v", value, allocatedData)
-	}
-}

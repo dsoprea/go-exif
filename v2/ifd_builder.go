@@ -318,9 +318,7 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 
 // NewIfdBuilderFromExistingChain creates a chain of IB instances from an
 // IFD chain generated from real data.
-func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolver) (firstIb *IfdBuilder) {
-	// OBSOLETE(dustin): Support for `itevr` is now obsolete. This parameter will be removed in the future.
-
+func NewIfdBuilderFromExistingChain(rootIfd *Ifd) (firstIb *IfdBuilder) {
 	var lastIb *IfdBuilder
 	i := 0
 	for thisExistingIfd := rootIfd; thisExistingIfd != nil; thisExistingIfd = thisExistingIfd.NextIfd {
@@ -331,7 +329,7 @@ func NewIfdBuilderFromExistingChain(rootIfd *Ifd, itevr *IfdTagEntryValueResolve
 			lastIb.SetNextIb(newIb)
 		}
 
-		err := newIb.AddTagsFromExisting(thisExistingIfd, nil, nil, nil)
+		err := newIb.AddTagsFromExisting(thisExistingIfd, nil, nil)
 		log.PanicIf(err)
 
 		lastIb = newIb
@@ -1028,14 +1026,12 @@ func (ib *IfdBuilder) NewBuilderTagFromBuilder(childIb *IfdBuilder) (bt *Builder
 // AddTagsFromExisting does a verbatim copy of the entries in `ifd` to this
 // builder. It excludes child IFDs. These must be added explicitly via
 // `AddChildIb()`.
-func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResolver, includeTagIds []uint16, excludeTagIds []uint16) (err error) {
+func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excludeTagIds []uint16) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
-
-	// OBSOLETE(dustin): Support for `itevr` is now obsolete. This parameter will be removed in the future.
 
 	thumbnailData, err := ifd.Thumbnail()
 	if err == nil {
@@ -1111,7 +1107,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath, ite.TagId, i, childTagIds)
 			}
 
-			childIb := NewIfdBuilderFromExistingChain(childIfd, nil)
+			childIb := NewIfdBuilderFromExistingChain(childIfd)
 			bt = ib.NewBuilderTagFromBuilder(childIb)
 		} else {
 			// Non-IFD tag.
