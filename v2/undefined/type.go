@@ -1,13 +1,7 @@
 package exifundefined
 
 import (
-	"fmt"
-	"strings"
-
-	"crypto/sha1"
 	"encoding/binary"
-
-	"github.com/dsoprea/go-logging"
 
 	"github.com/dsoprea/go-exif/v2/common"
 )
@@ -24,6 +18,7 @@ type UndefinedValueEncoder interface {
 
 type EncodeableValue interface {
 	EncoderName() string
+	String() string
 }
 
 // UndefinedValueEncoder knows how to decode an undefined-type tag's value from

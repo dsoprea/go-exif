@@ -350,7 +350,7 @@ func TranslateStringToType(tagType TagTypePrimitive, valueString string) (value 
     }()
 
     if tagType == TypeUndefined {
-        // TODO(dustin): Circle back to this.
+        // The caller should just call String() on the decoded type.
         log.Panicf("undefined-type values are not supported")
     }
 
