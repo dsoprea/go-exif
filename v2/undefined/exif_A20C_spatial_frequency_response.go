@@ -2,6 +2,7 @@ package exifundefined
 
 import (
 	"bytes"
+	"fmt"
 
 	"encoding/binary"
 
@@ -15,6 +16,14 @@ type TagA20CSpatialFrequencyResponse struct {
 	Rows        uint16
 	ColumnNames []string
 	Values      []exifcommon.Rational
+}
+
+func (TagA20CSpatialFrequencyResponse) EncoderName() string {
+	return "CodecA20CSpatialFrequencyResponse"
+}
+
+func (sfr TagA20CSpatialFrequencyResponse) String() string {
+	return fmt.Sprintf("CodecA20CSpatialFrequencyResponse<COLUMNS=(%d) ROWS=(%d)>", sfr.Columns, sfr.Rows)
 }
 
 type CodecA20CSpatialFrequencyResponse struct {
@@ -69,7 +78,7 @@ func (CodecA20CSpatialFrequencyResponse) Encode(value interface{}, byteOrder bin
 	return encoded, uint32(len(encoded)), nil
 }
 
-func (CodecA20CSpatialFrequencyResponse) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (CodecA20CSpatialFrequencyResponse) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -141,11 +150,11 @@ func (CodecA20CSpatialFrequencyResponse) Decode(valueContext *exifcommon.ValueCo
 
 func init() {
 	registerEncoder(
-		TagA302CfaPattern{},
-		CodecA302CfaPattern{})
+		TagA20CSpatialFrequencyResponse{},
+		CodecA20CSpatialFrequencyResponse{})
 
 	registerDecoder(
 		exifcommon.IfdPathStandardExif,
-		0xa302,
-		CodecA302CfaPattern{})
+		0xa20c,
+		CodecA20CSpatialFrequencyResponse{})
 }

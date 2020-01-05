@@ -2,6 +2,7 @@ package exifundefined
 
 import (
 	"bytes"
+	"fmt"
 
 	"encoding/binary"
 
@@ -14,6 +15,14 @@ type TagA302CfaPattern struct {
 	HorizontalRepeat uint16
 	VerticalRepeat   uint16
 	CfaValue         []byte
+}
+
+func (TagA302CfaPattern) EncoderName() string {
+	return "CodecA302CfaPattern"
+}
+
+func (cp TagA302CfaPattern) String() string {
+	return fmt.Sprintf("TagA302CfaPattern<HORZ-REPEAT=(%d) VERT-REPEAT=(%d)>", cp.HorizontalRepeat, cp.VerticalRepeat)
 }
 
 type CodecA302CfaPattern struct {
@@ -51,7 +60,7 @@ func (CodecA302CfaPattern) Encode(value interface{}, byteOrder binary.ByteOrder)
 	return encoded, uint32(len(encoded)), nil
 }
 
-func (CodecA302CfaPattern) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (CodecA302CfaPattern) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

@@ -17,6 +17,10 @@ type Tag927CMakerNote struct {
     MakerNoteBytes []byte
 }
 
+func (Tag927CMakerNote) EncoderName() string {
+    return "Codec927CMakerNote"
+}
+
 func (mn Tag927CMakerNote) String() string {
     parts := make([]string, 20)
     for i, c := range mn.MakerNoteType {
@@ -53,7 +57,7 @@ func (Codec927CMakerNote) Encode(value interface{}, byteOrder binary.ByteOrder) 
     return mn.MakerNoteBytes, uint32(len(mn.MakerNoteBytes)), nil
 }
 
-func (Codec927CMakerNote) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (Codec927CMakerNote) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))

@@ -1,6 +1,8 @@
 package exifundefined
 
 import (
+	"fmt"
+
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
@@ -9,6 +11,14 @@ import (
 )
 
 type TagExifA300FileSource uint32
+
+func (TagExifA300FileSource) EncoderName() string {
+	return "CodecExifA300FileSource"
+}
+
+func (af TagExifA300FileSource) String() string {
+	return fmt.Sprintf("%d", af)
+}
 
 const (
 	TagUndefinedType_A300_SceneType_Others                   TagExifA300FileSource = 0
@@ -42,7 +52,7 @@ func (CodecExifA300FileSource) Encode(value interface{}, byteOrder binary.ByteOr
 	return ed.Encoded, uint32(int(ed.UnitCount)), nil
 }
 
-func (CodecExifA300FileSource) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (CodecExifA300FileSource) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

@@ -11,15 +11,17 @@ import (
 	"io/ioutil"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 func TestIfdTagEntry_ValueBytes(t *testing.T) {
 	byteOrder := binary.BigEndian
-	ve := NewValueEncoder(byteOrder)
+	ve := exifcommon.NewValueEncoder(byteOrder)
 
 	original := []byte("original text")
 
-	ed, err := ve.encodeBytes(original)
+	ed, err := ve.Encode(original)
 	log.PanicIf(err)
 
 	// Now, pass the raw encoded value as if it was the entire addressable area
@@ -27,7 +29,7 @@ func TestIfdTagEntry_ValueBytes(t *testing.T) {
 	// value happened to be recorded at the beginning.
 
 	ite := IfdTagEntry{
-		TagType:     TypeByte,
+		TagType:     exifcommon.TypeByte,
 		UnitCount:   uint32(len(original)),
 		ValueOffset: 0,
 	}
@@ -264,7 +266,7 @@ func TestIfd_GpsInfo(t *testing.T) {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	ifd, err := index.RootIfd.ChildWithIfdPath(IfdPathStandardGps)
+	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
 	log.PanicIf(err)
 
 	gi, err := ifd.GpsInfo()
@@ -482,7 +484,7 @@ func ExampleIfd_GpsInfo() {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	ifd, err := index.RootIfd.ChildWithIfdPath(IfdPathStandardGps)
+	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
 	log.PanicIf(err)
 
 	gi, err := ifd.GpsInfo()

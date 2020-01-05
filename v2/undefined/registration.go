@@ -1,8 +1,6 @@
 package exifundefined
 
 import (
-	"reflect"
-
 	"github.com/dsoprea/go-logging"
 )
 
@@ -11,11 +9,11 @@ type UndefinedTagHandle struct {
 	TagId   uint16
 }
 
-func registerEncoder(entity interface{}, encoder UndefinedValueEncoder) {
-	typeName := reflect.TypeOf(entity).Name()
+func registerEncoder(entity EncodeableValue, encoder UndefinedValueEncoder) {
+	typeName := entity.EncoderName()
 
 	_, found := encoders[typeName]
-	if found != true {
+	if found == true {
 		log.Panicf("encoder already registered: %v", typeName)
 	}
 
@@ -29,7 +27,7 @@ func registerDecoder(ifdPath string, tagId uint16, decoder UndefinedValueDecoder
 	}
 
 	_, found := decoders[uth]
-	if found != true {
+	if found == true {
 		log.Panicf("decoder already registered: %v", uth)
 	}
 

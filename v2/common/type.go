@@ -3,6 +3,7 @@ package exifcommon
 import (
     "errors"
     "fmt"
+    "reflect"
     "strconv"
     "strings"
 
@@ -93,6 +94,22 @@ func (tagType TagTypePrimitive) Size() int {
     }
 }
 
+// IsValid returns true if tagType is a valid type.
+func (tagType TagTypePrimitive) IsValid() bool {
+
+    // TODO(dustin): Add test
+
+    return tagType == TypeByte ||
+        tagType == TypeAscii ||
+        tagType == TypeAsciiNoNul ||
+        tagType == TypeShort ||
+        tagType == TypeLong ||
+        tagType == TypeRational ||
+        tagType == TypeSignedLong ||
+        tagType == TypeSignedRational ||
+        tagType == TypeUndefined
+}
+
 var (
     // TODO(dustin): Rename TypeNames() to typeNames() and add getter.
     TypeNames = map[TagTypePrimitive]string{
@@ -108,7 +125,7 @@ var (
         TypeAsciiNoNul: "_ASCII_NO_NUL",
     }
 
-    TypeNamesR = map[string]TagTypePrimitive{}
+    typeNamesR = map[string]TagTypePrimitive{}
 )
 
 type Rational struct {
@@ -123,14 +140,134 @@ type SignedRational struct {
 
 // Format returns a stringified value for the given encoding. Automatically
 // parses. Automatically calculates count based on type size.
-func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder binary.ByteOrder) (value string, err error) {
+func FormatFromType(value interface{}, justFirst bool) (phrase string, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
 
-    // TODO(dustin): !! Add tests
+    // TODO(dustin): !! Add test
+
+    switch t := value.(type) {
+    case []byte:
+        return DumpBytesToString(t), nil
+    case string:
+        return t, nil
+    case []uint16:
+        if len(t) == 0 {
+            return "", nil
+        }
+
+        if justFirst == true {
+            var valueSuffix string
+            if len(t) > 1 {
+                valueSuffix = "..."
+            }
+
+            return fmt.Sprintf("%v%s", t[0], valueSuffix), nil
+        }
+
+        return fmt.Sprintf("%v", t), nil
+    case []uint32:
+        if len(t) == 0 {
+            return "", nil
+        }
+
+        if justFirst == true {
+            var valueSuffix string
+            if len(t) > 1 {
+                valueSuffix = "..."
+            }
+
+            return fmt.Sprintf("%v%s", t[0], valueSuffix), nil
+        }
+
+        return fmt.Sprintf("%v", t), nil
+    case []Rational:
+        if len(t) == 0 {
+            return "", nil
+        }
+
+        parts := make([]string, len(t))
+        for i, r := range t {
+            parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
+
+            if justFirst == true {
+                break
+            }
+        }
+
+        if justFirst == true {
+            var valueSuffix string
+            if len(t) > 1 {
+                valueSuffix = "..."
+            }
+
+            return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
+        }
+
+        return fmt.Sprintf("%v", parts), nil
+    case []int32:
+        if len(t) == 0 {
+            return "", nil
+        }
+
+        if justFirst == true {
+            var valueSuffix string
+            if len(t) > 1 {
+                valueSuffix = "..."
+            }
+
+            return fmt.Sprintf("%v%s", t[0], valueSuffix), nil
+        }
+
+        return fmt.Sprintf("%v", t), nil
+    case []SignedRational:
+        if len(t) == 0 {
+            return "", nil
+        }
+
+        parts := make([]string, len(t))
+        for i, r := range t {
+            parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
+
+            if justFirst == true {
+                break
+            }
+        }
+
+        if justFirst == true {
+            var valueSuffix string
+            if len(t) > 1 {
+                valueSuffix = "..."
+            }
+
+            return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
+        }
+
+        return fmt.Sprintf("%v", parts), nil
+    default:
+        // Affects only "unknown" values, in general.
+        log.Panicf("type can not be formatted into string: %v", reflect.TypeOf(value).Name())
+
+        // Never called.
+        return "", nil
+    }
+}
+
+// TODO(dustin): Rename Format() to FormatFromBytes()
+
+// Format returns a stringified value for the given encoding. Automatically
+// parses. Automatically calculates count based on type size.
+func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder binary.ByteOrder) (phrase string, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    // TODO(dustin): !! Add test
 
     typeSize := tagType.Size()
 
@@ -144,109 +281,61 @@ func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder
 
     // Truncate the items if it's not bytes or a string and we just want the first.
 
-    valueSuffix := ""
-    if justFirst == true && unitCount > 1 && tagType != TypeByte && tagType != TypeAscii && tagType != TypeAsciiNoNul {
-        unitCount = 1
-        valueSuffix = "..."
-    }
+    var value interface{}
 
-    if tagType == TypeByte {
-        items, err := parser.ParseBytes(rawBytes, unitCount)
+    switch tagType {
+    case TypeByte:
+        var err error
+
+        value, err = parser.ParseBytes(rawBytes, unitCount)
         log.PanicIf(err)
+    case TypeAscii:
+        var err error
 
-        return DumpBytesToString(items), nil
-    } else if tagType == TypeAscii {
-        phrase, err := parser.ParseAscii(rawBytes, unitCount)
+        value, err = parser.ParseAscii(rawBytes, unitCount)
         log.PanicIf(err)
+    case TypeAsciiNoNul:
+        var err error
 
-        return phrase, nil
-    } else if tagType == TypeAsciiNoNul {
-        phrase, err := parser.ParseAsciiNoNul(rawBytes, unitCount)
+        value, err = parser.ParseAsciiNoNul(rawBytes, unitCount)
         log.PanicIf(err)
+    case TypeShort:
+        var err error
 
-        return phrase, nil
-    } else if tagType == TypeShort {
-        items, err := parser.ParseShorts(rawBytes, unitCount, byteOrder)
+        value, err = parser.ParseShorts(rawBytes, unitCount, byteOrder)
         log.PanicIf(err)
+    case TypeLong:
+        var err error
 
-        if len(items) > 0 {
-            if justFirst == true {
-                return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
-            } else {
-                return fmt.Sprintf("%v", items), nil
-            }
-        } else {
-            return "", nil
-        }
-    } else if tagType == TypeLong {
-        items, err := parser.ParseLongs(rawBytes, unitCount, byteOrder)
+        value, err = parser.ParseLongs(rawBytes, unitCount, byteOrder)
         log.PanicIf(err)
+    case TypeRational:
+        var err error
 
-        if len(items) > 0 {
-            if justFirst == true {
-                return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
-            } else {
-                return fmt.Sprintf("%v", items), nil
-            }
-        } else {
-            return "", nil
-        }
-    } else if tagType == TypeRational {
-        items, err := parser.ParseRationals(rawBytes, unitCount, byteOrder)
+        value, err = parser.ParseRationals(rawBytes, unitCount, byteOrder)
         log.PanicIf(err)
+    case TypeSignedLong:
+        var err error
 
-        if len(items) > 0 {
-            parts := make([]string, len(items))
-            for i, r := range items {
-                parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
-            }
-
-            if justFirst == true {
-                return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
-            } else {
-                return fmt.Sprintf("%v", parts), nil
-            }
-        } else {
-            return "", nil
-        }
-    } else if tagType == TypeSignedLong {
-        items, err := parser.ParseSignedLongs(rawBytes, unitCount, byteOrder)
+        value, err = parser.ParseSignedLongs(rawBytes, unitCount, byteOrder)
         log.PanicIf(err)
+    case TypeSignedRational:
+        var err error
 
-        if len(items) > 0 {
-            if justFirst == true {
-                return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
-            } else {
-                return fmt.Sprintf("%v", items), nil
-            }
-        } else {
-            return "", nil
-        }
-    } else if tagType == TypeSignedRational {
-        items, err := parser.ParseSignedRationals(rawBytes, unitCount, byteOrder)
+        value, err = parser.ParseSignedRationals(rawBytes, unitCount, byteOrder)
         log.PanicIf(err)
-
-        parts := make([]string, len(items))
-        for i, r := range items {
-            parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
-        }
-
-        if len(items) > 0 {
-            if justFirst == true {
-                return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
-            } else {
-                return fmt.Sprintf("%v", parts), nil
-            }
-        } else {
-            return "", nil
-        }
-    } else {
+    default:
         // Affects only "unknown" values, in general.
         log.Panicf("value of type [%s] can not be formatted into string", tagType.String())
 
         // Never called.
         return "", nil
     }
+
+    phrase, err = FormatFromType(value, justFirst)
+    log.PanicIf(err)
+
+    return phrase, nil
 }
 
 // TranslateStringToType converts user-provided strings to properly-typed
@@ -323,8 +412,15 @@ func TranslateStringToType(tagType TagTypePrimitive, valueString string) (value 
     return nil, nil
 }
 
+// GetTypeByName returns the `TagTypePrimitive` for the given type name.
+// Returns (0) if not valid.
+func GetTypeByName(typeName string) (tagType TagTypePrimitive, found bool) {
+    tagType, found = typeNamesR[typeName]
+    return tagType, found
+}
+
 func init() {
     for typeId, typeName := range TypeNames {
-        TypeNamesR[typeName] = typeId
+        typeNamesR[typeName] = typeId
     }
 }

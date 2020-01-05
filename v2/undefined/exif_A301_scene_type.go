@@ -1,6 +1,8 @@
 package exifundefined
 
 import (
+	"fmt"
+
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
@@ -9,6 +11,14 @@ import (
 )
 
 type TagExifA301SceneType uint32
+
+func (TagExifA301SceneType) EncoderName() string {
+	return "CodecExifA301SceneType"
+}
+
+func (st TagExifA301SceneType) String() string {
+	return fmt.Sprintf("%d", st)
+}
 
 const (
 	TagUndefinedType_A301_SceneType_DirectlyPhotographedImage TagExifA301SceneType = 1
@@ -39,7 +49,7 @@ func (CodecExifA301SceneType) Encode(value interface{}, byteOrder binary.ByteOrd
 	return ed.Encoded, uint32(int(ed.UnitCount)), nil
 }
 
-func (CodecExifA301SceneType) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (CodecExifA301SceneType) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

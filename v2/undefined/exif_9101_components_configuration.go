@@ -55,6 +55,10 @@ type TagExif9101ComponentsConfiguration struct {
 	ConfigurationBytes []byte
 }
 
+func (TagExif9101ComponentsConfiguration) EncoderName() string {
+	return "CodecExif9101ComponentsConfiguration"
+}
+
 func (cc TagExif9101ComponentsConfiguration) String() string {
 	return fmt.Sprintf("Exif9101ComponentsConfiguration<ID=[%s] BYTES=%v>", TagUndefinedType_9101_ComponentsConfiguration_Names[cc.ConfigurationId], cc.ConfigurationBytes)
 }
@@ -79,7 +83,7 @@ func (CodecExif9101ComponentsConfiguration) Encode(value interface{}, byteOrder 
 	return cc.ConfigurationBytes, uint32(len(cc.ConfigurationBytes)), nil
 }
 
-func (CodecExif9101ComponentsConfiguration) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (CodecExif9101ComponentsConfiguration) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

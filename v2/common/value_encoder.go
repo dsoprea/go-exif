@@ -187,8 +187,6 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
         }
     }()
 
-    // TODO(dustin): This is redundant with EncodeWithType. Refactor one to use the other.
-
     switch value.(type) {
     case []byte:
         ed, err = ve.encodeBytes(value.([]byte))

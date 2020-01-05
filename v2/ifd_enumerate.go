@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +11,9 @@ import (
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
 var (
@@ -159,7 +161,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	tagTypeRaw, _, err := ite.getUint16()
 	log.PanicIf(err)
 
-	tagType := TagTypePrimitive(tagTypeRaw)
+	tagType := exifcommon.TagTypePrimitive(tagTypeRaw)
 
 	unitCount, _, err := ite.getUint32()
 	log.PanicIf(err)
@@ -167,7 +169,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	valueOffset, rawValueOffset, err := ite.getUint32()
 	log.PanicIf(err)
 
-	if _, found := TypeNames[tagType]; found == false {
+	if tagType.IsValid() == false {
 		log.Panic(ErrTagTypeNotValid)
 	}
 
@@ -210,7 +212,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, ite *IfdTagE
 	return tag, nil
 }
 
-func (ie *IfdEnumerate) GetValueContext(ite *IfdTagEntry) *ValueContext {
+func (ie *IfdEnumerate) GetValueContext(ite *IfdTagEntry) *exifcommon.ValueContext {
 
 	// TODO(dustin): Add test
 
@@ -229,119 +231,55 @@ func (ie *IfdEnumerate) resolveTagValue(ite *IfdTagEntry) (valueBytes []byte, is
 		}
 	}()
 
-	addressableData := ie.exifData[ExifAddressableAreaStart:]
+	valueContext := ie.GetValueContext(ite)
 
 	// Return the exact bytes of the unknown-type value. Returning a string
 	// (`ValueString`) is easy because we can just pass everything to
 	// `Sprintf()`. Returning the raw, typed value (`Value`) is easy
 	// (obviously). However, here, in order to produce the list of bytes, we
 	// need to coerce whatever `Undefined()` returns.
-	if ite.TagType == TypeUndefined {
-		valueContext := ie.GetValueContext(ite)
-
-		value, err := valueContext.Undefined()
+	if ite.TagType == exifcommon.TypeUndefined {
+		value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, ie.byteOrder)
 		if err != nil {
-			if err == ErrUnhandledUnknownTypedTag {
-				valueBytes = []byte(UnparseableUnknownTagValuePlaceholder)
-				return valueBytes, true, nil
+			if err == exifcommon.ErrUnhandledUnknownTypedTag {
+				return nil, true, nil
 			}
 
 			log.Panic(err)
-		} else {
-			switch value.(type) {
-			case []byte:
-				return value.([]byte), false, nil
-			case TagUnknownType_UnknownValue:
-				b := []byte(value.(TagUnknownType_UnknownValue))
-				return b, false, nil
-			case string:
-				return []byte(value.(string)), false, nil
-			case UnknownTagValue:
-				valueBytes, err := value.(UnknownTagValue).ValueBytes()
-				log.PanicIf(err)
-
-				return valueBytes, false, nil
-			default:
-				// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
-				log.Panicf("can not produce bytes for unknown-type tag (0x%04x) (1): [%s]", ite.TagId, reflect.TypeOf(value))
-			}
 		}
+
+		encodeable := value.(exifundefined.EncodeableValue)
+
+		valueBytes, _, err = exifundefined.Encode(encodeable, ie.byteOrder)
+		log.PanicIf(err)
 	} else {
-		originalType := NewTagType(ite.TagType, ie.byteOrder)
-		byteCount := uint32(originalType.Type().Size()) * ite.UnitCount
+		var err error
 
-		tt := NewTagType(TypeByte, ie.byteOrder)
-
-		if tt.valueIsEmbedded(byteCount) == true {
-			iteLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
-
-			// In this case, the bytes normally used for the offset are actually
-			// data.
-			valueBytes, err = tt.ParseBytes(ite.RawValueOffset, byteCount)
-			log.PanicIf(err)
-		} else {
-			iteLogger.Debugf(nil, "Reading BYTE value (ITE; at offset).")
-
-			valueBytes, err = tt.ParseBytes(addressableData[ite.ValueOffset:], byteCount)
-			log.PanicIf(err)
-		}
+		valueBytes, err = valueContext.ReadRawEncoded()
+		log.PanicIf(err)
 	}
 
 	return valueBytes, false, nil
 }
 
-// RawTagVisitorPtr is an optional callback that can get hit for every tag we parse
+// RawTagWalk is an optional callback that can get hit for every tag we parse
 // through. `addressableData` is the byte array startign after the EXIF header
 // (where the offsets of all IFDs and values are calculated from).
 //
 // This was reimplemented as an interface to allow for simpler change management
 // in the future.
 type RawTagWalk interface {
-	Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext *ValueContext) (err error)
+	Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error)
 }
-
-type RawTagWalkLegacyWrapper struct {
-	legacyVisitor RawTagVisitor
-}
-
-func (rtwlw RawTagWalkLegacyWrapper) Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext *ValueContext) (err error) {
-	return rtwlw.legacyVisitor(fqIfdPath, ifdIndex, tagId, tagType, *valueContext)
-}
-
-// RawTagVisitor is an optional callback that can get hit for every tag we parse
-// through. `addressableData` is the byte array startign after the EXIF header
-// (where the offsets of all IFDs and values are calculated from).
-//
-// DEPRECATED(dustin): Use a RawTagWalk instead.
-type RawTagVisitor func(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error)
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnumerator, visitor interface{}, doDescend bool, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnumerator, visitor RawTagWalk, doDescend bool, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
-
-	var visitorWrapper RawTagWalk
-
-	if visitor != nil {
-		var ok bool
-
-		visitorWrapper, ok = visitor.(RawTagWalk)
-		if ok == false {
-			// Legacy usage.
-
-			// `ok` can be `true` but `legacyVisitor` can still be `nil` (when
-			// passed as nil).
-			if legacyVisitor, ok := visitor.(RawTagVisitor); ok == true && legacyVisitor != nil {
-				visitorWrapper = RawTagWalkLegacyWrapper{
-					legacyVisitor: legacyVisitor,
-				}
-			}
-		}
-	}
 
 	tagCount, _, err := ite.getUint16()
 	log.PanicIf(err)
@@ -373,12 +311,10 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, ite *IfdTagEnum
 			continue
 		}
 
-		if visitorWrapper != nil {
-			tt := NewTagType(tag.TagType, ie.byteOrder)
-
+		if visitor != nil {
 			valueContext := ie.GetValueContext(tag)
 
-			err := visitorWrapper.Visit(fqIfdPath, ifdIndex, tag.TagId, tt, valueContext)
+			err := visitor.Visit(fqIfdPath, ifdIndex, tag.TagId, tag.TagType, valueContext)
 			log.PanicIf(err)
 		}
 
@@ -430,7 +366,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 	length := vList[0]
 
 	// The tag is official a LONG type, but it's actually an offset to a blob of bytes.
-	offsetIte.TagType = TypeByte
+	offsetIte.TagType = exifcommon.TypeByte
 	offsetIte.UnitCount = length
 
 	thumbnailData, err = offsetIte.ValueBytes(addressableData, ie.byteOrder)
@@ -440,7 +376,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 }
 
 // Scan enumerates the different EXIF's IFD blocks.
-func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor interface{}, resolveValues bool) (err error) {
+func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor RawTagWalk, resolveValues bool) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -466,7 +402,7 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor interfa
 
 // Scan enumerates the different EXIF blocks (called IFDs). `rootIfdName` will
 // be "IFD" in the TIFF standard.
-func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor RawTagVisitor, resolveValue bool) (err error) {
+func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor RawTagWalk, resolveValue bool) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -717,8 +653,8 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 
 				value, err = ifd.TagValue(tag)
 				if err != nil {
-					if err == ErrUnhandledUnknownTypedTag {
-						value = UnparseableUnknownTagValuePlaceholder
+					if err == exifcommon.ErrUnhandledUnknownTypedTag {
+						value = exifundefined.UnparseableUnknownTagValuePlaceholder
 					} else {
 						log.Panic(err)
 					}
@@ -863,8 +799,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	gi = new(GpsInfo)
 
-	if ifd.IfdPath != IfdPathStandardGps {
-		log.Panicf("GPS can only be read on GPS IFD: [%s] != [%s]", ifd.IfdPath, IfdPathStandardGps)
+	if ifd.IfdPath != exifcommon.IfdPathStandardGps {
+		log.Panicf("GPS can only be read on GPS IFD: [%s] != [%s]", ifd.IfdPath, exifcommon.IfdPathStandardGps)
 	}
 
 	if tags, found := ifd.EntriesByTagId[TagVersionId]; found == false {
@@ -926,7 +862,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	// Parse location.
 
-	latitudeRaw := latitudeValue.([]Rational)
+	latitudeRaw := latitudeValue.([]exifcommon.Rational)
 
 	gi.Latitude = GpsDegrees{
 		Orientation: latitudeRefValue.(string)[0],
@@ -935,7 +871,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		Seconds:     float64(latitudeRaw[2].Numerator) / float64(latitudeRaw[2].Denominator),
 	}
 
-	longitudeRaw := longitudeValue.([]Rational)
+	longitudeRaw := longitudeValue.([]exifcommon.Rational)
 
 	gi.Longitude = GpsDegrees{
 		Orientation: longitudeRefValue.(string)[0],
@@ -956,7 +892,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		altitudeRefValue, err := ifd.TagValue(altitudeRefTags[0])
 		log.PanicIf(err)
 
-		altitudeRaw := altitudeValue.([]Rational)
+		altitudeRaw := altitudeValue.([]exifcommon.Rational)
 		altitude := int(altitudeRaw[0].Numerator / altitudeRaw[0].Denominator)
 		if altitudeRefValue.([]byte)[0] == 1 {
 			altitude *= -1
@@ -984,7 +920,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 			timestampValue, err := ifd.TagValue(timestampTags[0])
 			log.PanicIf(err)
 
-			timestampRaw := timestampValue.([]Rational)
+			timestampRaw := timestampValue.([]exifcommon.Rational)
 
 			hour := int(timestampRaw[0].Numerator / timestampRaw[0].Denominator)
 			minute := int(timestampRaw[1].Numerator / timestampRaw[1].Denominator)
@@ -1023,7 +959,7 @@ func (ifd *Ifd) EnumerateTagsRecursively(visitor ParsedTagVisitor) (err error) {
 	return nil
 }
 
-func (ifd *Ifd) GetValueContext(ite *IfdTagEntry) *ValueContext {
+func (ifd *Ifd) GetValueContext(ite *IfdTagEntry) *exifcommon.ValueContext {
 	return newValueContextFromTag(
 		ite,
 		ifd.addressableData,
@@ -1068,9 +1004,9 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32, resolveValues bool) (index
 
 	queue := []QueuedIfd{
 		{
-			Name:      IfdStandard,
-			IfdPath:   IfdStandard,
-			FqIfdPath: IfdStandard,
+			Name:      exifcommon.IfdStandard,
+			IfdPath:   exifcommon.IfdStandard,
+			FqIfdPath: exifcommon.IfdStandard,
 
 			TagId: 0xffff,
 
@@ -1258,7 +1194,7 @@ func (ie *IfdEnumerate) setChildrenIndex(ifd *Ifd) (err error) {
 
 // ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
 // testing.
-func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath string, byteOrder binary.ByteOrder, ifdBlock []byte, visitor RawTagVisitor, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
+func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath string, byteOrder binary.ByteOrder, ifdBlock []byte, visitor RawTagWalk, resolveValues bool) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -1308,8 +1244,8 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdPath string) (ifd *Ifd, err error) {
 
 	if len(lineage) == 0 {
 		log.Panicf("IFD path must be non-empty.")
-	} else if lineage[0].Name != IfdStandard {
-		log.Panicf("First IFD path item must be [%s].", IfdStandard)
+	} else if lineage[0].Name != exifcommon.IfdStandard {
+		log.Panicf("First IFD path item must be [%s].", exifcommon.IfdStandard)
 	}
 
 	desiredRootIndex := lineage[0].Index

@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 const (
@@ -219,8 +221,8 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 
 	if bt.value.IsBytes() == true {
 		effectiveType := bt.typeId
-		if bt.typeId == TypeUndefined {
-			effectiveType = TypeByte
+		if bt.typeId == exifcommon.TypeUndefined {
+			effectiveType = exifcommon.TypeByte
 		}
 
 		// It's a non-unknown value.Calculate the count of values of

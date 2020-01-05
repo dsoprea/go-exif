@@ -22,24 +22,19 @@ type UndefinedValueEncoder interface {
 	Encode(value interface{}, byteOrder binary.ByteOrder) (encoded []byte, unitCount uint32, err error)
 }
 
+type EncodeableValue interface {
+	EncoderName() string
+}
+
 // UndefinedValueEncoder knows how to decode an undefined-type tag's value from
 // bytes.
 type UndefinedValueDecoder interface {
-	Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error)
+	Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error)
 }
 
-// TODO(dustin): Rename `UnknownTagValue` to `UndefinedTagValue`.
-// OBSOLETE(dustin): Use a `UndefinedValueEncoder` instead of an `UnknownTagValue`.
+type TagUndefinedType_UnknownValue []byte
 
-type UnknownTagValue interface {
-	ValueBytes() ([]byte, error)
-}
-
-// TODO(dustin): Rename `TagUnknownType_UnknownValue` to `TagUndefinedType_UnknownValue`.
-
-type TagUnknownType_UnknownValue []byte
-
-func (tutuv TagUnknownType_UnknownValue) String() string {
+func (tutuv TagUndefinedType_UnknownValue) String() string {
 	parts := make([]string, len(tutuv))
 	for i, c := range tutuv {
 		parts[i] = fmt.Sprintf("%02x", c)
@@ -54,5 +49,3 @@ func (tutuv TagUnknownType_UnknownValue) String() string {
 
 	return fmt.Sprintf("Unknown<DATA=[%s] LEN=(%d) SHA1=[%020x]>", strings.Join(parts, " "), len(tutuv), digest)
 }
-
-type TagUndefinedGeneralString string

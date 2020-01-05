@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v2/undefined"
 	"github.com/dsoprea/go-logging"
 )
 
@@ -17,11 +19,11 @@ func TestIfdBuilder_Add(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -30,8 +32,8 @@ func TestIfdBuilder_Add(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -40,8 +42,8 @@ func TestIfdBuilder_Add(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -52,8 +54,8 @@ func TestIfdBuilder_Add(t *testing.T) {
 	originalBytes := []byte{0x11, 0x22, 0x33}
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x44,
 		value:   NewIfdBuilderTagValueFromBytes([]byte(originalBytes)),
 	}
@@ -61,11 +63,11 @@ func TestIfdBuilder_Add(t *testing.T) {
 	err = ib.Add(bt)
 	log.PanicIf(err)
 
-	if ib.ifdPath != IfdPathStandard {
+	if ib.ifdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("IFD name not correct.")
 	} else if ib.ifdTagId != 0 {
 		t.Fatalf("IFD tag-ID not correct.")
-	} else if ib.byteOrder != TestDefaultByteOrder {
+	} else if ib.byteOrder != exifcommon.TestDefaultByteOrder {
 		t.Fatalf("IFD byte-order not correct.")
 	} else if len(ib.tags) != 4 {
 		t.Fatalf("IFD tag-count not correct.")
@@ -110,8 +112,8 @@ func TestIfdBuilder_SetNextIb(t *testing.T) {
 
 	ti := NewTagIndex()
 
-	ib1 := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
-	ib2 := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib1 := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
+	ib2 := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	if ib1.nextIb != nil {
 		t.Fatalf("Next-IFD for IB1 not initially terminal.")
@@ -134,11 +136,11 @@ func TestIfdBuilder_AddChildIb(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -146,13 +148,13 @@ func TestIfdBuilder_AddChildIb(t *testing.T) {
 	err = ib.Add(bt)
 	log.PanicIf(err)
 
-	ibChild := NewIfdBuilder(im, ti, IfdPathStandardExif, TestDefaultByteOrder)
+	ibChild := NewIfdBuilder(im, ti, exifcommon.IfdPathStandardExif, exifcommon.TestDefaultByteOrder)
 	err = ib.AddChildIb(ibChild)
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -193,7 +195,7 @@ func TestIfdBuilder_AddTagsFromExisting(t *testing.T) {
 	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	err = ib.AddTagsFromExisting(index.RootIfd, nil, nil, nil)
 	log.PanicIf(err)
@@ -229,7 +231,7 @@ func TestIfdBuilder_AddTagsFromExisting__Includes(t *testing.T) {
 	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	err = ib.AddTagsFromExisting(index.RootIfd, nil, []uint16{0x00ff}, nil)
 	log.PanicIf(err)
@@ -262,7 +264,7 @@ func TestIfdBuilder_AddTagsFromExisting__Excludes(t *testing.T) {
 	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	err = ib.AddTagsFromExisting(index.RootIfd, nil, nil, []uint16{0xff})
 	log.PanicIf(err)
@@ -291,11 +293,11 @@ func TestIfdBuilder_FindN__First_1(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -304,8 +306,8 @@ func TestIfdBuilder_FindN__First_1(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -314,8 +316,8 @@ func TestIfdBuilder_FindN__First_1(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -347,11 +349,11 @@ func TestIfdBuilder_FindN__First_2_1Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -360,8 +362,8 @@ func TestIfdBuilder_FindN__First_2_1Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -370,8 +372,8 @@ func TestIfdBuilder_FindN__First_2_1Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -403,11 +405,11 @@ func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -416,8 +418,8 @@ func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -426,8 +428,8 @@ func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -436,8 +438,8 @@ func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -446,8 +448,8 @@ func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string5")),
 	}
@@ -486,11 +488,11 @@ func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -499,8 +501,8 @@ func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -509,8 +511,8 @@ func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -519,8 +521,8 @@ func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -529,8 +531,8 @@ func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string5")),
 	}
@@ -539,8 +541,8 @@ func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string6")),
 	}
@@ -572,11 +574,11 @@ func TestIfdBuilder_FindN__Middle_NoDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -585,8 +587,8 @@ func TestIfdBuilder_FindN__Middle_NoDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -595,8 +597,8 @@ func TestIfdBuilder_FindN__Middle_NoDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -605,8 +607,8 @@ func TestIfdBuilder_FindN__Middle_NoDuplicates(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -638,7 +640,7 @@ func TestIfdBuilder_FindN__Miss(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	found, err := ib.FindN(0x11, 1)
 	log.PanicIf(err)
@@ -655,11 +657,11 @@ func TestIfdBuilder_Find__Hit(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -668,8 +670,8 @@ func TestIfdBuilder_Find__Hit(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -678,8 +680,8 @@ func TestIfdBuilder_Find__Hit(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -688,8 +690,8 @@ func TestIfdBuilder_Find__Hit(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -719,11 +721,11 @@ func TestIfdBuilder_Find__Miss(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -732,8 +734,8 @@ func TestIfdBuilder_Find__Miss(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -742,8 +744,8 @@ func TestIfdBuilder_Find__Miss(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -752,8 +754,8 @@ func TestIfdBuilder_Find__Miss(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -776,11 +778,11 @@ func TestIfdBuilder_Replace(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -789,8 +791,8 @@ func TestIfdBuilder_Replace(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -799,8 +801,8 @@ func TestIfdBuilder_Replace(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -818,8 +820,8 @@ func TestIfdBuilder_Replace(t *testing.T) {
 	}
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x99,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -844,11 +846,11 @@ func TestIfdBuilder_ReplaceN(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -857,8 +859,8 @@ func TestIfdBuilder_ReplaceN(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -867,8 +869,8 @@ func TestIfdBuilder_ReplaceN(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -886,8 +888,8 @@ func TestIfdBuilder_ReplaceN(t *testing.T) {
 	}
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0xA9,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -912,11 +914,11 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -925,8 +927,8 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -935,8 +937,8 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -945,8 +947,8 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -1014,11 +1016,11 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -1027,8 +1029,8 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -1037,8 +1039,8 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -1047,8 +1049,8 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -1116,11 +1118,11 @@ func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -1129,8 +1131,8 @@ func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -1139,8 +1141,8 @@ func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -1149,8 +1151,8 @@ func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -1202,11 +1204,11 @@ func TestIfdBuilder_DeleteAll(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	bt := &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x11,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string")),
 	}
@@ -1215,8 +1217,8 @@ func TestIfdBuilder_DeleteAll(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string2")),
 	}
@@ -1225,8 +1227,8 @@ func TestIfdBuilder_DeleteAll(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x22,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string3")),
 	}
@@ -1235,8 +1237,8 @@ func TestIfdBuilder_DeleteAll(t *testing.T) {
 	log.PanicIf(err)
 
 	bt = &BuilderTag{
-		ifdPath: IfdPathStandard,
-		typeId:  TypeByte,
+		ifdPath: exifcommon.IfdPathStandard,
+		typeId:  exifcommon.TypeByte,
 		tagId:   0x33,
 		value:   NewIfdBuilderTagValueFromBytes([]byte("test string4")),
 	}
@@ -1486,15 +1488,69 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
 		}
 
-		// TODO(dustin): We're always accessing the addressable-data using the root-IFD. It shouldn't matter, but we'd rather access it from our specific IFD.
-		originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
-		log.PanicIf(err)
+		var originalValueBytes []byte
 
-		recoveredValueBytes, err := recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
-		log.PanicIf(err)
+		if originalIte.TagType == exifcommon.TypeUndefined {
+			var err error
 
-		if bytes.Compare(originalValueBytes, recoveredValueBytes) != 0 {
-			t.Fatalf("bytes of tag content not correct: %s != %s", originalIte, recoveredIte)
+			valueContext :=
+				newValueContextFromTag(
+					originalIte,
+					originalIndex.RootIfd.addressableData,
+					originalIndex.RootIfd.ByteOrder)
+
+			value, err := exifundefined.Decode(
+				originalIte.IfdPath,
+				originalIte.TagId,
+				valueContext,
+				originalIndex.RootIfd.ByteOrder)
+
+			log.PanicIf(err)
+
+			originalValueBytes, _, err = exifundefined.Encode(value, originalIndex.RootIfd.ByteOrder)
+		} else {
+			var err error
+
+			// TODO(dustin): We're always accessing the addressable-data using the root-IFD. It shouldn't matter, but we'd rather access it from our specific IFD.
+			originalValueBytes, err = originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
+			log.PanicIf(err)
+		}
+
+		var recoveredValueBytes []byte
+
+		if recoveredIte.TagType == exifcommon.TypeUndefined {
+			var err error
+
+			valueContext :=
+				newValueContextFromTag(
+					recoveredIte,
+					recoveredIndex.RootIfd.addressableData,
+					recoveredIndex.RootIfd.ByteOrder)
+
+			value, err := exifundefined.Decode(
+				recoveredIte.IfdPath,
+				recoveredIte.TagId,
+				valueContext,
+				recoveredIndex.RootIfd.ByteOrder)
+
+			log.PanicIf(err)
+
+			recoveredValueBytes, _, err = exifundefined.Encode(value, recoveredIndex.RootIfd.ByteOrder)
+		} else {
+			var err error
+
+			recoveredValueBytes, err = recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
+			log.PanicIf(err)
+		}
+
+		if bytes.Compare(recoveredValueBytes, originalValueBytes) != 0 {
+			fmt.Printf("ACTUAL: %s\n", originalIte)
+			exifcommon.DumpBytes(recoveredValueBytes)
+
+			fmt.Printf("EXPECTED: %s\n", recoveredIte)
+			exifcommon.DumpBytes(originalValueBytes)
+
+			t.Fatalf("Bytes of tag content not correct.")
 		}
 	}
 }
@@ -1529,8 +1585,8 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 // 	ucBt, err := exifBt.value.Ib().FindTagWithName("UserComment")
 // 	log.PanicIf(err)
 
-// 	uc := TagUnknownType_9298_UserComment{
-// 		EncodingType:  TagUnknownType_9298_UserComment_Encoding_ASCII,
+// 	uc := exifundefined.Tag9286UserComment{
+// 		EncodingType:  TagUndefinedType_9286_UserComment_Encoding_ASCII,
 // 		EncodingBytes: []byte("TEST COMMENT"),
 // 	}
 
@@ -1687,8 +1743,8 @@ func ExampleBuilderTag_SetValue() {
 	// its type-specific struct.
 
 	// TODO(dustin): !! Add an example for setting a non-unknown value, too.
-	uc := TagUnknownType_9298_UserComment{
-		EncodingType:  TagUnknownType_9298_UserComment_Encoding_ASCII,
+	uc := exifundefined.Tag9286UserComment{
+		EncodingType:  exifundefined.TagUndefinedType_9286_UserComment_Encoding_ASCII,
 		EncodingBytes: []byte("TEST COMMENT"),
 	}
 
@@ -1793,19 +1849,19 @@ func TestIfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	mi, err := im.GetWithPath(IfdPathStandardGps)
+	mi, err := im.GetWithPath(exifcommon.IfdPathStandardGps)
 	log.PanicIf(err)
 
 	tagId := mi.TagId
 
 	parentIfd := &Ifd{
-		IfdPath:  IfdPathStandard,
+		IfdPath:  exifcommon.IfdPathStandard,
 		tagIndex: ti,
 	}
 
 	ifd := &Ifd{
-		IfdPath:   IfdPathStandardGps,
-		ByteOrder: TestDefaultByteOrder,
+		IfdPath:   exifcommon.IfdPathStandardGps,
+		ByteOrder: exifcommon.TestDefaultByteOrder,
 		Offset:    0x123,
 		ParentIfd: parentIfd,
 
@@ -1829,12 +1885,12 @@ func TestIfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 func TestNewStandardBuilderTag__OneUnit(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.Get(IfdPathStandardExif, uint16(0x8833))
+	it, err := ti.Get(exifcommon.IfdPathStandardExif, uint16(0x8833))
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(IfdPathStandardExif, it, TestDefaultByteOrder, []uint32{uint32(0x1234)})
+	bt := NewStandardBuilderTag(exifcommon.IfdPathStandardExif, it, exifcommon.TestDefaultByteOrder, []uint32{uint32(0x1234)})
 
-	if bt.ifdPath != IfdPathStandardExif {
+	if bt.ifdPath != exifcommon.IfdPathStandardExif {
 		t.Fatalf("II in BuilderTag not correct")
 	} else if bt.tagId != 0x8833 {
 		t.Fatalf("tag-ID not correct")
@@ -1846,12 +1902,12 @@ func TestNewStandardBuilderTag__OneUnit(t *testing.T) {
 func TestNewStandardBuilderTag__TwoUnits(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.Get(IfdPathStandardExif, uint16(0x8833))
+	it, err := ti.Get(exifcommon.IfdPathStandardExif, uint16(0x8833))
 	log.PanicIf(err)
 
-	bt := NewStandardBuilderTag(IfdPathStandardExif, it, TestDefaultByteOrder, []uint32{uint32(0x1234), uint32(0x5678)})
+	bt := NewStandardBuilderTag(exifcommon.IfdPathStandardExif, it, exifcommon.TestDefaultByteOrder, []uint32{uint32(0x1234), uint32(0x5678)})
 
-	if bt.ifdPath != IfdPathStandardExif {
+	if bt.ifdPath != exifcommon.IfdPathStandardExif {
 		t.Fatalf("II in BuilderTag not correct")
 	} else if bt.tagId != 0x8833 {
 		t.Fatalf("tag-ID not correct")
@@ -1869,7 +1925,7 @@ func TestIfdBuilder_AddStandardWithName(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	err = ib.AddStandardWithName("ProcessingSoftware", "some software")
 	log.PanicIf(err)
@@ -1880,7 +1936,7 @@ func TestIfdBuilder_AddStandardWithName(t *testing.T) {
 
 	bt := ib.tags[0]
 
-	if bt.ifdPath != IfdPathStandard {
+	if bt.ifdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("II not correct: %s", bt.ifdPath)
 	} else if bt.tagId != 0x000b {
 		t.Fatalf("Tag-ID not correct: (0x%04x)", bt.tagId)
@@ -1900,7 +1956,7 @@ func TestGetOrCreateIbFromRootIb__Noop(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	rootIb := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	rootIb := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	ib, err := GetOrCreateIbFromRootIb(rootIb, "IFD")
 	log.PanicIf(err)
@@ -1921,7 +1977,7 @@ func TestGetOrCreateIbFromRootIb__FqNoop(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	rootIb := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	rootIb := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	ib, err := GetOrCreateIbFromRootIb(rootIb, "IFD0")
 	log.PanicIf(err)
@@ -1942,7 +1998,7 @@ func TestGetOrCreateIbFromRootIb_InvalidChild(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	rootIb := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	rootIb := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	_, err = GetOrCreateIbFromRootIb(rootIb, "IFD/Invalid")
 	if err == nil {
@@ -1966,7 +2022,7 @@ func TestGetOrCreateIbFromRootIb__Child(t *testing.T) {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	rootIb := NewIfdBuilder(im, ti, IfdPathStandard, TestDefaultByteOrder)
+	rootIb := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
 
 	lines := rootIb.DumpToStrings()
 	expected := []string{

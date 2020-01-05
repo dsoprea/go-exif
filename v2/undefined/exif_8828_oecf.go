@@ -1,6 +1,8 @@
 package exifundefined
 
 import (
+	"fmt"
+
 	"github.com/dsoprea/go-logging"
 
 	"github.com/dsoprea/go-exif/v2/common"
@@ -13,10 +15,18 @@ type Tag8828Oecf struct {
 	Values      []exifcommon.SignedRational
 }
 
+func (oecf Tag8828Oecf) String() string {
+	return fmt.Sprintf("Tag8828Oecf<COLUMNS=(%d) ROWS=(%d)>", oecf.Columns, oecf.Rows)
+}
+
+func (oecf Tag8828Oecf) EncoderName() string {
+	return "Codec8828Oecf"
+}
+
 type Codec8828Oecf struct {
 }
 
-func (Codec8828Oecf) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (Codec8828Oecf) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

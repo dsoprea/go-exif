@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 var (
@@ -363,16 +365,16 @@ func LoadStandardIfds(im *IfdMapping) (err error) {
 		}
 	}()
 
-	err = im.Add([]uint16{}, IfdRootId, IfdStandard)
+	err = im.Add([]uint16{}, exifcommon.IfdRootId, exifcommon.IfdStandard)
 	log.PanicIf(err)
 
-	err = im.Add([]uint16{IfdRootId}, IfdExifId, IfdExif)
+	err = im.Add([]uint16{exifcommon.IfdRootId}, exifcommon.IfdExifId, exifcommon.IfdExif)
 	log.PanicIf(err)
 
-	err = im.Add([]uint16{IfdRootId, IfdExifId}, IfdIopId, IfdIop)
+	err = im.Add([]uint16{exifcommon.IfdRootId, exifcommon.IfdExifId}, exifcommon.IfdIopId, exifcommon.IfdIop)
 	log.PanicIf(err)
 
-	err = im.Add([]uint16{IfdRootId}, IfdGpsId, IfdGps)
+	err = im.Add([]uint16{exifcommon.IfdRootId}, exifcommon.IfdGpsId, exifcommon.IfdGps)
 	log.PanicIf(err)
 
 	return nil

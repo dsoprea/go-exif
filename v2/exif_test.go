@@ -11,13 +11,28 @@ import (
 	"io/ioutil"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v2/undefined"
 )
+
+type innerVisitorCall func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error)
+
+type visitorWrapper struct {
+	f innerVisitorCall
+}
+
+func (vw *visitorWrapper) Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error) {
+	return vw.f(fqIfdPath, ifdIndex, tagId, tagType, valueContext)
+}
 
 func TestVisit(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Exif failure.")
+			log.PrintError(err)
+
+			t.Fatalf("Test failure.")
 		}
 	}()
 
@@ -56,7 +71,7 @@ func TestVisit(t *testing.T) {
 
 	tags := make([]string, 0)
 
-	visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType TagType, valueContext ValueContext) (err error) {
+	visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error) {
 		defer func() {
 			if state := recover(); state != nil {
 				err = log.Wrap(state.(error))
@@ -78,10 +93,10 @@ func TestVisit(t *testing.T) {
 		}
 
 		valueString := ""
-		if tagType.Type() == TypeUndefined {
-			value, err := valueContext.Undefined()
+		if tagType == exifcommon.TypeUndefined {
+			value, err := exifundefined.Decode(fqIfdPath, tagId, valueContext, valueContext.ByteOrder())
 			if err != nil {
-				if err == ErrUnhandledUnknownTypedTag {
+				if err == exifcommon.ErrUnhandledUnknownTypedTag {
 					valueString = "!UNDEFINED!"
 				} else {
 					log.Panic(err)
@@ -90,17 +105,23 @@ func TestVisit(t *testing.T) {
 
 			valueString = fmt.Sprintf("%v", value)
 		} else {
+			var err error
+
 			valueString, err = valueContext.FormatFirst()
 			log.PanicIf(err)
 		}
 
-		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, valueContext.UnitCount(), tagType.Name(), valueString)
+		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, valueContext.UnitCount(), tagType.String(), valueString)
 		tags = append(tags, description)
 
 		return nil
 	}
 
-	_, err = Visit(IfdStandard, im, ti, data[foundAt:], visitor)
+	vw := &visitorWrapper{
+		f: visitor,
+	}
+
+	_, err = Visit(exifcommon.IfdStandard, im, ti, data[foundAt:], vw)
 	log.PanicIf(err)
 
 	expected := []string{
@@ -124,7 +145,7 @@ func TestVisit(t *testing.T) {
 		"IFD-PATH=[IFD/Exif] ID=(0x9000) NAME=[ExifVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0230]",
 		"IFD-PATH=[IFD/Exif] ID=(0x9003) NAME=[DateTimeOriginal] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
 		"IFD-PATH=[IFD/Exif] ID=(0x9004) NAME=[DateTimeDigitized] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]",
-		"IFD-PATH=[IFD/Exif] ID=(0x9101) NAME=[ComponentsConfiguration] COUNT=(4) TYPE=[UNDEFINED] VALUE=[ComponentsConfiguration<ID=[YCBCR] BYTES=[1 2 3 0]>]",
+		"IFD-PATH=[IFD/Exif] ID=(0x9101) NAME=[ComponentsConfiguration] COUNT=(4) TYPE=[UNDEFINED] VALUE=[Exif9101ComponentsConfiguration<ID=[YCBCR] BYTES=[1 2 3 0]>]",
 		"IFD-PATH=[IFD/Exif] ID=(0x9201) NAME=[ShutterSpeedValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[614400/65536]",
 		"IFD-PATH=[IFD/Exif] ID=(0x9202) NAME=[ApertureValue] COUNT=(1) TYPE=[RATIONAL] VALUE=[262144/65536]",
 		"IFD-PATH=[IFD/Exif] ID=(0x9204) NAME=[ExposureBiasValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[0/1]",
@@ -213,7 +234,9 @@ func TestCollect(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Exif failure.")
+			log.PrintError(err)
+
+			t.Fatalf("Test failure.")
 		}
 	}()
 
@@ -259,52 +282,52 @@ func TestCollect(t *testing.T) {
 		t.Fatalf("Root IFD chain not terminated correctly (2).")
 	}
 
-	if rootIfd.IfdPath != IfdPathStandard {
+	if rootIfd.IfdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("Root IFD is not labeled correctly: [%s]", rootIfd.IfdPath)
-	} else if rootIfd.NextIfd.IfdPath != IfdPathStandard {
+	} else if rootIfd.NextIfd.IfdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("Root IFD sibling is not labeled correctly: [%s]", rootIfd.IfdPath)
-	} else if rootIfd.Children[0].IfdPath != IfdPathStandardExif {
+	} else if rootIfd.Children[0].IfdPath != exifcommon.IfdPathStandardExif {
 		t.Fatalf("Root IFD child (0) is not labeled correctly: [%s]", rootIfd.Children[0].IfdPath)
-	} else if rootIfd.Children[1].IfdPath != IfdPathStandardGps {
+	} else if rootIfd.Children[1].IfdPath != exifcommon.IfdPathStandardGps {
 		t.Fatalf("Root IFD child (1) is not labeled correctly: [%s]", rootIfd.Children[1].IfdPath)
-	} else if rootIfd.Children[0].Children[0].IfdPath != IfdPathStandardExifIop {
+	} else if rootIfd.Children[0].Children[0].IfdPath != exifcommon.IfdPathStandardExifIop {
 		t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children[0].Children[0].IfdPath)
 	}
 
-	if lookup[IfdPathStandard][0].IfdPath != IfdPathStandard {
+	if lookup[exifcommon.IfdPathStandard][0].IfdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("Lookup for standard IFD not correct.")
-	} else if lookup[IfdPathStandard][1].IfdPath != IfdPathStandard {
+	} else if lookup[exifcommon.IfdPathStandard][1].IfdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("Lookup for standard IFD not correct.")
 	}
 
-	if lookup[IfdPathStandardExif][0].IfdPath != IfdPathStandardExif {
+	if lookup[exifcommon.IfdPathStandardExif][0].IfdPath != exifcommon.IfdPathStandardExif {
 		t.Fatalf("Lookup for EXIF IFD not correct.")
 	}
 
-	if lookup[IfdPathStandardGps][0].IfdPath != IfdPathStandardGps {
+	if lookup[exifcommon.IfdPathStandardGps][0].IfdPath != exifcommon.IfdPathStandardGps {
 		t.Fatalf("Lookup for GPS IFD not correct.")
 	}
 
-	if lookup[IfdPathStandardExifIop][0].IfdPath != IfdPathStandardExifIop {
+	if lookup[exifcommon.IfdPathStandardExifIop][0].IfdPath != exifcommon.IfdPathStandardExifIop {
 		t.Fatalf("Lookup for IOP IFD not correct.")
 	}
 
 	foundExif := 0
 	foundGps := 0
-	for _, ite := range lookup[IfdPathStandard][0].Entries {
-		if ite.ChildIfdPath == IfdPathStandardExif {
+	for _, ite := range lookup[exifcommon.IfdPathStandard][0].Entries {
+		if ite.ChildIfdPath == exifcommon.IfdPathStandardExif {
 			foundExif++
 
-			if ite.TagId != IfdExifId {
-				t.Fatalf("EXIF IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, IfdExifId)
+			if ite.TagId != exifcommon.IfdExifId {
+				t.Fatalf("EXIF IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, exifcommon.IfdExifId)
 			}
 		}
 
-		if ite.ChildIfdPath == IfdPathStandardGps {
+		if ite.ChildIfdPath == exifcommon.IfdPathStandardGps {
 			foundGps++
 
-			if ite.TagId != IfdGpsId {
-				t.Fatalf("GPS IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, IfdGpsId)
+			if ite.TagId != exifcommon.IfdGpsId {
+				t.Fatalf("GPS IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, exifcommon.IfdGpsId)
 			}
 		}
 	}
@@ -316,12 +339,12 @@ func TestCollect(t *testing.T) {
 	}
 
 	foundIop := 0
-	for _, ite := range lookup[IfdPathStandardExif][0].Entries {
-		if ite.ChildIfdPath == IfdPathStandardExifIop {
+	for _, ite := range lookup[exifcommon.IfdPathStandardExif][0].Entries {
+		if ite.ChildIfdPath == exifcommon.IfdPathStandardExifIop {
 			foundIop++
 
-			if ite.TagId != IfdIopId {
-				t.Fatalf("IOP IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, IfdIopId)
+			if ite.TagId != exifcommon.IfdIopId {
+				t.Fatalf("IOP IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, exifcommon.IfdIopId)
 			}
 		}
 	}
@@ -343,13 +366,13 @@ func TestParseExifHeader(t *testing.T) {
 }
 
 func TestExif_BuildAndParseExifHeader(t *testing.T) {
-	headerBytes, err := BuildExifHeader(TestDefaultByteOrder, 0x11223344)
+	headerBytes, err := BuildExifHeader(exifcommon.TestDefaultByteOrder, 0x11223344)
 	log.PanicIf(err)
 
 	eh, err := ParseExifHeader(headerBytes)
 	log.PanicIf(err)
 
-	if eh.ByteOrder != TestDefaultByteOrder {
+	if eh.ByteOrder != exifcommon.TestDefaultByteOrder {
 		t.Fatalf("Byte-order of EXIF header not correct.")
 	} else if eh.FirstIfdOffset != 0x11223344 {
 		t.Fatalf("First IFD offset not correct.")
@@ -357,7 +380,7 @@ func TestExif_BuildAndParseExifHeader(t *testing.T) {
 }
 
 func ExampleBuildExifHeader() {
-	headerBytes, err := BuildExifHeader(TestDefaultByteOrder, 0x11223344)
+	headerBytes, err := BuildExifHeader(exifcommon.TestDefaultByteOrder, 0x11223344)
 	log.PanicIf(err)
 
 	eh, err := ParseExifHeader(headerBytes)

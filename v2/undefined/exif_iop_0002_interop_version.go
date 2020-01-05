@@ -1,15 +1,44 @@
 package exifundefined
 
 import (
+	"encoding/binary"
+
 	"github.com/dsoprea/go-logging"
 
 	"github.com/dsoprea/go-exif/v2/common"
 )
 
+type Tag0002InteropVersion struct {
+	string
+}
+
+func (Tag0002InteropVersion) EncoderName() string {
+	return "Codec0002InteropVersion"
+}
+
+func (iv Tag0002InteropVersion) String() string {
+	return iv.string
+}
+
 type Codec0002InteropVersion struct {
 }
 
-func (Codec0002InteropVersion) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (Codec0002InteropVersion) Encode(value interface{}, byteOrder binary.ByteOrder) (encoded []byte, unitCount uint32, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	s, ok := value.(Tag0002InteropVersion)
+	if ok == false {
+		log.Panicf("can only encode a Tag0002InteropVersion")
+	}
+
+	return []byte(s.string), uint32(len(s.string)), nil
+}
+
+func (Codec0002InteropVersion) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -21,10 +50,14 @@ func (Codec0002InteropVersion) Decode(valueContext *exifcommon.ValueContext) (va
 	valueString, err := valueContext.ReadAsciiNoNul()
 	log.PanicIf(err)
 
-	return TagUndefinedGeneralString(valueString), nil
+	return Tag0002InteropVersion{valueString}, nil
 }
 
 func init() {
+	registerEncoder(
+		Tag0002InteropVersion{},
+		Codec0002InteropVersion{})
+
 	registerDecoder(
 		exifcommon.IfdPathStandardExifIop,
 		0x0002,

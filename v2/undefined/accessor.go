@@ -1,8 +1,6 @@
 package exifundefined
 
 import (
-	"reflect"
-
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
@@ -10,14 +8,14 @@ import (
 	"github.com/dsoprea/go-exif/v2/common"
 )
 
-func Encode(value interface{}, byteOrder binary.ByteOrder) (encoded []byte, unitCount uint32, err error) {
+func Encode(value EncodeableValue, byteOrder binary.ByteOrder) (encoded []byte, unitCount uint32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	encoderName := reflect.TypeOf(value).Name()
+	encoderName := value.EncoderName()
 
 	encoder, found := encoders[encoderName]
 	if found == false {
@@ -31,7 +29,7 @@ func Encode(value interface{}, byteOrder binary.ByteOrder) (encoded []byte, unit
 }
 
 // UndefinedValue knows how to resolve the value for most unknown-type tags.
-func Decode(ifdPath string, tagId uint16, valueContext *exifcommon.ValueContext, byteOrder binary.ByteOrder) (value interface{}, err error) {
+func Decode(ifdPath string, tagId uint16, valueContext *exifcommon.ValueContext, byteOrder binary.ByteOrder) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

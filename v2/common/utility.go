@@ -7,6 +7,7 @@ import (
     "github.com/dsoprea/go-logging"
 )
 
+// DumpBytes prints a list of hex-encoded bytes.
 func DumpBytes(data []byte) {
     fmt.Printf("DUMP: ")
     for _, x := range data {
@@ -16,6 +17,8 @@ func DumpBytes(data []byte) {
     fmt.Printf("\n")
 }
 
+// DumpBytesClause prints a list like DumpBytes(), but encapsulated in
+// "[]byte { ... }".
 func DumpBytesClause(data []byte) {
     fmt.Printf("DUMP: ")
 
@@ -32,6 +35,7 @@ func DumpBytesClause(data []byte) {
     fmt.Printf(" }\n")
 }
 
+// DumpBytesToString returns a stringified list of hex-encoded bytes.
 func DumpBytesToString(data []byte) string {
     b := new(bytes.Buffer)
 
@@ -48,6 +52,7 @@ func DumpBytesToString(data []byte) string {
     return b.String()
 }
 
+// DumpBytesClauseToString returns a comma-separated list of hex-encoded bytes.
 func DumpBytesClauseToString(data []byte) string {
     b := new(bytes.Buffer)
 

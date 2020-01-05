@@ -32,7 +32,7 @@ type ValueContext struct {
 // TODO(dustin): We can update newValueContext() to derive `valueOffset` itself (from `rawValueOffset`).
 
 // newValueContext returns a new ValueContext struct.
-func newValueContext(ifdPath string, tagId uint16, unitCount, valueOffset uint32, rawValueOffset, addressableData []byte, tagType TagTypePrimitive, byteOrder binary.ByteOrder) *ValueContext {
+func NewValueContext(ifdPath string, tagId uint16, unitCount, valueOffset uint32, rawValueOffset, addressableData []byte, tagType TagTypePrimitive, byteOrder binary.ByteOrder) *ValueContext {
 	return &ValueContext{
 		unitCount:       unitCount,
 		valueOffset:     valueOffset,
@@ -136,6 +136,14 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 	} else {
 		return vc.addressableData[vc.valueOffset : vc.valueOffset+vc.unitCount*unitSizeRaw], nil
 	}
+}
+
+// ReadRawEncoded returns the encoded bytes for the value that we represent.
+func (vc *ValueContext) ReadRawEncoded() (rawBytes []byte, err error) {
+
+	// TODO(dustin): Remove this method and rename readRawEncoded in its place.
+
+	return vc.readRawEncoded()
 }
 
 // Format returns a string representation for the value.

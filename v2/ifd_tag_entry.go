@@ -2,11 +2,13 @@ package exif
 
 import (
 	"fmt"
-	"reflect"
 
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
 var (
@@ -16,7 +18,7 @@ var (
 type IfdTagEntry struct {
 	TagId          uint16
 	TagIndex       int
-	TagType        TagTypePrimitive
+	TagType        exifcommon.TagTypePrimitive
 	UnitCount      uint32
 	ValueOffset    uint32
 	RawValueOffset []byte
@@ -44,7 +46,7 @@ type IfdTagEntry struct {
 }
 
 func (ite *IfdTagEntry) String() string {
-	return fmt.Sprintf("IfdTagEntry<TAG-IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.IfdPath, ite.TagId, TypeNames[ite.TagType], ite.UnitCount)
+	return fmt.Sprintf("IfdTagEntry<TAG-IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.IfdPath, ite.TagId, ite.TagType.String(), ite.UnitCount)
 }
 
 // TODO(dustin): TODO(dustin): Stop exporting IfdPath and TagId.
@@ -60,7 +62,7 @@ func (ite *IfdTagEntry) String() string {
 // }
 
 // ValueString renders a string from whatever the value in this tag is.
-func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.ByteOrder) (value string, err error) {
+func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.ByteOrder) (phrase string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -73,17 +75,23 @@ func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.Byt
 			addressableData,
 			byteOrder)
 
-	if ite.TagType == TypeUndefined {
-		valueRaw, err := valueContext.Undefined()
+	if ite.TagType == exifcommon.TypeUndefined {
+		var err error
+
+		value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, byteOrder)
 		log.PanicIf(err)
 
-		value = fmt.Sprintf("%v", valueRaw)
+		s := value.(fmt.Stringer)
+
+		phrase = s.String()
 	} else {
-		value, err = valueContext.Format()
+		var err error
+
+		phrase, err = valueContext.Format()
 		log.PanicIf(err)
 	}
 
-	return value, nil
+	return phrase, nil
 }
 
 // ValueBytes renders a specific list of bytes from the value in this tag.
@@ -94,60 +102,33 @@ func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.Byte
 		}
 	}()
 
+	valueContext :=
+		newValueContextFromTag(
+			ite,
+			addressableData,
+			byteOrder)
+
 	// Return the exact bytes of the unknown-type value. Returning a string
 	// (`ValueString`) is easy because we can just pass everything to
 	// `Sprintf()`. Returning the raw, typed value (`Value`) is easy
 	// (obviously). However, here, in order to produce the list of bytes, we
 	// need to coerce whatever `Undefined()` returns.
-	if ite.TagType == TypeUndefined {
-		valueContext :=
-			newValueContextFromTag(
-				ite,
-				addressableData,
-				byteOrder)
-
-		value, err := valueContext.Undefined()
+	if ite.TagType == exifcommon.TypeUndefined {
+		value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, byteOrder)
 		log.PanicIf(err)
 
-		switch value.(type) {
-		case []byte:
-			return value.([]byte), nil
-		case TagUnknownType_UnknownValue:
-			b := []byte(value.(TagUnknownType_UnknownValue))
-			return b, nil
-		case string:
-			return []byte(value.(string)), nil
-		case UnknownTagValue:
-			valueBytes, err := value.(UnknownTagValue).ValueBytes()
-			log.PanicIf(err)
+		ve := exifcommon.NewValueEncoder(byteOrder)
 
-			return valueBytes, nil
-		default:
-			// TODO(dustin): !! Finish translating the rest of the types (make reusable and replace into other similar implementations?)
-			log.Panicf("can not produce bytes for unknown-type tag (0x%04x) (2): [%s]", ite.TagId, reflect.TypeOf(value))
-		}
-	}
-
-	originalType := NewTagType(ite.TagType, byteOrder)
-	byteCount := uint32(originalType.Type().Size()) * ite.UnitCount
-
-	tt := NewTagType(TypeByte, byteOrder)
-
-	if tt.valueIsEmbedded(byteCount) == true {
-		iteLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
-
-		// In this case, the bytes normally used for the offset are actually
-		// data.
-		value, err = tt.ParseBytes(ite.RawValueOffset, byteCount)
+		ed, err := ve.Encode(value)
 		log.PanicIf(err)
+
+		return ed.Encoded, nil
 	} else {
-		iteLogger.Debugf(nil, "Reading BYTE value (ITE; at offset).")
-
-		value, err = tt.ParseBytes(addressableData[ite.ValueOffset:], byteCount)
+		rawBytes, err := valueContext.ReadRawEncoded()
 		log.PanicIf(err)
-	}
 
-	return value, nil
+		return rawBytes, nil
+	}
 }
 
 // Value returns the specific, parsed, typed value from the tag.
@@ -164,13 +145,15 @@ func (ite *IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder
 			addressableData,
 			byteOrder)
 
-	if ite.TagType == TypeUndefined {
-		value, err = valueContext.Undefined()
+	if ite.TagType == exifcommon.TypeUndefined {
+		var err error
+
+		value, err = exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, byteOrder)
 		log.PanicIf(err)
 	} else {
-		tt := NewTagType(ite.TagType, byteOrder)
+		var err error
 
-		value, err = tt.Resolve(valueContext)
+		value, err = valueContext.Values()
 		log.PanicIf(err)
 	}
 
@@ -206,7 +189,7 @@ func (itevr *IfdTagEntryValueResolver) ValueBytes(ite *IfdTagEntry) (value []byt
 		itevr.addressableData,
 		itevr.byteOrder)
 
-	rawBytes, err := valueContext.readRawEncoded()
+	rawBytes, err := valueContext.ReadRawEncoded()
 	log.PanicIf(err)
 
 	return rawBytes, nil

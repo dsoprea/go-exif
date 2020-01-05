@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 func TestIfdMapping_Add(t *testing.T) {
@@ -106,12 +108,12 @@ func TestIfdMapping_Get(t *testing.T) {
 	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	mi, err := im.Get([]uint16{IfdRootId, IfdExifId, IfdIopId})
+	mi, err := im.Get([]uint16{exifcommon.IfdRootId, exifcommon.IfdExifId, exifcommon.IfdIopId})
 	log.PanicIf(err)
 
-	if mi.ParentTagId != IfdExifId {
+	if mi.ParentTagId != exifcommon.IfdExifId {
 		t.Fatalf("Parent tag-ID not correct")
-	} else if mi.TagId != IfdIopId {
+	} else if mi.TagId != exifcommon.IfdIopId {
 		t.Fatalf("Tag-ID not correct")
 	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")
@@ -129,9 +131,9 @@ func TestIfdMapping_GetWithPath(t *testing.T) {
 	mi, err := im.GetWithPath("IFD/Exif/Iop")
 	log.PanicIf(err)
 
-	if mi.ParentTagId != IfdExifId {
+	if mi.ParentTagId != exifcommon.IfdExifId {
 		t.Fatalf("Parent tag-ID not correct")
-	} else if mi.TagId != IfdIopId {
+	} else if mi.TagId != exifcommon.IfdIopId {
 		t.Fatalf("Tag-ID not correct")
 	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")

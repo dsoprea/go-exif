@@ -43,6 +43,10 @@ type Tag9286UserComment struct {
     EncodingBytes []byte
 }
 
+func (Tag9286UserComment) EncoderName() string {
+    return "Codec9286UserComment"
+}
+
 func (uc Tag9286UserComment) String() string {
     var valuePhrase string
 
@@ -85,7 +89,7 @@ func (Codec9286UserComment) Encode(value interface{}, byteOrder binary.ByteOrder
     return encoded, uint32(len(encoded)), nil
 }
 
-func (Codec9286UserComment) Decode(valueContext *exifcommon.ValueContext) (value interface{}, err error) {
+func (Codec9286UserComment) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))

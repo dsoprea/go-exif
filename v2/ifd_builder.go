@@ -13,6 +13,9 @@ import (
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
 var (
@@ -94,7 +97,7 @@ type BuilderTag struct {
 	ifdPath string
 
 	tagId  uint16
-	typeId TagTypePrimitive
+	typeId exifcommon.TagTypePrimitive
 
 	// value is either a value that can be encoded, an IfdBuilder instance (for
 	// child IFDs), or an IfdTagEntry instance representing an existing,
@@ -106,7 +109,7 @@ type BuilderTag struct {
 	byteOrder binary.ByteOrder
 }
 
-func NewBuilderTag(ifdPath string, tagId uint16, typeId TagTypePrimitive, value *IfdBuilderTagValue, byteOrder binary.ByteOrder) *BuilderTag {
+func NewBuilderTag(ifdPath string, tagId uint16, typeId exifcommon.TagTypePrimitive, value *IfdBuilderTagValue, byteOrder binary.ByteOrder) *BuilderTag {
 	return &BuilderTag{
 		ifdPath:   ifdPath,
 		tagId:     tagId,
@@ -120,7 +123,7 @@ func NewChildIfdBuilderTag(ifdPath string, tagId uint16, value *IfdBuilderTagVal
 	return &BuilderTag{
 		ifdPath: ifdPath,
 		tagId:   tagId,
-		typeId:  TypeLong,
+		typeId:  exifcommon.TypeLong,
 		value:   value,
 	}
 }
@@ -135,13 +138,13 @@ func (bt *BuilderTag) String() string {
 	if bt.value.IsBytes() == true {
 		var err error
 
-		valueString, err = Format(bt.value.Bytes(), bt.typeId, false, bt.byteOrder)
+		valueString, err = exifcommon.Format(bt.value.Bytes(), bt.typeId, false, bt.byteOrder)
 		log.PanicIf(err)
 	} else {
 		valueString = fmt.Sprintf("%v", bt.value)
 	}
 
-	return fmt.Sprintf("BuilderTag<IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ifdPath, bt.tagId, TypeNames[bt.typeId], valueString)
+	return fmt.Sprintf("BuilderTag<IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] VALUE=[%s]>", bt.ifdPath, bt.tagId, bt.typeId.String(), valueString)
 }
 
 func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (err error) {
@@ -153,19 +156,24 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 
 	// TODO(dustin): !! Add test.
 
-	tt := NewTagType(bt.typeId, byteOrder)
-	ve := NewValueEncoder(byteOrder)
+	var ed exifcommon.EncodedData
+	if bt.typeId == exifcommon.TypeUndefined {
+		encodeable := value.(exifundefined.EncodeableValue)
 
-	var ed EncodedData
-	if bt.typeId == TypeUndefined {
-		var err error
-
-		ed, err = EncodeUndefined(bt.ifdPath, bt.tagId, value)
+		encoded, unitCount, err := exifundefined.Encode(encodeable, byteOrder)
 		log.PanicIf(err)
+
+		ed = exifcommon.EncodedData{
+			Type:      exifcommon.TypeUndefined,
+			Encoded:   encoded,
+			UnitCount: unitCount,
+		}
 	} else {
+		ve := exifcommon.NewValueEncoder(byteOrder)
+
 		var err error
 
-		ed, err = ve.EncodeWithType(tt, value)
+		ed, err = ve.Encode(value)
 		log.PanicIf(err)
 	}
 
@@ -177,30 +185,29 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 // NewStandardBuilderTag constructs a `BuilderTag` instance. The type is looked
 // up. `ii` is the type of IFD that owns this tag.
 func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
-	typeId := it.Type
-	tt := NewTagType(typeId, byteOrder)
+	var rawBytes []byte
+	if it.Type == exifcommon.TypeUndefined {
+		encodeable := value.(exifundefined.EncodeableValue)
 
-	ve := NewValueEncoder(byteOrder)
-
-	var ed EncodedData
-	if it.Type == TypeUndefined {
 		var err error
 
-		ed, err = EncodeUndefined(ifdPath, it.Id, value)
+		rawBytes, _, err = exifundefined.Encode(encodeable, byteOrder)
 		log.PanicIf(err)
 	} else {
-		var err error
+		ve := exifcommon.NewValueEncoder(byteOrder)
 
-		ed, err = ve.EncodeWithType(tt, value)
+		ed, err := ve.Encode(value)
 		log.PanicIf(err)
+
+		rawBytes = ed.Encoded
 	}
 
-	tagValue := NewIfdBuilderTagValueFromBytes(ed.Encoded)
+	tagValue := NewIfdBuilderTagValueFromBytes(rawBytes)
 
 	return NewBuilderTag(
 		ifdPath,
 		it.Id,
-		typeId,
+		it.Type,
 		tagValue,
 		byteOrder)
 }
@@ -288,7 +295,7 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 	var ifdTagId uint16
 
 	// There is no tag-ID for the root IFD. It will never be a child IFD.
-	if ifdPath != IfdPathStandard {
+	if ifdPath != exifcommon.IfdPathStandard {
 		mi, err := ifd.ifdMapping.GetWithPath(ifdPath)
 		log.PanicIf(err)
 
@@ -523,7 +530,7 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 		}
 	}()
 
-	if ib.ifdPath != IfdPathStandard {
+	if ib.ifdPath != exifcommon.IfdPathStandard {
 		log.Panicf("thumbnails can only go into a root Ifd (and only the second one)")
 	}
 
@@ -540,7 +547,7 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 		NewBuilderTag(
 			ib.ifdPath,
 			ThumbnailOffsetTagId,
-			TypeLong,
+			exifcommon.TypeLong,
 			ibtvfb,
 			ib.byteOrder)
 
@@ -1113,13 +1120,15 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 
 			var rawBytes []byte
 
-			if ite.TagType == TypeUndefined {
-				// It's an undefined-type value. Try to process, or skip if
-				// we don't know how to.
+			if ite.TagType == exifcommon.TypeUndefined {
+				// It's an undefined-type value. Try to process (or skip if
+				// we don't know how to), and encode back to bytes. This is the
+				// cleanest way of using what we already have to both determine
+				// if we support this tag and producing the bytes for it.
 
-				undefinedInterface, err := valueContext.Undefined()
+				value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, ib.byteOrder)
 				if err != nil {
-					if err == ErrUnhandledUnknownTypedTag {
+					if err == exifcommon.ErrUnhandledUnknownTypedTag {
 						// It's an undefined-type tag that we don't handle. If
 						// we don't know how to handle it, we can't know how
 						// many bytes it is and we must skip it.
@@ -1129,19 +1138,14 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 					log.Panic(err)
 				}
 
-				undefined, ok := undefinedInterface.(UnknownTagValue)
-				if ok != true {
-					log.Panicf("unexpected value returned from undefined-value processor")
-				}
-
-				rawBytes, err = undefined.ValueBytes()
+				rawBytes, _, err = exifundefined.Encode(value, ib.byteOrder)
 				log.PanicIf(err)
 			} else {
 				// It's a value with a standard type.
 
 				var err error
 
-				rawBytes, err = valueContext.readRawEncoded()
+				rawBytes, err = valueContext.ReadRawEncoded()
 				log.PanicIf(err)
 			}
 

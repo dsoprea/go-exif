@@ -1,13 +1,15 @@
 package exif
 
 import (
-    "bytes"
     "fmt"
     "strconv"
     "strings"
     "time"
 
     "github.com/dsoprea/go-logging"
+
+    "github.com/dsoprea/go-exif/v2/common"
+    "github.com/dsoprea/go-exif/v2/undefined"
 )
 
 // ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49" into a UTC
@@ -75,10 +77,10 @@ type ExifTag struct {
     TagId   uint16 `json:"id"`
     TagName string `json:"name"`
 
-    TagTypeId   TagTypePrimitive `json:"type_id"`
-    TagTypeName string           `json:"type_name"`
-    Value       interface{}      `json:"value"`
-    ValueBytes  []byte           `json:"value_bytes"`
+    TagTypeId   exifcommon.TagTypePrimitive `json:"type_id"`
+    TagTypeName string                      `json:"type_name"`
+    Value       interface{}                 `json:"value"`
+    ValueBytes  []byte                      `json:"value_bytes"`
 
     ChildIfdPath string `json:"child_ifd_path"`
 }
@@ -126,15 +128,15 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 
             value, err := ifd.TagValue(ite)
             if err != nil {
-                if err == ErrUnhandledUnknownTypedTag {
-                    value = UnparseableUnknownTagValuePlaceholder
+                if err == exifcommon.ErrUnhandledUnknownTypedTag {
+                    value = exifundefined.UnparseableUnknownTagValuePlaceholder
                 } else {
                     log.Panic(err)
                 }
             }
 
             valueBytes, err := ifd.TagValueBytes(ite)
-            if err != nil && err != ErrUnhandledUnknownTypedTag {
+            if err != nil && err != exifcommon.ErrUnhandledUnknownTypedTag {
                 log.Panic(err)
             }
 
@@ -143,7 +145,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
                 TagId:        ite.TagId,
                 TagName:      tagName,
                 TagTypeId:    ite.TagType,
-                TagTypeName:  TypeNames[ite.TagType],
+                TagTypeName:  ite.TagType.String(),
                 Value:        value,
                 ValueBytes:   valueBytes,
                 ChildIfdPath: ite.ChildIfdPath,
