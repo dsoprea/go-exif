@@ -1499,11 +1499,7 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 					originalIndex.RootIfd.addressableData,
 					originalIndex.RootIfd.ByteOrder)
 
-			value, err := exifundefined.Decode(
-				originalIte.IfdPath,
-				originalIte.TagId,
-				valueContext,
-				originalIndex.RootIfd.ByteOrder)
+			value, err := exifundefined.Decode(valueContext)
 
 			log.PanicIf(err)
 
@@ -1527,11 +1523,7 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 					recoveredIndex.RootIfd.addressableData,
 					recoveredIndex.RootIfd.ByteOrder)
 
-			value, err := exifundefined.Decode(
-				recoveredIte.IfdPath,
-				recoveredIte.TagId,
-				valueContext,
-				recoveredIndex.RootIfd.ByteOrder)
+			value, err := exifundefined.Decode(valueContext)
 
 			log.PanicIf(err)
 

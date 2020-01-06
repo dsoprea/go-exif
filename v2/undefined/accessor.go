@@ -29,7 +29,7 @@ func Encode(value EncodeableValue, byteOrder binary.ByteOrder) (encoded []byte, 
 }
 
 // UndefinedValue knows how to resolve the value for most unknown-type tags.
-func Decode(ifdPath string, tagId uint16, valueContext *exifcommon.ValueContext, byteOrder binary.ByteOrder) (value EncodeableValue, err error) {
+func Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -37,8 +37,8 @@ func Decode(ifdPath string, tagId uint16, valueContext *exifcommon.ValueContext,
 	}()
 
 	uth := UndefinedTagHandle{
-		IfdPath: ifdPath,
-		TagId:   tagId,
+		IfdPath: valueContext.IfdPath(),
+		TagId:   valueContext.TagId(),
 	}
 
 	decoder, found := decoders[uth]
@@ -46,10 +46,6 @@ func Decode(ifdPath string, tagId uint16, valueContext *exifcommon.ValueContext,
 		// We have no choice but to return the error. We have no way of knowing how
 		// much data there is without already knowing what data-type this tag is.
 		return nil, exifcommon.ErrUnhandledUnknownTypedTag
-	}
-
-	if valueContext.IfdPath() != ifdPath || valueContext.TagId() != tagId {
-		log.Panicf("IFD-path for codec does not match value-context: [%s] (0x%04x) != [%s] (0x%04x)", ifdPath, tagId, valueContext.IfdPath(), valueContext.TagId())
 	}
 
 	value, err = decoder.Decode(valueContext)

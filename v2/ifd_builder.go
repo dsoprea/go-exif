@@ -1122,7 +1122,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 				// cleanest way of using what we already have to both determine
 				// if we support this tag and producing the bytes for it.
 
-				value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, ib.byteOrder)
+				value, err := exifundefined.Decode(valueContext)
 				if err != nil {
 					if err == exifcommon.ErrUnhandledUnknownTypedTag {
 						// It's an undefined-type tag that we don't handle. If

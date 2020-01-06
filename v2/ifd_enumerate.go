@@ -190,7 +190,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, enumerator *
 		valueContext := ie.GetValueContext(ite)
 
 		if ite.TagType == exifcommon.TypeUndefined {
-			value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, ie.byteOrder)
+			value, err := exifundefined.Decode(valueContext)
 			if err != nil {
 				if err == exifcommon.ErrUnhandledUnknownTypedTag {
 					ite.isUnhandledUnknown = true

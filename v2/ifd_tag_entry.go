@@ -78,7 +78,7 @@ func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.Byt
 	if ite.TagType == exifcommon.TypeUndefined {
 		var err error
 
-		value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, byteOrder)
+		value, err := exifundefined.Decode(valueContext)
 		log.PanicIf(err)
 
 		s := value.(fmt.Stringer)
@@ -114,7 +114,7 @@ func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.Byte
 	// (obviously). However, here, in order to produce the list of bytes, we
 	// need to coerce whatever `Undefined()` returns.
 	if ite.TagType == exifcommon.TypeUndefined {
-		value, err := exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, byteOrder)
+		value, err := exifundefined.Decode(valueContext)
 		log.PanicIf(err)
 
 		ve := exifcommon.NewValueEncoder(byteOrder)
@@ -148,7 +148,7 @@ func (ite *IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder
 	if ite.TagType == exifcommon.TypeUndefined {
 		var err error
 
-		value, err = exifundefined.Decode(ite.IfdPath, ite.TagId, valueContext, byteOrder)
+		value, err = exifundefined.Decode(valueContext)
 		log.PanicIf(err)
 	} else {
 		var err error

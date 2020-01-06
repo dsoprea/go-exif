@@ -94,7 +94,7 @@ func TestVisit(t *testing.T) {
 
 		valueString := ""
 		if tagType == exifcommon.TypeUndefined {
-			value, err := exifundefined.Decode(fqIfdPath, tagId, valueContext, valueContext.ByteOrder())
+			value, err := exifundefined.Decode(valueContext)
 			if err != nil {
 				if err == exifcommon.ErrUnhandledUnknownTypedTag {
 					valueString = "!UNDEFINED!"
