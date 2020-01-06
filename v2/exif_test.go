@@ -315,19 +315,19 @@ func TestCollect(t *testing.T) {
 	foundExif := 0
 	foundGps := 0
 	for _, ite := range lookup[exifcommon.IfdPathStandard][0].Entries {
-		if ite.ChildIfdPath == exifcommon.IfdPathStandardExif {
+		if ite.ChildIfdPath() == exifcommon.IfdPathStandardExif {
 			foundExif++
 
-			if ite.TagId != exifcommon.IfdExifId {
-				t.Fatalf("EXIF IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, exifcommon.IfdExifId)
+			if ite.TagId() != exifcommon.IfdExifId {
+				t.Fatalf("EXIF IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId(), exifcommon.IfdExifId)
 			}
 		}
 
-		if ite.ChildIfdPath == exifcommon.IfdPathStandardGps {
+		if ite.ChildIfdPath() == exifcommon.IfdPathStandardGps {
 			foundGps++
 
-			if ite.TagId != exifcommon.IfdGpsId {
-				t.Fatalf("GPS IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, exifcommon.IfdGpsId)
+			if ite.TagId() != exifcommon.IfdGpsId {
+				t.Fatalf("GPS IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId(), exifcommon.IfdGpsId)
 			}
 		}
 	}
@@ -340,11 +340,11 @@ func TestCollect(t *testing.T) {
 
 	foundIop := 0
 	for _, ite := range lookup[exifcommon.IfdPathStandardExif][0].Entries {
-		if ite.ChildIfdPath == exifcommon.IfdPathStandardExifIop {
+		if ite.ChildIfdPath() == exifcommon.IfdPathStandardExifIop {
 			foundIop++
 
-			if ite.TagId != exifcommon.IfdIopId {
-				t.Fatalf("IOP IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId, exifcommon.IfdIopId)
+			if ite.TagId() != exifcommon.IfdIopId {
+				t.Fatalf("IOP IFD tag-ID mismatch: (0x%04x) != (0x%04x)", ite.TagId(), exifcommon.IfdIopId)
 			}
 		}
 	}

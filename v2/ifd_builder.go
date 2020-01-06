@@ -1042,7 +1042,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 	}
 
 	for i, ite := range ifd.Entries {
-		if ite.TagId == ThumbnailOffsetTagId || ite.TagId == ThumbnailSizeTagId {
+		if ite.TagId() == ThumbnailOffsetTagId || ite.TagId() == ThumbnailSizeTagId {
 			// These will be added on-the-fly when we encode.
 			continue
 		}
@@ -1050,7 +1050,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 		if excludeTagIds != nil && len(excludeTagIds) > 0 {
 			found := false
 			for _, excludedTagId := range excludeTagIds {
-				if excludedTagId == ite.TagId {
+				if excludedTagId == ite.TagId() {
 					found = true
 				}
 			}
@@ -1066,7 +1066,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 
 			found := false
 			for _, includedTagId := range includeTagIds {
-				if includedTagId == ite.TagId {
+				if includedTagId == ite.TagId() {
 					found = true
 					break
 				}
@@ -1079,7 +1079,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 
 		var bt *BuilderTag
 
-		if ite.ChildIfdPath != "" {
+		if ite.ChildIfdPath() != "" {
 			// If we want to add an IFD tag, we'll have to build it first and
 			// *then* add it via a different method.
 
@@ -1090,7 +1090,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 			for _, thisChildIfd := range ifd.Children {
 				if thisChildIfd.ParentTagIndex != i {
 					continue
-				} else if thisChildIfd.TagId != 0xffff && thisChildIfd.TagId != ite.TagId {
+				} else if thisChildIfd.TagId != 0xffff && thisChildIfd.TagId != ite.TagId() {
 					log.Panicf("child-IFD tag is not correct: TAG-POSITION=(%d) ITE=%s CHILD-IFD=%s", thisChildIfd.ParentTagIndex, ite, thisChildIfd)
 				}
 
@@ -1104,7 +1104,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 					childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.TagId, childIfd.ParentTagIndex)
 				}
 
-				log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath, ite.TagId, i, childTagIds)
+				log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath(), ite.TagId(), i, childTagIds)
 			}
 
 			childIb := NewIfdBuilderFromExistingChain(childIfd)
@@ -1112,11 +1112,11 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 		} else {
 			// Non-IFD tag.
 
-			valueContext := ifd.GetValueContext(ite)
+			valueContext := ite.GetValueContext()
 
 			var rawBytes []byte
 
-			if ite.TagType == exifcommon.TypeUndefined {
+			if ite.TagType() == exifcommon.TypeUndefined {
 				// It's an undefined-type value. Try to process (or skip if
 				// we don't know how to), and encode back to bytes. This is the
 				// cleanest way of using what we already have to both determine
@@ -1149,8 +1149,8 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 
 			bt = NewBuilderTag(
 				ifd.IfdPath,
-				ite.TagId,
-				ite.TagType,
+				ite.TagId(),
+				ite.TagType(),
 				value,
 				ib.byteOrder)
 		}

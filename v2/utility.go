@@ -116,7 +116,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
         for _, ite := range ifd.Entries {
             tagName := ""
 
-            it, err := ti.Get(ifd.IfdPath, ite.TagId)
+            it, err := ti.Get(ifd.IfdPath, ite.TagId())
             if err != nil {
                 // If it's a non-standard tag, just leave the name blank.
                 if log.Is(err, ErrTagNotFound) != true {
@@ -126,7 +126,12 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
                 tagName = it.Name
             }
 
-            value, err := ifd.TagValue(ite)
+            valueContext := ite.GetValueContext()
+
+            valueBytes, err := valueContext.ReadRawEncoded()
+            log.PanicIf(err)
+
+            value, err := ite.Value()
             if err != nil {
                 if err == exifcommon.ErrUnhandledUnknownTypedTag {
                     value = exifundefined.UnparseableUnknownTagValuePlaceholder
@@ -135,20 +140,17 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
                 }
             }
 
-            valueBytes, err := ifd.TagValueBytes(ite)
-            if err != nil && err != exifcommon.ErrUnhandledUnknownTypedTag {
-                log.Panic(err)
-            }
+            tagType := ite.TagType()
 
             et := ExifTag{
                 IfdPath:      ifd.IfdPath,
-                TagId:        ite.TagId,
+                TagId:        ite.TagId(),
                 TagName:      tagName,
-                TagTypeId:    ite.TagType,
-                TagTypeName:  ite.TagType.String(),
+                TagTypeId:    tagType,
+                TagTypeName:  tagType.String(),
                 Value:        value,
                 ValueBytes:   valueBytes,
-                ChildIfdPath: ite.ChildIfdPath,
+                ChildIfdPath: ite.ChildIfdPath(),
             }
 
             exifTags = append(exifTags, et)

@@ -1435,15 +1435,15 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	originalIfdTags := make([][2]interface{}, 0)
 	for _, ite := range originalTags {
-		if ite.ChildIfdPath != "" {
-			originalIfdTags = append(originalIfdTags, [2]interface{}{ite.IfdPath, ite.TagId})
+		if ite.ChildIfdPath() != "" {
+			originalIfdTags = append(originalIfdTags, [2]interface{}{ite.IfdPath(), ite.TagId()})
 		}
 	}
 
 	recoveredIfdTags := make([][2]interface{}, 0)
 	for _, ite := range recoveredTags {
-		if ite.ChildIfdPath != "" {
-			recoveredIfdTags = append(recoveredIfdTags, [2]interface{}{ite.IfdPath, ite.TagId})
+		if ite.ChildIfdPath() != "" {
+			recoveredIfdTags = append(recoveredIfdTags, [2]interface{}{ite.IfdPath(), ite.TagId()})
 		}
 	}
 
@@ -1474,64 +1474,53 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	}
 
 	for i, recoveredIte := range recoveredTags {
-		if recoveredIte.ChildIfdPath != "" {
+		if recoveredIte.ChildIfdPath() != "" {
 			continue
 		}
 
 		originalIte := originalTags[i]
 
-		if recoveredIte.IfdPath != originalIte.IfdPath {
-			t.Fatalf("IfdIdentity not as expected: %s != %s  ITE=%s", recoveredIte.IfdPath, originalIte.IfdPath, recoveredIte)
-		} else if recoveredIte.TagId != originalIte.TagId {
-			t.Fatalf("Tag-ID not as expected: %d != %d  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
-		} else if recoveredIte.TagType != originalIte.TagType {
-			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
+		if recoveredIte.IfdPath() != originalIte.IfdPath() {
+			t.Fatalf("IfdIdentity not as expected: %s != %s  ITE=%s", recoveredIte.IfdPath(), originalIte.IfdPath(), recoveredIte)
+		} else if recoveredIte.TagId() != originalIte.TagId() {
+			t.Fatalf("Tag-ID not as expected: %d != %d  ITE=%s", recoveredIte.TagId(), originalIte.TagId(), recoveredIte)
+		} else if recoveredIte.TagType() != originalIte.TagType() {
+			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType(), originalIte.TagType(), recoveredIte)
 		}
 
 		var originalValueBytes []byte
 
-		if originalIte.TagType == exifcommon.TypeUndefined {
+		if originalIte.TagType() == exifcommon.TypeUndefined {
+			valueContext := originalIte.GetValueContext()
+
 			var err error
 
-			valueContext :=
-				newValueContextFromTag(
-					originalIte,
-					originalIndex.RootIfd.addressableData,
-					originalIndex.RootIfd.ByteOrder)
-
 			value, err := exifundefined.Decode(valueContext)
-
 			log.PanicIf(err)
 
 			originalValueBytes, _, err = exifundefined.Encode(value, originalIndex.RootIfd.ByteOrder)
 		} else {
 			var err error
 
-			// TODO(dustin): We're always accessing the addressable-data using the root-IFD. It shouldn't matter, but we'd rather access it from our specific IFD.
-			originalValueBytes, err = originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
+			originalValueBytes, err = originalIte.RawBytes()
 			log.PanicIf(err)
 		}
 
 		var recoveredValueBytes []byte
 
-		if recoveredIte.TagType == exifcommon.TypeUndefined {
+		if recoveredIte.TagType() == exifcommon.TypeUndefined {
+			valueContext := recoveredIte.GetValueContext()
+
 			var err error
 
-			valueContext :=
-				newValueContextFromTag(
-					recoveredIte,
-					recoveredIndex.RootIfd.addressableData,
-					recoveredIndex.RootIfd.ByteOrder)
-
 			value, err := exifundefined.Decode(valueContext)
-
 			log.PanicIf(err)
 
 			recoveredValueBytes, _, err = exifundefined.Encode(value, recoveredIndex.RootIfd.ByteOrder)
 		} else {
 			var err error
 
-			recoveredValueBytes, err = recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
+			recoveredValueBytes, err = recoveredIte.RawBytes()
 			log.PanicIf(err)
 		}
 
@@ -1610,15 +1599,15 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 // 	originalIfdTags := make([][2]interface{}, 0)
 // 	for _, ite := range originalTags {
-// 		if ite.ChildIfdPath != "" {
-// 			originalIfdTags = append(originalIfdTags, [2]interface{}{ite.IfdPath, ite.TagId})
+// 		if ite.ChildIfdPath() != "" {
+// 			originalIfdTags = append(originalIfdTags, [2]interface{}{ite.IfdPath(), ite.TagId()})
 // 		}
 // 	}
 
 // 	recoveredIfdTags := make([][2]interface{}, 0)
 // 	for _, ite := range recoveredTags {
-// 		if ite.ChildIfdPath != "" {
-// 			recoveredIfdTags = append(recoveredIfdTags, [2]interface{}{ite.IfdPath, ite.TagId})
+// 		if ite.ChildIfdPath() != "" {
+// 			recoveredIfdTags = append(recoveredIfdTags, [2]interface{}{ite.IfdPath(), ite.TagId()})
 // 		}
 // 	}
 
@@ -1649,18 +1638,18 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 // 	}
 
 // 	for i, recoveredIte := range recoveredTags {
-// 		if recoveredIte.ChildIfdPath != "" {
+// 		if recoveredIte.ChildIfdPath() != "" {
 // 			continue
 // 		}
 
 // 		originalIte := originalTags[i]
 
-// 		if recoveredIte.IfdPath != originalIte.IfdPath {
-// 			t.Fatalf("IfdIdentity not as expected: %s != %s  ITE=%s", recoveredIte.IfdPath, originalIte.IfdPath, recoveredIte)
-// 		} else if recoveredIte.TagId != originalIte.TagId {
-// 			t.Fatalf("Tag-ID not as expected: %d != %d  ITE=%s", recoveredIte.TagId, originalIte.TagId, recoveredIte)
-// 		} else if recoveredIte.TagType != originalIte.TagType {
-// 			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType, originalIte.TagType, recoveredIte)
+// 		if recoveredIte.IfdPath() != originalIte.IfdPath() {
+// 			t.Fatalf("IfdIdentity not as expected: %s != %s  ITE=%s", recoveredIte.IfdPath(), originalIte.IfdPath(), recoveredIte)
+// 		} else if recoveredIte.TagId() != originalIte.TagId() {
+// 			t.Fatalf("Tag-ID not as expected: %d != %d  ITE=%s", recoveredIte.TagId(), originalIte.TagId(), recoveredIte)
+// 		} else if recoveredIte.TagType() != originalIte.TagType() {
+// 			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType(), originalIte.TagType(), recoveredIte)
 // 		}
 
 // 		originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
@@ -1669,7 +1658,7 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 // 		recoveredValueBytes, err := recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
 // 		log.PanicIf(err)
 
-// 		if recoveredIte.TagId == 0x9286 {
+// 		if recoveredIte.TagId() == 0x9286 {
 // 			expectedValueBytes := make([]byte, 0)
 
 // 			expectedValueBytes = append(expectedValueBytes, []byte{'A', 'S', 'C', 'I', 'I', 0, 0, 0}...)
@@ -1822,10 +1811,12 @@ func ExampleIfdBuilder_SetStandardWithName() {
 	log.PanicIf(err)
 
 	for _, ite := range results {
-		value, err := childIfd.TagValue(ite)
+		valueContext := ite.GetValueContext()
+
+		valueRaw, err := valueContext.Values()
 		log.PanicIf(err)
 
-		stringValue := value.(string)
+		stringValue := valueRaw.(string)
 		fmt.Println(stringValue)
 	}
 

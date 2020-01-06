@@ -17,7 +17,7 @@ const (
 
 	// Exif
 
-	TagVersionId = 0x0000
+	TagGpsVersionId = 0x0000
 
 	TagLatitudeId     = 0x0002
 	TagLatitudeRefId  = 0x0001

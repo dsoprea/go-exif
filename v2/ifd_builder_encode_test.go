@@ -422,30 +422,28 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("Child IFD is not the right size: (%d)", len(childIfdBlock))
 	}
 
-	iteV, err := ParseOneTag(im, ti, fmt.Sprintf("%s%d", exifcommon.IfdPathStandard, 0), exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder, tagBytes, false)
+	iteV, err := ParseOneTag(im, ti, fmt.Sprintf("%s%d", exifcommon.IfdPathStandard, 0), exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder, tagBytes)
 	log.PanicIf(err)
 
-	if iteV.TagId != exifcommon.IfdExifId {
-		t.Fatalf("IFD first tag-ID not correct: (0x%02x)", iteV.TagId)
-	} else if iteV.TagIndex != 0 {
-		t.Fatalf("IFD first tag index not correct: (%d)", iteV.TagIndex)
-	} else if iteV.TagType != exifcommon.TypeLong {
-		t.Fatalf("IFD first tag type not correct: (%d)", iteV.TagType)
-	} else if iteV.UnitCount != 1 {
-		t.Fatalf("IFD first tag unit-count not correct: (%d)", iteV.UnitCount)
-	} else if iteV.ValueOffset != nextIfdOffsetToWrite {
-		t.Fatalf("IFD's child-IFD offset (as offset) is not correct: (%d) != (%d)", iteV.ValueOffset, nextIfdOffsetToWrite)
-	} else if bytes.Compare(iteV.RawValueOffset, []byte{0x0, 0x0, 0x07, 0xd0}) != 0 {
-		t.Fatalf("IFD's child-IFD offset (as raw bytes) is not correct: [%x]", iteV.RawValueOffset)
-	} else if iteV.ChildIfdPath != exifcommon.IfdPathStandardExif {
-		t.Fatalf("IFD first tag IFD-name name not correct: [%s]", iteV.ChildIfdPath)
-	} else if iteV.IfdPath != exifcommon.IfdPathStandard {
-		t.Fatalf("IFD first tag parent IFD not correct: %v", iteV.IfdPath)
+	if iteV.TagId() != exifcommon.IfdExifId {
+		t.Fatalf("IFD first tag-ID not correct: (0x%02x)", iteV.TagId())
+	} else if iteV.tagIndex != 0 {
+		t.Fatalf("IFD first tag index not correct: (%d)", iteV.tagIndex)
+	} else if iteV.TagType() != exifcommon.TypeLong {
+		t.Fatalf("IFD first tag type not correct: (%d)", iteV.TagType())
+	} else if iteV.UnitCount() != 1 {
+		t.Fatalf("IFD first tag unit-count not correct: (%d)", iteV.UnitCount())
+	} else if iteV.valueOffset_() != nextIfdOffsetToWrite {
+		t.Fatalf("IFD's child-IFD offset (as offset) is not correct: (%d) != (%d)", iteV.valueOffset_(), nextIfdOffsetToWrite)
+	} else if iteV.ChildIfdPath() != exifcommon.IfdPathStandardExif {
+		t.Fatalf("IFD first tag IFD-name name not correct: [%s]", iteV.ChildIfdPath())
+	} else if iteV.IfdPath() != exifcommon.IfdPathStandard {
+		t.Fatalf("IFD first tag parent IFD not correct: %v", iteV.IfdPath())
 	}
 
 	// Validate the child's raw IFD bytes.
 
-	childNextIfdOffset, childEntries, err := ParseOneIfd(im, ti, "IFD0/Exif0", "IFD/Exif", exifcommon.TestDefaultByteOrder, childIfdBlock, nil, false)
+	childNextIfdOffset, childEntries, err := ParseOneIfd(im, ti, "IFD0/Exif0", "IFD/Exif", exifcommon.TestDefaultByteOrder, childIfdBlock, nil)
 	log.PanicIf(err)
 
 	if childNextIfdOffset != uint32(0) {
@@ -456,22 +454,18 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
 	ite := childEntries[0]
 
-	if ite.TagId != 0x8822 {
-		t.Fatalf("Child IFD first tag-ID not correct: (0x%02x)", ite.TagId)
-	} else if ite.TagIndex != 0 {
-		t.Fatalf("Child IFD first tag index not correct: (%d)", ite.TagIndex)
-	} else if ite.TagType != exifcommon.TypeShort {
-		t.Fatalf("Child IFD first tag type not correct: (%d)", ite.TagType)
-	} else if ite.UnitCount != 1 {
-		t.Fatalf("Child IFD first tag unit-count not correct: (%d)", ite.UnitCount)
-	} else if ite.ValueOffset != 0x12340000 {
-		t.Fatalf("Child IFD first tag value value (as offset) not correct: (0x%02x)", ite.ValueOffset)
-	} else if bytes.Compare(ite.RawValueOffset, []byte{0x12, 0x34, 0x0, 0x0}) != 0 {
-		t.Fatalf("Child IFD first tag value value (as raw bytes) not correct: [%v]", ite.RawValueOffset)
-	} else if ite.ChildIfdPath != "" {
-		t.Fatalf("Child IFD first tag IFD-name name not empty: [%s]", ite.ChildIfdPath)
-	} else if ite.IfdPath != exifcommon.IfdPathStandardExif {
-		t.Fatalf("Child IFD first tag parent IFD not correct: %v", ite.IfdPath)
+	if ite.TagId() != 0x8822 {
+		t.Fatalf("Child IFD first tag-ID not correct: (0x%02x)", ite.TagId())
+	} else if ite.tagIndex != 0 {
+		t.Fatalf("Child IFD first tag index not correct: (%d)", ite.tagIndex)
+	} else if ite.TagType() != exifcommon.TypeShort {
+		t.Fatalf("Child IFD first tag type not correct: (%d)", ite.TagType())
+	} else if ite.UnitCount() != 1 {
+		t.Fatalf("Child IFD first tag unit-count not correct: (%d)", ite.UnitCount())
+	} else if ite.ChildIfdPath() != "" {
+		t.Fatalf("Child IFD first tag IFD-name name not empty: [%s]", ite.ChildIfdPath())
+	} else if ite.IfdPath() != exifcommon.IfdPathStandardExif {
+		t.Fatalf("Child IFD first tag parent IFD not correct: %v", ite.IfdPath())
 	}
 }
 
@@ -531,25 +525,21 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 		t.Fatalf("Child IFD not have been allocated.")
 	}
 
-	ite, err := ParseOneTag(im, ti, fmt.Sprintf("%s%d", exifcommon.IfdPathStandard, 0), exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder, tagBytes, false)
+	ite, err := ParseOneTag(im, ti, fmt.Sprintf("%s%d", exifcommon.IfdPathStandard, 0), exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder, tagBytes)
 	log.PanicIf(err)
 
-	if ite.TagId != 0x000b {
-		t.Fatalf("Tag-ID not correct: (0x%02x)", ite.TagId)
-	} else if ite.TagIndex != 0 {
-		t.Fatalf("Tag index not correct: (%d)", ite.TagIndex)
-	} else if ite.TagType != exifcommon.TypeAscii {
-		t.Fatalf("Tag type not correct: (%d)", ite.TagType)
-	} else if ite.UnitCount != (uint32(len(valueString) + 1)) {
-		t.Fatalf("Tag unit-count not correct: (%d)", ite.UnitCount)
-	} else if ite.ValueOffset != addressableOffset {
-		t.Fatalf("Tag's value (as offset) is not correct: (%d) != (%d)", ite.ValueOffset, addressableOffset)
-	} else if bytes.Compare(ite.RawValueOffset, []byte{0x0, 0x0, 0x12, 0x34}) != 0 {
-		t.Fatalf("Tag's value (as raw bytes) is not correct: [%x]", ite.RawValueOffset)
-	} else if ite.ChildIfdPath != "" {
-		t.Fatalf("Tag's IFD-name should be empty: [%s]", ite.ChildIfdPath)
-	} else if ite.IfdPath != exifcommon.IfdPathStandard {
-		t.Fatalf("Tag's parent IFD is not correct: %v", ite.IfdPath)
+	if ite.TagId() != 0x000b {
+		t.Fatalf("Tag-ID not correct: (0x%02x)", ite.TagId())
+	} else if ite.tagIndex != 0 {
+		t.Fatalf("Tag index not correct: (%d)", ite.tagIndex)
+	} else if ite.TagType() != exifcommon.TypeAscii {
+		t.Fatalf("Tag type not correct: (%d)", ite.TagType())
+	} else if ite.UnitCount() != (uint32(len(valueString) + 1)) {
+		t.Fatalf("Tag unit-count not correct: (%d)", ite.UnitCount())
+	} else if ite.ChildIfdPath() != "" {
+		t.Fatalf("Tag's IFD-name should be empty: [%s]", ite.ChildIfdPath())
+	} else if ite.IfdPath() != exifcommon.IfdPathStandard {
+		t.Fatalf("Tag's parent IFD is not correct: %v", ite.IfdPath())
 	}
 
 	expectedBuffer := bytes.NewBufferString(valueString)
@@ -886,15 +876,11 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	// addressableData is the byte-slice where the allocated data can be
-	// resolved (where position 0x0 will correlate with offset 0x0).
-	addressableData := exifData[ExifAddressableAreaStart:]
-
-	for i, e := range index.RootIfd.Entries {
-		value, err := e.Value(addressableData, exifcommon.TestDefaultByteOrder)
+	for i, ite := range index.RootIfd.Entries {
+		value, err := ite.Value()
 		log.PanicIf(err)
 
-		fmt.Printf("%d: %s [%v]\n", i, e, value)
+		fmt.Printf("%d: %s [%v]\n", i, ite, value)
 	}
 
 	// Output:

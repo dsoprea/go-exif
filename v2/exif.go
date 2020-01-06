@@ -189,7 +189,7 @@ func Visit(rootIfdName string, ifdMapping *IfdMapping, tagIndex *TagIndex, exifD
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, exifData, eh.ByteOrder)
 
-	err = ie.Scan(rootIfdName, eh.FirstIfdOffset, visitor, true)
+	err = ie.Scan(rootIfdName, eh.FirstIfdOffset, visitor)
 	log.PanicIf(err)
 
 	return eh, nil
@@ -208,7 +208,7 @@ func Collect(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte) (eh Ex
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, exifData, eh.ByteOrder)
 
-	index, err = ie.Collect(eh.FirstIfdOffset, true)
+	index, err = ie.Collect(eh.FirstIfdOffset)
 	log.PanicIf(err)
 
 	return eh, index, nil

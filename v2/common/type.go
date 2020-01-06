@@ -139,7 +139,10 @@ type SignedRational struct {
 }
 
 // Format returns a stringified value for the given encoding. Automatically
-// parses. Automatically calculates count based on type size.
+// parses. Automatically calculates count based on type size. This function
+// also supports undefined-type values (the ones that we support, anyway) by
+// way of the String() method that they all require. We can't be more specific
+// because we're a base package and we can't refer to it.
 func FormatFromType(value interface{}, justFirst bool) (phrase string, err error) {
     defer func() {
         if state := recover(); state != nil {
@@ -247,6 +250,9 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
         }
 
         return fmt.Sprintf("%v", parts), nil
+    case fmt.Stringer:
+        // An undefined value that is documented (or that we otherwise support).
+        return t.String(), nil
     default:
         // Affects only "unknown" values, in general.
         log.Panicf("type can not be formatted into string: %v", reflect.TypeOf(value).Name())

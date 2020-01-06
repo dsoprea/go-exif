@@ -15,141 +15,144 @@ var (
 	iteLogger = log.NewLogger("exif.ifd_tag_entry")
 )
 
+// IfdTagEntry refers to a tag in the loaded EXIF block.
 type IfdTagEntry struct {
-	TagId          uint16
-	TagIndex       int
-	TagType        exifcommon.TagTypePrimitive
-	UnitCount      uint32
-	ValueOffset    uint32
-	RawValueOffset []byte
+	tagId          uint16
+	tagIndex       int
+	tagType        exifcommon.TagTypePrimitive
+	unitCount      uint32
+	valueOffset    uint32
+	rawValueOffset []byte
 
-	// ChildIfdName is the right most atom in the IFD-path. We need this to
+	// childIfdName is the right most atom in the IFD-path. We need this to
 	// construct the fully-qualified IFD-path.
-	ChildIfdName string
+	childIfdName string
 
-	// ChildIfdPath is the IFD-path of the child if this tag represents a child
+	// childIfdPath is the IFD-path of the child if this tag represents a child
 	// IFD.
-	ChildIfdPath string
+	childIfdPath string
 
-	// ChildFqIfdPath is the IFD-path of the child if this tag represents a
+	// childFqIfdPath is the IFD-path of the child if this tag represents a
 	// child IFD. Includes indices.
-	ChildFqIfdPath string
+	childFqIfdPath string
 
 	// TODO(dustin): !! IB's host the child-IBs directly in the tag, but that's not the case here. Refactor to accomodate it for a consistent experience.
 
-	// IfdPath is the IFD that this tag belongs to.
-	IfdPath string
+	// ifdPath is the IFD that this tag belongs to.
+	ifdPath string
 
-	// TODO(dustin): !! We now parse and read the value immediately. Update the rest of the logic to use this and get rid of all of the staggered and different resolution mechanisms.
-	value              []byte
 	isUnhandledUnknown bool
+
+	addressableData []byte
+	byteOrder       binary.ByteOrder
 }
 
-func (ite *IfdTagEntry) String() string {
-	return fmt.Sprintf("IfdTagEntry<TAG-IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.IfdPath, ite.TagId, ite.TagType.String(), ite.UnitCount)
-}
-
-// TODO(dustin): TODO(dustin): Stop exporting IfdPath and TagId.
-//
-// func (ite *IfdTagEntry) IfdPath() string {
-// 	return ite.IfdPath
-// }
-
-// TODO(dustin): TODO(dustin): Stop exporting IfdPath and TagId.
-//
-// func (ite *IfdTagEntry) TagId() uint16 {
-// 	return ite.TagId
-// }
-
-// ValueString renders a string from whatever the value in this tag is.
-func (ite *IfdTagEntry) ValueString(addressableData []byte, byteOrder binary.ByteOrder) (phrase string, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
-
-	valueContext :=
-		newValueContextFromTag(
-			ite,
-			addressableData,
-			byteOrder)
-
-	if ite.TagType == exifcommon.TypeUndefined {
-		var err error
-
-		value, err := exifundefined.Decode(valueContext)
-		log.PanicIf(err)
-
-		s := value.(fmt.Stringer)
-
-		phrase = s.String()
-	} else {
-		var err error
-
-		phrase, err = valueContext.Format()
-		log.PanicIf(err)
+func newIfdTagEntry(ifdPath string, tagId uint16, tagIndex int, tagType exifcommon.TagTypePrimitive, unitCount uint32, valueOffset uint32, rawValueOffset []byte, addressableData []byte, byteOrder binary.ByteOrder) *IfdTagEntry {
+	return &IfdTagEntry{
+		ifdPath:         ifdPath,
+		tagId:           tagId,
+		tagIndex:        tagIndex,
+		tagType:         tagType,
+		unitCount:       unitCount,
+		valueOffset:     valueOffset,
+		rawValueOffset:  rawValueOffset,
+		addressableData: addressableData,
+		byteOrder:       byteOrder,
 	}
-
-	return phrase, nil
 }
 
-// ValueBytes renders a specific list of bytes from the value in this tag.
-func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.ByteOrder) (value []byte, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
+// String returns a stringified representation of the struct.
+func (ite *IfdTagEntry) String() string {
+	return fmt.Sprintf("IfdTagEntry<TAG-IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.ifdPath, ite.tagId, ite.tagType.String(), ite.unitCount)
+}
 
-	valueContext :=
-		newValueContextFromTag(
-			ite,
-			addressableData,
-			byteOrder)
+// IfdPath returns the path of the IFD that owns this tag.
+func (ite *IfdTagEntry) IfdPath() string {
+	return ite.ifdPath
+}
 
-	// Return the exact bytes of the unknown-type value. Returning a string
-	// (`ValueString`) is easy because we can just pass everything to
-	// `Sprintf()`. Returning the raw, typed value (`Value`) is easy
-	// (obviously). However, here, in order to produce the list of bytes, we
-	// need to coerce whatever `Undefined()` returns.
-	if ite.TagType == exifcommon.TypeUndefined {
+// TagId returns the ID of the tag that we represent. The combination of
+// (IfdPath(), TagId()) is unique.
+func (ite *IfdTagEntry) TagId() uint16 {
+	return ite.tagId
+}
+
+// TagType is the type of value for this tag.
+func (ite *IfdTagEntry) TagType() exifcommon.TagTypePrimitive {
+	return ite.tagType
+}
+
+// updateTagType sets an alternatively interpreted tag-type.
+func (ite *IfdTagEntry) updateTagType(tagType exifcommon.TagTypePrimitive) {
+	ite.tagType = tagType
+}
+
+// UnitCount returns the unit-count of the tag's value.
+func (ite *IfdTagEntry) UnitCount() uint32 {
+	return ite.unitCount
+}
+
+// updateUnitCount sets an alternatively interpreted unit-count.
+func (ite *IfdTagEntry) updateUnitCount(unitCount uint32) {
+	ite.unitCount = unitCount
+}
+
+// valueOffset_ is the four-byte offset converted to an integer to point to the
+// location of its value in the EXIF block.
+func (ite *IfdTagEntry) valueOffset_() uint32 {
+	return ite.valueOffset
+}
+
+// RawBytes renders a specific list of bytes from the value in this tag.
+func (ite *IfdTagEntry) RawBytes() (rawBytes []byte, err error) {
+	valueContext := ite.GetValueContext()
+
+	if ite.TagType() == exifcommon.TypeUndefined {
 		value, err := exifundefined.Decode(valueContext)
-		log.PanicIf(err)
+		if err != nil {
+			if err == exifcommon.ErrUnhandledUnknownTypedTag {
+				ite.setIsUnhandledUnknown(true)
+			} else {
+				log.Panic(err)
+			}
+		}
 
-		ve := exifcommon.NewValueEncoder(byteOrder)
+		// Encode it back, in order to get the raw bytes. This is the best,
+		// general way to do it with an undefined tag.
 
-		ed, err := ve.Encode(value)
-		log.PanicIf(err)
-
-		return ed.Encoded, nil
-	} else {
-		rawBytes, err := valueContext.ReadRawEncoded()
+		rawBytes, _, err := exifundefined.Encode(value, ite.byteOrder)
 		log.PanicIf(err)
 
 		return rawBytes, nil
 	}
+
+	rawBytes, err = valueContext.ReadRawEncoded()
+	log.PanicIf(err)
+
+	return rawBytes, nil
 }
 
 // Value returns the specific, parsed, typed value from the tag.
-func (ite *IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder) (value interface{}, err error) {
+func (ite *IfdTagEntry) Value() (value interface{}, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	valueContext :=
-		newValueContextFromTag(
-			ite,
-			addressableData,
-			byteOrder)
+	valueContext := ite.GetValueContext()
 
-	if ite.TagType == exifcommon.TypeUndefined {
+	if ite.tagType == exifcommon.TypeUndefined {
 		var err error
 
 		value, err = exifundefined.Decode(valueContext)
-		log.PanicIf(err)
+		if err != nil {
+			if err == exifcommon.ErrUnhandledUnknownTypedTag {
+				return nil, err
+			}
+
+			log.Panic(err)
+		}
 	} else {
 		var err error
 
@@ -158,4 +161,39 @@ func (ite *IfdTagEntry) Value(addressableData []byte, byteOrder binary.ByteOrder
 	}
 
 	return value, nil
+}
+
+func (ite *IfdTagEntry) setIsUnhandledUnknown(isUnhandledUnknown bool) {
+	ite.isUnhandledUnknown = isUnhandledUnknown
+}
+
+// SetChildIfd sets child-IFD information (if we represent a child IFD).
+func (ite *IfdTagEntry) SetChildIfd(childFqIfdPath, childIfdPath, childIfdName string) {
+	ite.childFqIfdPath = childFqIfdPath
+	ite.childIfdPath = childIfdPath
+	ite.childIfdName = childIfdName
+}
+
+func (ite *IfdTagEntry) ChildIfdName() string {
+	return ite.childIfdName
+}
+
+func (ite *IfdTagEntry) ChildIfdPath() string {
+	return ite.childIfdPath
+}
+
+func (ite *IfdTagEntry) ChildFqIfdPath() string {
+	return ite.childFqIfdPath
+}
+
+func (ite *IfdTagEntry) GetValueContext() *exifcommon.ValueContext {
+	return exifcommon.NewValueContext(
+		ite.ifdPath,
+		ite.tagId,
+		ite.unitCount,
+		ite.valueOffset,
+		ite.rawValueOffset,
+		ite.addressableData,
+		ite.tagType,
+		ite.byteOrder)
 }

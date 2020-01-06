@@ -135,8 +135,6 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 
 	// Verify the values by using the actual, orginal types (this is awesome).
 
-	addressableData := exifData[ExifAddressableAreaStart:]
-
 	expected := []struct {
 		tagId uint16
 		value interface{}
@@ -147,12 +145,12 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 		{tagId: 0x013e, value: []exifcommon.Rational{{Numerator: 0x11112222, Denominator: 0x33334444}}},
 	}
 
-	for i, e := range ifd.Entries {
-		if e.TagId != expected[i].tagId {
-			t.Fatalf("Tag-ID for entry (%d) not correct: (0x%02x) != (0x%02x)", i, e.TagId, expected[i].tagId)
+	for i, ite := range ifd.Entries {
+		if ite.TagId() != expected[i].tagId {
+			t.Fatalf("Tag-ID for entry (%d) not correct: (0x%02x) != (0x%02x)", i, ite.TagId(), expected[i].tagId)
 		}
 
-		value, err := e.Value(addressableData, exifcommon.TestDefaultByteOrder)
+		value, err := ite.Value()
 		log.PanicIf(err)
 
 		if reflect.DeepEqual(value, expected[i].value) != true {
