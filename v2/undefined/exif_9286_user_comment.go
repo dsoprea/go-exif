@@ -50,10 +50,14 @@ func (Tag9286UserComment) EncoderName() string {
 func (uc Tag9286UserComment) String() string {
     var valuePhrase string
 
-    if len(uc.EncodingBytes) <= 8 {
-        valuePhrase = fmt.Sprintf("%v", uc.EncodingBytes)
+    if uc.EncodingType == TagUndefinedType_9286_UserComment_Encoding_ASCII {
+        return fmt.Sprintf("[ASCII] %s", string(uc.EncodingBytes))
     } else {
-        valuePhrase = fmt.Sprintf("%v...", uc.EncodingBytes[:8])
+        if len(uc.EncodingBytes) <= 8 {
+            valuePhrase = fmt.Sprintf("%v", uc.EncodingBytes)
+        } else {
+            valuePhrase = fmt.Sprintf("%v...", uc.EncodingBytes[:8])
+        }
     }
 
     return fmt.Sprintf("UserComment<SIZE=(%d) ENCODING=[%s] V=%v LEN=(%d)>", len(uc.EncodingBytes), TagUndefinedType_9286_UserComment_Encoding_Names[uc.EncodingType], valuePhrase, len(uc.EncodingBytes))
