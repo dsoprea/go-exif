@@ -267,7 +267,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *Ifd
 			if doDescend == true {
 				ifdEnumerateLogger.Debugf(nil, "Descending to IFD [%s].", ite.ChildIfdPath())
 
-				err := ie.scan(ite.ChildFqIfdPath(), ite.valueOffset_(), visitor)
+				err := ie.scan(ite.ChildFqIfdPath(), ite.getValueOffset(), visitor)
 				log.PanicIf(err)
 			}
 		}
@@ -1032,7 +1032,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 				TagId:     ite.TagId(),
 
 				Index:          0,
-				Offset:         ite.valueOffset_(),
+				Offset:         ite.getValueOffset(),
 				Parent:         ifd,
 				ParentTagIndex: i,
 			}

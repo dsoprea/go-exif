@@ -433,8 +433,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("IFD first tag type not correct: (%d)", iteV.TagType())
 	} else if iteV.UnitCount() != 1 {
 		t.Fatalf("IFD first tag unit-count not correct: (%d)", iteV.UnitCount())
-	} else if iteV.valueOffset_() != nextIfdOffsetToWrite {
-		t.Fatalf("IFD's child-IFD offset (as offset) is not correct: (%d) != (%d)", iteV.valueOffset_(), nextIfdOffsetToWrite)
+	} else if iteV.getValueOffset() != nextIfdOffsetToWrite {
+		t.Fatalf("IFD's child-IFD offset (as offset) is not correct: (%d) != (%d)", iteV.getValueOffset(), nextIfdOffsetToWrite)
 	} else if iteV.ChildIfdPath() != exifcommon.IfdPathStandardExif {
 		t.Fatalf("IFD first tag IFD-name name not correct: [%s]", iteV.ChildIfdPath())
 	} else if iteV.IfdPath() != exifcommon.IfdPathStandard {

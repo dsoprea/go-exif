@@ -22,7 +22,8 @@ func (Tag927CMakerNote) EncoderName() string {
 }
 
 func (mn Tag927CMakerNote) String() string {
-    parts := make([]string, 20)
+    parts := make([]string, len(mn.MakerNoteType))
+
     for i, c := range mn.MakerNoteType {
         parts[i] = fmt.Sprintf("%02x", c)
     }
@@ -83,8 +84,15 @@ func (Codec927CMakerNote) Decode(valueContext *exifcommon.ValueContext) (value E
     //                 fmt.Printf("ENTRY: 0x%02x %d\n", entry.TagId, entry.TagType)
     //             }
 
+    var makerNoteType []byte
+    if len(valueBytes) >= 20 {
+        makerNoteType = valueBytes[:20]
+    } else {
+        makerNoteType = valueBytes
+    }
+
     mn := Tag927CMakerNote{
-        MakerNoteType: valueBytes[:20],
+        MakerNoteType: makerNoteType,
 
         // MakerNoteBytes has the whole length of bytes. There's always
         // the chance that the first 20 bytes includes actual data.

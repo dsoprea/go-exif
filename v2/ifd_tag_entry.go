@@ -97,9 +97,10 @@ func (ite *IfdTagEntry) updateUnitCount(unitCount uint32) {
 	ite.unitCount = unitCount
 }
 
-// valueOffset_ is the four-byte offset converted to an integer to point to the
-// location of its value in the EXIF block.
-func (ite *IfdTagEntry) valueOffset_() uint32 {
+// getValueOffset is the four-byte offset converted to an integer to point to
+// the location of its value in the EXIF block. The "get" parameter is obviously
+// used in order to differentiate the naming of the method from the field.
+func (ite *IfdTagEntry) getValueOffset() uint32 {
 	return ite.valueOffset
 }
 
