@@ -28,6 +28,7 @@ func GetModuleRootPath() string {
 	log.PanicIf(err)
 
 	currentPath := currentWd
+	visited := make([]string, 0)
 
 	for {
 		tryStampFilepath := path.Join(currentPath, ".MODULE_ROOT")
@@ -38,9 +39,11 @@ func GetModuleRootPath() string {
 			break
 		}
 
+		visited = append(visited, tryStampFilepath)
+
 		currentPath = path.Dir(currentPath)
 		if currentPath == "/" {
-			log.Panicf("could not find module-root")
+			log.Panicf("could not find module-root: %v", visited)
 		}
 	}
 
