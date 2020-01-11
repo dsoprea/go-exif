@@ -17,7 +17,7 @@ func (TagExifA300FileSource) EncoderName() string {
 }
 
 func (af TagExifA300FileSource) String() string {
-	return fmt.Sprintf("%d", af)
+	return fmt.Sprintf("0x%08x", uint32(af))
 }
 
 const (
