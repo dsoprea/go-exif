@@ -13,7 +13,6 @@ import (
 	"github.com/dsoprea/go-logging"
 
 	"github.com/dsoprea/go-exif/v2/common"
-	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
 var (
@@ -540,50 +539,6 @@ func (ifd *Ifd) DumpTags() []*IfdTagEntry {
 	return ifd.dumpTags(nil)
 }
 
-// FormatValue returns a stringified value for any well-defined tag value as
-// well as supported undefined-tag values.
-func (ifd *Ifd) FormatValue(ite *IfdTagEntry) (valuePhrase string, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
-
-	value, err := ite.Value()
-	if err != nil {
-		if err == exifcommon.ErrUnhandledUnknownTypedTag {
-			return exifundefined.UnparseableUnknownTagValuePlaceholder, nil
-		}
-
-		log.Panic(err)
-	}
-
-	valuePhrase, err = exifcommon.FormatFromType(value, false)
-	log.PanicIf(err)
-
-	return valuePhrase, nil
-}
-
-// Value returns the value for the given tag.
-func (ifd *Ifd) Value(ite *IfdTagEntry) (value interface{}, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
-
-	value, err = ite.Value()
-	if err != nil {
-		if err == exifcommon.ErrUnhandledUnknownTypedTag {
-			return nil, err
-		}
-
-		log.Panic(err)
-	}
-
-	return value, nil
-}
-
 func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink bool) {
 	indent := strings.Repeat(" ", level*2)
 
@@ -613,7 +568,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 			if populateValues == true {
 				var err error
 
-				valuePhrase, err = ifd.FormatValue(ite)
+				valuePhrase, err = ite.Format()
 				log.PanicIf(err)
 			} else {
 				valuePhrase = "!UNRESOLVED"
@@ -792,7 +747,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panic(ErrNoGpsTags)
 	}
 
-	latitudeValue, err := ifd.Value(tags[0])
+	latitudeValue, err := tags[0].Value()
 	log.PanicIf(err)
 
 	// Look for whether North or South.
@@ -802,7 +757,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panic(ErrNoGpsTags)
 	}
 
-	latitudeRefValue, err := ifd.Value(tags[0])
+	latitudeRefValue, err := tags[0].Value()
 	log.PanicIf(err)
 
 	tags, found = ifd.EntriesByTagId[TagLongitudeId]
@@ -811,7 +766,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panic(ErrNoGpsTags)
 	}
 
-	longitudeValue, err := ifd.Value(tags[0])
+	longitudeValue, err := tags[0].Value()
 	log.PanicIf(err)
 
 	// Look for whether West or East.
@@ -821,7 +776,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panic(ErrNoGpsTags)
 	}
 
-	longitudeRefValue, err := ifd.Value(tags[0])
+	longitudeRefValue, err := tags[0].Value()
 	log.PanicIf(err)
 
 	// Parse location.
@@ -850,10 +805,10 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	altitudeRefTags, foundAltitudeRef := ifd.EntriesByTagId[TagAltitudeRefId]
 
 	if foundAltitude == true && foundAltitudeRef == true {
-		altitudeValue, err := ifd.Value(altitudeTags[0])
+		altitudeValue, err := altitudeTags[0].Value()
 		log.PanicIf(err)
 
-		altitudeRefValue, err := ifd.Value(altitudeRefTags[0])
+		altitudeRefValue, err := altitudeRefTags[0].Value()
 		log.PanicIf(err)
 
 		altitudeRaw := altitudeValue.([]exifcommon.Rational)
@@ -871,7 +826,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	datestampTags, foundDatestamp := ifd.EntriesByTagId[TagDatestampId]
 
 	if foundTimestamp == true && foundDatestamp == true {
-		datestampValue, err := ifd.Value(datestampTags[0])
+		datestampValue, err := datestampTags[0].Value()
 		log.PanicIf(err)
 
 		dateParts := strings.Split(datestampValue.(string), ":")
@@ -881,7 +836,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		day, err3 := strconv.ParseUint(dateParts[2], 10, 8)
 
 		if err1 == nil && err2 == nil && err3 == nil {
-			timestampValue, err := ifd.Value(timestampTags[0])
+			timestampValue, err := timestampTags[0].Value()
 			log.PanicIf(err)
 
 			timestampRaw := timestampValue.([]exifcommon.Rational)
