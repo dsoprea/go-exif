@@ -39,6 +39,10 @@ func GetModuleRootPath() string {
 			break
 		}
 
+		if err.Error() != "No such file or directory" {
+			log.Panic(err)
+		}
+
 		visited = append(visited, tryStampFilepath)
 
 		currentPath = path.Dir(currentPath)
