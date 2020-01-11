@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"path"
 	"reflect"
 	"testing"
@@ -13,6 +12,8 @@ import (
 	"os/exec"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 var (
@@ -58,7 +59,7 @@ IFD-PATH=[IFD/Exif] ID=(0x8832) NAME=[RecommendedExposureIndex] COUNT=(1) TYPE=[
 IFD-PATH=[IFD/Exif] ID=(0x9000) NAME=[ExifVersion] COUNT=(4) TYPE=[UNDEFINED] VALUE=[0230]
 IFD-PATH=[IFD/Exif] ID=(0x9003) NAME=[DateTimeOriginal] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]
 IFD-PATH=[IFD/Exif] ID=(0x9004) NAME=[DateTimeDigitized] COUNT=(20) TYPE=[ASCII] VALUE=[2017:12:02 08:18:50]
-IFD-PATH=[IFD/Exif] ID=(0x9101) NAME=[ComponentsConfiguration] COUNT=(4) TYPE=[UNDEFINED] VALUE=[ComponentsConfiguration<ID=[YCBCR] BYTES=[1 2 3 0]>]
+IFD-PATH=[IFD/Exif] ID=(0x9101) NAME=[ComponentsConfiguration] COUNT=(4) TYPE=[UNDEFINED] VALUE=[Exif9101ComponentsConfiguration<ID=[YCBCR] BYTES=[1 2 3 0]>]
 IFD-PATH=[IFD/Exif] ID=(0x9201) NAME=[ShutterSpeedValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[614400/65536]
 IFD-PATH=[IFD/Exif] ID=(0x9202) NAME=[ApertureValue] COUNT=(1) TYPE=[RATIONAL] VALUE=[262144/65536]
 IFD-PATH=[IFD/Exif] ID=(0x9204) NAME=[ExposureBiasValue] COUNT=(1) TYPE=[SRATIONAL] VALUE=[0/1]
@@ -145,22 +146,10 @@ func TestMainJson(t *testing.T) {
 }
 
 func init() {
-	goPath := os.Getenv("GOPATH")
+	moduleRootPath := exifcommon.GetModuleRootPath()
+	assetsPath = path.Join(moduleRootPath, "assets")
 
-	moduleRoot := ""
-	if goPath != "" {
-		moduleRoot = path.Join(goPath, "src", "github.com", "dsoprea", "go-exif")
-	} else {
-		// Module-enabled context.
-
-		currentWd, err := os.Getwd()
-		log.PanicIf(err)
-
-		moduleRoot = path.Join(currentWd, "..")
-	}
-
-	assetsPath = path.Join(moduleRoot, "assets")
-	appFilepath = path.Join(moduleRoot, "exif-read-tool", "main.go")
+	appFilepath = path.Join(moduleRootPath, "exif-read-tool", "main.go")
 
 	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
 }

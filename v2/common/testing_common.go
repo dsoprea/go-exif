@@ -23,7 +23,7 @@ var (
 	TestDefaultByteOrder = binary.BigEndian
 )
 
-func getModuleRootPath() string {
+func GetModuleRootPath() string {
 	currentWd, err := os.Getwd()
 	log.PanicIf(err)
 
@@ -48,7 +48,7 @@ func getModuleRootPath() string {
 }
 
 func init() {
-	moduleRootPath := getModuleRootPath()
+	moduleRootPath := GetModuleRootPath()
 	assetsPath = path.Join(moduleRootPath, "assets")
 
 	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")

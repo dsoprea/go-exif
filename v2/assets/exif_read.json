@@ -32,7 +32,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "1",
+        "value": [
+            1
+        ],
         "value_string": "1"
     },
     {
@@ -44,7 +46,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "72/1",
+        "value": [
+            {
+                "Numerator": 72,
+                "Denominator": 1
+            }
+        ],
         "value_string": "72/1"
     },
     {
@@ -56,7 +63,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "72/1",
+        "value": [
+            {
+                "Numerator": 72,
+                "Denominator": 1
+            }
+        ],
         "value_string": "72/1"
     },
     {
@@ -68,7 +80,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "2",
+        "value": [
+            2
+        ],
         "value_string": "2"
     },
     {
@@ -104,7 +118,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "2",
+        "value": [
+            2
+        ],
         "value_string": "2"
     },
     {
@@ -128,7 +144,9 @@
         "tag_type_id": 4,
         "tag_type_name": "LONG",
         "unit_count": 1,
-        "value": "360",
+        "value": [
+            360
+        ],
         "value_string": "360"
     },
     {
@@ -140,7 +158,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "1/640",
+        "value": [
+            {
+                "Numerator": 1,
+                "Denominator": 640
+            }
+        ],
         "value_string": "1/640"
     },
     {
@@ -152,7 +175,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "4/1",
+        "value": [
+            {
+                "Numerator": 4,
+                "Denominator": 1
+            }
+        ],
         "value_string": "4/1"
     },
     {
@@ -164,7 +192,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "4",
+        "value": [
+            4
+        ],
         "value_string": "4"
     },
     {
@@ -176,7 +206,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "1600",
+        "value": [
+            1600
+        ],
         "value_string": "1600"
     },
     {
@@ -188,7 +220,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "2",
+        "value": [
+            2
+        ],
         "value_string": "2"
     },
     {
@@ -200,7 +234,9 @@
         "tag_type_id": 4,
         "tag_type_name": "LONG",
         "unit_count": 1,
-        "value": "1600",
+        "value": [
+            1600
+        ],
         "value_string": "1600"
     },
     {
@@ -212,7 +248,7 @@
         "tag_type_id": 7,
         "tag_type_name": "UNDEFINED",
         "unit_count": 4,
-        "value": "0230",
+        "value": {},
         "value_string": "0230"
     },
     {
@@ -252,7 +288,7 @@
             "ConfigurationId": 2,
             "ConfigurationBytes": "AQIDAA=="
         },
-        "value_string": "ComponentsConfiguration\u003cID=[YCBCR] BYTES=[1 2 3 0]\u003e"
+        "value_string": "Exif9101ComponentsConfiguration\u003cID=[YCBCR] BYTES=[1 2 3 0]\u003e"
     },
     {
         "ifd_path": "IFD/Exif",
@@ -263,7 +299,12 @@
         "tag_type_id": 10,
         "tag_type_name": "SRATIONAL",
         "unit_count": 1,
-        "value": "614400/65536",
+        "value": [
+            {
+                "Numerator": 614400,
+                "Denominator": 65536
+            }
+        ],
         "value_string": "614400/65536"
     },
     {
@@ -275,7 +316,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "262144/65536",
+        "value": [
+            {
+                "Numerator": 262144,
+                "Denominator": 65536
+            }
+        ],
         "value_string": "262144/65536"
     },
     {
@@ -287,7 +333,12 @@
         "tag_type_id": 10,
         "tag_type_name": "SRATIONAL",
         "unit_count": 1,
-        "value": "0/1",
+        "value": [
+            {
+                "Numerator": 0,
+                "Denominator": 1
+            }
+        ],
         "value_string": "0/1"
     },
     {
@@ -299,7 +350,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "5",
+        "value": [
+            5
+        ],
         "value_string": "5"
     },
     {
@@ -311,7 +364,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "16",
+        "value": [
+            16
+        ],
         "value_string": "16"
     },
     {
@@ -323,7 +378,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "16/1",
+        "value": [
+            {
+                "Numerator": 16,
+                "Denominator": 1
+            }
+        ],
         "value_string": "16/1"
     },
     {
@@ -401,7 +461,7 @@
         "tag_type_id": 7,
         "tag_type_name": "UNDEFINED",
         "unit_count": 4,
-        "value": "0100",
+        "value": {},
         "value_string": "0100"
     },
     {
@@ -413,7 +473,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "1",
+        "value": [
+            1
+        ],
         "value_string": "1"
     },
     {
@@ -425,7 +487,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "3840",
+        "value": [
+            3840
+        ],
         "value_string": "3840"
     },
     {
@@ -437,7 +501,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "2560",
+        "value": [
+            2560
+        ],
         "value_string": "2560"
     },
     {
@@ -449,7 +515,9 @@
         "tag_type_id": 4,
         "tag_type_name": "LONG",
         "unit_count": 1,
-        "value": "9326",
+        "value": [
+            9326
+        ],
         "value_string": "9326"
     },
     {
@@ -473,7 +541,7 @@
         "tag_type_id": 7,
         "tag_type_name": "UNDEFINED",
         "unit_count": 4,
-        "value": "0100",
+        "value": {},
         "value_string": "0100"
     },
     {
@@ -485,7 +553,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "3840000/1461",
+        "value": [
+            {
+                "Numerator": 3840000,
+                "Denominator": 1461
+            }
+        ],
         "value_string": "3840000/1461"
     },
     {
@@ -497,7 +570,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "2560000/972",
+        "value": [
+            {
+                "Numerator": 2560000,
+                "Denominator": 972
+            }
+        ],
         "value_string": "2560000/972"
     },
     {
@@ -509,7 +587,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "2",
+        "value": [
+            2
+        ],
         "value_string": "2"
     },
     {
@@ -521,7 +601,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "0",
+        "value": [
+            0
+        ],
         "value_string": "0"
     },
     {
@@ -533,7 +615,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "0",
+        "value": [
+            0
+        ],
         "value_string": "0"
     },
     {
@@ -545,7 +629,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "0",
+        "value": [
+            0
+        ],
         "value_string": "0"
     },
     {
@@ -557,7 +643,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "0",
+        "value": [
+            0
+        ],
         "value_string": "0"
     },
     {
@@ -593,7 +681,24 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 4,
-        "value": "16/1...",
+        "value": [
+            {
+                "Numerator": 16,
+                "Denominator": 1
+            },
+            {
+                "Numerator": 35,
+                "Denominator": 1
+            },
+            {
+                "Numerator": 0,
+                "Denominator": 1
+            },
+            {
+                "Numerator": 0,
+                "Denominator": 1
+            }
+        ],
         "value_string": "16/1..."
     },
     {
@@ -629,7 +734,9 @@
         "tag_type_id": 4,
         "tag_type_name": "LONG",
         "unit_count": 1,
-        "value": "9554",
+        "value": [
+            9554
+        ],
         "value_string": "9554"
     },
     {
@@ -641,7 +748,7 @@
         "tag_type_id": 1,
         "tag_type_name": "BYTE",
         "unit_count": 4,
-        "value": "02 03 00 00",
+        "value": "AgMAAA==",
         "value_string": "02 03 00 00"
     },
     {
@@ -653,7 +760,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "6",
+        "value": [
+            6
+        ],
         "value_string": "6"
     },
     {
@@ -665,7 +774,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "72/1",
+        "value": [
+            {
+                "Numerator": 72,
+                "Denominator": 1
+            }
+        ],
         "value_string": "72/1"
     },
     {
@@ -677,7 +791,12 @@
         "tag_type_id": 5,
         "tag_type_name": "RATIONAL",
         "unit_count": 1,
-        "value": "72/1",
+        "value": [
+            {
+                "Numerator": 72,
+                "Denominator": 1
+            }
+        ],
         "value_string": "72/1"
     },
     {
@@ -689,7 +808,9 @@
         "tag_type_id": 3,
         "tag_type_name": "SHORT",
         "unit_count": 1,
-        "value": "2",
+        "value": [
+            2
+        ],
         "value_string": "2"
     }
 ]

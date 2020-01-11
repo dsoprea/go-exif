@@ -1,7 +1,6 @@
 package exif
 
 import (
-	"os"
 	"path"
 	"reflect"
 	"testing"
@@ -159,34 +158,8 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 	}
 }
 
-func getModuleRootPath() string {
-	currentWd, err := os.Getwd()
-	log.PanicIf(err)
-
-	currentPath := currentWd
-
-	for {
-		tryStampFilepath := path.Join(currentPath, ".MODULE_ROOT")
-
-		f, err := os.Open(tryStampFilepath)
-		if err != nil && err != os.ErrNotExist {
-			log.Panic(err)
-		} else if err == nil {
-			f.Close()
-			break
-		}
-
-		currentPath := path.Dir(currentPath)
-		if currentPath == "/" {
-			log.Panicf("could not find module-root")
-		}
-	}
-
-	return currentPath
-}
-
 func init() {
-	moduleRootPath := getModuleRootPath()
+	moduleRootPath := exifcommon.GetModuleRootPath()
 	assetsPath = path.Join(moduleRootPath, "assets")
 
 	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
