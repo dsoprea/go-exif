@@ -21,8 +21,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-exif"
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2"
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 var (
@@ -32,16 +34,36 @@ var (
 )
 
 type IfdEntry struct {
-	IfdPath     string                `json:"ifd_path"`
-	FqIfdPath   string                `json:"fq_ifd_path"`
-	IfdIndex    int                   `json:"ifd_index"`
-	TagId       uint16                `json:"tag_id"`
-	TagName     string                `json:"tag_name"`
-	TagTypeId   exif.TagTypePrimitive `json:"tag_type_id"`
-	TagTypeName string                `json:"tag_type_name"`
-	UnitCount   uint32                `json:"unit_count"`
-	Value       interface{}           `json:"value"`
-	ValueString string                `json:"value_string"`
+	IfdPath     string                      `json:"ifd_path"`
+	FqIfdPath   string                      `json:"fq_ifd_path"`
+	IfdIndex    int                         `json:"ifd_index"`
+	TagId       uint16                      `json:"tag_id"`
+	TagName     string                      `json:"tag_name"`
+	TagTypeId   exifcommon.TagTypePrimitive `json:"tag_type_id"`
+	TagTypeName string                      `json:"tag_type_name"`
+	UnitCount   uint32                      `json:"unit_count"`
+	Value       interface{}                 `json:"value"`
+	ValueString string                      `json:"value_string"`
+}
+
+type visitorFn func(fqIfdPath string, ifdIndex int, ite *exif.IfdTagEntry) (err error)
+
+type visitorWrapper struct {
+	visitor visitorFn
+}
+
+func (vw *visitorWrapper) Visit(fqIfdPath string, ifdIndex int, ite *exif.IfdTagEntry) (err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+			log.Panic(err)
+		}
+	}()
+
+	err = vw.visitor(fqIfdPath, ifdIndex, ite)
+	log.PanicIf(err)
+
+	return nil
 }
 
 func main() {
@@ -84,13 +106,16 @@ func main() {
 	ti := exif.NewTagIndex()
 
 	entries := make([]IfdEntry, 0)
-	visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
+	visitor := func(fqIfdPath string, ifdIndex int, ite *exif.IfdTagEntry) (err error) {
 		defer func() {
 			if state := recover(); state != nil {
 				err = log.Wrap(state.(error))
 				log.Panic(err)
 			}
 		}()
+
+		tagId := ite.TagId()
+		tagType := ite.TagType()
 
 		ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
 		log.PanicIf(err)
@@ -105,26 +130,11 @@ func main() {
 			}
 		}
 
-		valueString := ""
-		var value interface{}
-		if tagType.Type() == exif.TypeUndefined {
-			var err error
-			value, err = valueContext.Undefined()
-			if err != nil {
-				if err == exif.ErrUnhandledUnknownTypedTag {
-					value = nil
-				} else {
-					log.Panic(err)
-				}
-			}
+		value, err := ite.Value()
+		log.PanicIf(err)
 
-			valueString = fmt.Sprintf("%v", value)
-		} else {
-			valueString, err = valueContext.FormatFirst()
-			log.PanicIf(err)
-
-			value = valueString
-		}
+		valueString, err := ite.FormatFirst()
+		log.PanicIf(err)
 
 		entry := IfdEntry{
 			IfdPath:     ifdPath,
@@ -132,9 +142,9 @@ func main() {
 			IfdIndex:    ifdIndex,
 			TagId:       tagId,
 			TagName:     it.Name,
-			TagTypeId:   tagType.Type(),
-			TagTypeName: tagType.Name(),
-			UnitCount:   valueContext.UnitCount(),
+			TagTypeId:   tagType,
+			TagTypeName: tagType.String(),
+			UnitCount:   ite.UnitCount(),
 			Value:       value,
 			ValueString: valueString,
 		}
@@ -144,7 +154,9 @@ func main() {
 		return nil
 	}
 
-	_, err = exif.Visit(exif.IfdStandard, im, ti, rawExif, visitor)
+	vw := &visitorWrapper{visitor}
+
+	_, err = exif.Visit(exifcommon.IfdStandard, im, ti, rawExif, vw)
 	log.PanicIf(err)
 
 	if printAsJsonArg == true {
