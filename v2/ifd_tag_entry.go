@@ -107,7 +107,7 @@ func (ite *IfdTagEntry) valueOffset_() uint32 {
 func (ite *IfdTagEntry) GetRawBytes() (rawBytes []byte, err error) {
 	valueContext := ite.getValueContext()
 
-	if ite.TagType() == exifcommon.TypeUndefined {
+	if ite.tagType == exifcommon.TypeUndefined {
 		value, err := exifundefined.Decode(valueContext)
 		if err != nil {
 			if err == exifcommon.ErrUnhandledUnknownTypedTag {
