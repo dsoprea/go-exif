@@ -361,11 +361,6 @@ type Ifd struct {
 	// TODO(dustin): !! Why are all of these exported? Stop doing this in the next release.
 	// TODO(dustin): Add NextIfd().
 
-	// This is just for convenience, just so that we can easily get the values
-	// and not involve other projects in semantics that they won't otherwise
-	// need to know.
-	addressableData []byte
-
 	ByteOrder binary.ByteOrder
 
 	// Name is the name of the IFD (the rightmost name in the path, sans any
@@ -968,8 +963,6 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		}
 
 		ifd := &Ifd{
-			addressableData: ie.exifData[ExifAddressableAreaStart:],
-
 			ByteOrder: ie.byteOrder,
 
 			Name:      name,
