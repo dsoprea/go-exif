@@ -231,7 +231,9 @@ func (ite *IfdTagEntry) ChildIfdPath() string {
 	return ite.childIfdPath
 }
 
-// ChildFqIfdPath returns the complete path of the child IFD.
+// ChildFqIfdPath returns the complete path of the child IFD along with the
+// numeric suffixes differentiating sibling occurrences of the same type. "0"
+// indices are omitted.
 func (ite *IfdTagEntry) ChildFqIfdPath() string {
 	return ite.childFqIfdPath
 }
