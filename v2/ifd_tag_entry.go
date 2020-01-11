@@ -105,7 +105,7 @@ func (ite *IfdTagEntry) valueOffset_() uint32 {
 
 // RawBytes renders a specific list of bytes from the value in this tag.
 func (ite *IfdTagEntry) RawBytes() (rawBytes []byte, err error) {
-	valueContext := ite.GetValueContext()
+	valueContext := ite.getValueContext()
 
 	if ite.TagType() == exifcommon.TypeUndefined {
 		value, err := exifundefined.Decode(valueContext)
@@ -140,7 +140,7 @@ func (ite *IfdTagEntry) Value() (value interface{}, err error) {
 		}
 	}()
 
-	valueContext := ite.GetValueContext()
+	valueContext := ite.getValueContext()
 
 	if ite.tagType == exifcommon.TypeUndefined {
 		var err error
@@ -163,6 +163,52 @@ func (ite *IfdTagEntry) Value() (value interface{}, err error) {
 	return value, nil
 }
 
+// Format returns the tag's value as a string.
+func (ite *IfdTagEntry) Format() (phrase string, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	value, err := ite.Value()
+	if err != nil {
+		if err == exifcommon.ErrUnhandledUnknownTypedTag {
+			return exifundefined.UnparseableUnknownTagValuePlaceholder, nil
+		}
+
+		log.Panic(err)
+	}
+
+	phrase, err = exifcommon.FormatFromType(value, false)
+	log.PanicIf(err)
+
+	return phrase, nil
+}
+
+// FormatFirst returns the same as Format() but only the first item.
+func (ite *IfdTagEntry) FormatFirst() (phrase string, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	value, err := ite.Value()
+	if err != nil {
+		if err == exifcommon.ErrUnhandledUnknownTypedTag {
+			return exifundefined.UnparseableUnknownTagValuePlaceholder, nil
+		}
+
+		log.Panic(err)
+	}
+
+	phrase, err = exifcommon.FormatFromType(value, true)
+	log.PanicIf(err)
+
+	return phrase, nil
+}
+
 func (ite *IfdTagEntry) setIsUnhandledUnknown(isUnhandledUnknown bool) {
 	ite.isUnhandledUnknown = isUnhandledUnknown
 }
@@ -174,19 +220,22 @@ func (ite *IfdTagEntry) SetChildIfd(childFqIfdPath, childIfdPath, childIfdName s
 	ite.childIfdName = childIfdName
 }
 
+// ChildIfdName returns the name of the child IFD
 func (ite *IfdTagEntry) ChildIfdName() string {
 	return ite.childIfdName
 }
 
+// ChildIfdPath returns the path of the child IFD.
 func (ite *IfdTagEntry) ChildIfdPath() string {
 	return ite.childIfdPath
 }
 
+// ChildFqIfdPath returns the complete path of the child IFD.
 func (ite *IfdTagEntry) ChildFqIfdPath() string {
 	return ite.childFqIfdPath
 }
 
-func (ite *IfdTagEntry) GetValueContext() *exifcommon.ValueContext {
+func (ite *IfdTagEntry) getValueContext() *exifcommon.ValueContext {
 	return exifcommon.NewValueContext(
 		ite.ifdPath,
 		ite.tagId,

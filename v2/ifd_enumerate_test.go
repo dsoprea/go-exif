@@ -495,9 +495,8 @@ func ExampleIfd_FindTagWithName() {
 	}
 
 	ite := results[0]
-	valueContext := ite.GetValueContext()
 
-	valueRaw, err := valueContext.Values()
+	valueRaw, err := ite.Value()
 	log.PanicIf(err)
 
 	value := valueRaw.(string)

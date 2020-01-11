@@ -1112,38 +1112,8 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 		} else {
 			// Non-IFD tag.
 
-			valueContext := ite.GetValueContext()
-
-			var rawBytes []byte
-
-			if ite.TagType() == exifcommon.TypeUndefined {
-				// It's an undefined-type value. Try to process (or skip if
-				// we don't know how to), and encode back to bytes. This is the
-				// cleanest way of using what we already have to both determine
-				// if we support this tag and producing the bytes for it.
-
-				value, err := exifundefined.Decode(valueContext)
-				if err != nil {
-					if err == exifcommon.ErrUnhandledUnknownTypedTag {
-						// It's an undefined-type tag that we don't handle. If
-						// we don't know how to handle it, we can't know how
-						// many bytes it is and we must skip it.
-						continue
-					}
-
-					log.Panic(err)
-				}
-
-				rawBytes, _, err = exifundefined.Encode(value, ib.byteOrder)
-				log.PanicIf(err)
-			} else {
-				// It's a value with a standard type.
-
-				var err error
-
-				rawBytes, err = valueContext.ReadRawEncoded()
-				log.PanicIf(err)
-			}
+			rawBytes, err := ite.RawBytes()
+			log.PanicIf(err)
 
 			value := NewIfdBuilderTagValueFromBytes(rawBytes)
 

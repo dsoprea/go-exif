@@ -126,9 +126,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
                 tagName = it.Name
             }
 
-            valueContext := ite.GetValueContext()
-
-            valueBytes, err := valueContext.ReadRawEncoded()
+            valueBytes, err := ite.RawBytes()
             log.PanicIf(err)
 
             value, err := ite.Value()

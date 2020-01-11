@@ -13,17 +13,16 @@ import (
 	"github.com/dsoprea/go-logging"
 
 	"github.com/dsoprea/go-exif/v2/common"
-	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
-type innerVisitorCall func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error)
+type innerVisitorCall func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
 
 type visitorWrapper struct {
 	f innerVisitorCall
 }
 
-func (vw *visitorWrapper) Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error) {
-	return vw.f(fqIfdPath, ifdIndex, tagId, tagType, valueContext)
+func (vw *visitorWrapper) Visit(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
+	return vw.f(fqIfdPath, ifdIndex, ite)
 }
 
 func TestVisit(t *testing.T) {
@@ -71,13 +70,16 @@ func TestVisit(t *testing.T) {
 
 	tags := make([]string, 0)
 
-	visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error) {
+	visitor := func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
 		defer func() {
 			if state := recover(); state != nil {
 				err = log.Wrap(state.(error))
 				log.Panic(err)
 			}
 		}()
+
+		tagId := ite.TagId()
+		tagType := ite.TagType()
 
 		ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
 		log.PanicIf(err)
@@ -92,26 +94,10 @@ func TestVisit(t *testing.T) {
 			}
 		}
 
-		valueString := ""
-		if tagType == exifcommon.TypeUndefined {
-			value, err := exifundefined.Decode(valueContext)
-			if err != nil {
-				if err == exifcommon.ErrUnhandledUnknownTypedTag {
-					valueString = "!UNDEFINED!"
-				} else {
-					log.Panic(err)
-				}
-			}
+		valueString, err := ite.FormatFirst()
+		log.PanicIf(err)
 
-			valueString = fmt.Sprintf("%v", value)
-		} else {
-			var err error
-
-			valueString, err = valueContext.FormatFirst()
-			log.PanicIf(err)
-		}
-
-		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, valueContext.UnitCount(), tagType.String(), valueString)
+		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, ite.UnitCount(), tagType.String(), valueString)
 		tags = append(tags, description)
 
 		return nil

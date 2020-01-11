@@ -213,7 +213,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, enumerator *
 // This was reimplemented as an interface to allow for simpler change management
 // in the future.
 type RawTagWalk interface {
-	Visit(fqIfdPath string, ifdIndex int, tagId uint16, tagType exifcommon.TagTypePrimitive, valueContext *exifcommon.ValueContext) (err error)
+	Visit(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
 }
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
@@ -257,9 +257,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *Ifd
 		}
 
 		if visitor != nil {
-			valueContext := ite.GetValueContext()
-
-			err := visitor.Visit(fqIfdPath, ifdIndex, ite.TagId(), ite.TagType(), valueContext)
+			err := visitor.Visit(fqIfdPath, ifdIndex, ite)
 			log.PanicIf(err)
 		}
 

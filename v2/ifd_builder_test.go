@@ -1488,41 +1488,11 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType(), originalIte.TagType(), recoveredIte)
 		}
 
-		var originalValueBytes []byte
+		originalValueBytes, err := originalIte.RawBytes()
+		log.PanicIf(err)
 
-		if originalIte.TagType() == exifcommon.TypeUndefined {
-			valueContext := originalIte.GetValueContext()
-
-			var err error
-
-			value, err := exifundefined.Decode(valueContext)
-			log.PanicIf(err)
-
-			originalValueBytes, _, err = exifundefined.Encode(value, originalIndex.RootIfd.ByteOrder)
-		} else {
-			var err error
-
-			originalValueBytes, err = originalIte.RawBytes()
-			log.PanicIf(err)
-		}
-
-		var recoveredValueBytes []byte
-
-		if recoveredIte.TagType() == exifcommon.TypeUndefined {
-			valueContext := recoveredIte.GetValueContext()
-
-			var err error
-
-			value, err := exifundefined.Decode(valueContext)
-			log.PanicIf(err)
-
-			recoveredValueBytes, _, err = exifundefined.Encode(value, recoveredIndex.RootIfd.ByteOrder)
-		} else {
-			var err error
-
-			recoveredValueBytes, err = recoveredIte.RawBytes()
-			log.PanicIf(err)
-		}
+		recoveredValueBytes, err := recoveredIte.RawBytes()
+		log.PanicIf(err)
 
 		if bytes.Compare(recoveredValueBytes, originalValueBytes) != 0 {
 			fmt.Printf("ACTUAL: %s\n", originalIte)
@@ -1811,9 +1781,7 @@ func ExampleIfdBuilder_SetStandardWithName() {
 	log.PanicIf(err)
 
 	for _, ite := range results {
-		valueContext := ite.GetValueContext()
-
-		valueRaw, err := valueContext.Values()
+		valueRaw, err := ite.Value()
 		log.PanicIf(err)
 
 		stringValue := valueRaw.(string)
