@@ -104,7 +104,7 @@ func (ite *IfdTagEntry) valueOffset_() uint32 {
 }
 
 // RawBytes renders a specific list of bytes from the value in this tag.
-func (ite *IfdTagEntry) RawBytes() (rawBytes []byte, err error) {
+func (ite *IfdTagEntry) GetRawBytes() (rawBytes []byte, err error) {
 	valueContext := ite.getValueContext()
 
 	if ite.TagType() == exifcommon.TypeUndefined {

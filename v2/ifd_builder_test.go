@@ -1488,10 +1488,10 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType(), originalIte.TagType(), recoveredIte)
 		}
 
-		originalValueBytes, err := originalIte.RawBytes()
+		originalValueBytes, err := originalIte.GetRawBytes()
 		log.PanicIf(err)
 
-		recoveredValueBytes, err := recoveredIte.RawBytes()
+		recoveredValueBytes, err := recoveredIte.GetRawBytes()
 		log.PanicIf(err)
 
 		if bytes.Compare(recoveredValueBytes, originalValueBytes) != 0 {

@@ -47,7 +47,7 @@ func TestIfdTagEntry_RawBytes_RealData(t *testing.T) {
 		t.Fatalf("Tag not found.")
 	}
 
-	decodedBytes, err := ite.RawBytes()
+	decodedBytes, err := ite.GetRawBytes()
 	log.PanicIf(err)
 
 	expected := []byte("Canon EOS 5D Mark III")

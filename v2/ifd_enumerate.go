@@ -310,7 +310,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 	offsetIte.updateTagType(exifcommon.TypeByte)
 	offsetIte.updateUnitCount(length)
 
-	thumbnailData, err = offsetIte.RawBytes()
+	thumbnailData, err = offsetIte.GetRawBytes()
 	log.PanicIf(err)
 
 	return thumbnailData, nil
@@ -769,7 +769,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		// 2.2.0.0 format.
 		ifdEnumerateLogger.Warningf(nil, "No GPS version tag (0x%04x) found.", TagGpsVersionId)
 	} else {
-		versionBytes, err := tags[0].RawBytes()
+		versionBytes, err := tags[0].GetRawBytes()
 		log.PanicIf(err)
 
 		hit := false

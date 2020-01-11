@@ -25,7 +25,7 @@ func TestIfdTagEntry_RawBytes_Allocated(t *testing.T) {
 		addressableBytes,
 		exifcommon.TestDefaultByteOrder)
 
-	value, err := ite.RawBytes()
+	value, err := ite.GetRawBytes()
 	log.PanicIf(err)
 
 	if bytes.Compare(value, data) != 0 {
@@ -56,7 +56,7 @@ func TestIfdTagEntry_RawBytes_Embedded(t *testing.T) {
 		nil,
 		exifcommon.TestDefaultByteOrder)
 
-	value, err := ite.RawBytes()
+	value, err := ite.GetRawBytes()
 	log.PanicIf(err)
 
 	if bytes.Compare(value, data) != 0 {
