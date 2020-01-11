@@ -24,6 +24,11 @@ var (
 )
 
 func GetModuleRootPath() string {
+	moduleRootPath := os.Getenv("EXIF_MODULE_ROOT_PATH")
+	if moduleRootPath != "" {
+		return moduleRootPath
+	}
+
 	currentWd, err := os.Getwd()
 	log.PanicIf(err)
 
@@ -33,14 +38,11 @@ func GetModuleRootPath() string {
 	for {
 		tryStampFilepath := path.Join(currentPath, ".MODULE_ROOT")
 
-		f, err := os.Open(tryStampFilepath)
-		if err == nil {
-			f.Close()
-			break
-		}
-
-		if err.Error() != "No such file or directory" {
+		_, err := os.Stat(tryStampFilepath)
+		if err != nil && os.IsNotExist(err) != true {
 			log.Panic(err)
+		} else if err == nil {
+			break
 		}
 
 		visited = append(visited, tryStampFilepath)
