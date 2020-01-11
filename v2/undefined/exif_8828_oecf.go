@@ -95,7 +95,7 @@ func (Codec8828Oecf) Decode(valueContext *exifcommon.ValueContext) (value Encode
 	startAt := 4
 
 	// offset is our current position.
-	offset := 4
+	offset := startAt
 
 	currentColumnNumber := uint16(0)
 

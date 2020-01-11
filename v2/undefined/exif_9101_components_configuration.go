@@ -78,8 +78,6 @@ func (CodecExif9101ComponentsConfiguration) Encode(value interface{}, byteOrder 
 		log.Panicf("can only encode a TagExif9101ComponentsConfiguration")
 	}
 
-	// TODO(dustin): Confirm this size against the specification.
-
 	return cc.ConfigurationBytes, uint32(len(cc.ConfigurationBytes)), nil
 }
 
@@ -96,7 +94,7 @@ func (CodecExif9101ComponentsConfiguration) Decode(valueContext *exifcommon.Valu
 	log.PanicIf(err)
 
 	for configurationId, configurationBytes := range TagUndefinedType_9101_ComponentsConfiguration_Configurations {
-		if bytes.Compare(valueBytes, configurationBytes) == 0 {
+		if bytes.Equal(configurationBytes, valueBytes) == true {
 			cc := TagExif9101ComponentsConfiguration{
 				ConfigurationId:    configurationId,
 				ConfigurationBytes: valueBytes,
