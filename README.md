@@ -2,17 +2,17 @@
 [![Coverage Status](https://coveralls.io/repos/github/dsoprea/go-exif/badge.svg?branch=master)](https://coveralls.io/github/dsoprea/go-exif?branch=master)
 [![GoDoc](https://godoc.org/github.com/dsoprea/go-exif?status.svg)](https://godoc.org/github.com/dsoprea/go-exif)
 
-## Overview
+# Overview
 
 This package provides native Go functionality to parse an existing EXIF block, update an existing EXIF block, or add a new EXIF block.
 
 
-## *NOTICE*
+# *NOTICE*
 
-- A couple of undefined-type tags still need to be implemented. Currently these will show "!DEFINED!" for their values but actually be dropped in EXIF updates. See https://github.com/dsoprea/go-exif/issues/26 .
+**This project is modulized and v2 is now available (in v2/). This features a heavily reflowed interface that makes usage much simpler.** The undefined-type tag-processing (which affects most photographic images) has also been overhauled and streamlined. It is now complete and stable. Adoption is strongly encouraged.
 
 
-## Getting
+# Getting
 
 To get the project and dependencies:
 
@@ -21,25 +21,16 @@ $ go get -t github.com/dsoprea/go-exif/v2
 ```
 
 
-## Testing
+# Scope
 
-The traditional method:
-
-```
-$ go test github.com/dsoprea/go-exif/v2
-```
-
-
-## Usage
-
-The package provides a set of [working examples](https://godoc.org/github.com/dsoprea/go-exif/v2#pkg-examples) and is covered by unit-tests. Please look to these for getting familiar with how to read and write EXIF.
-
-In general, this package is concerned only with parsing and encoding raw EXIF data. It does not understand specific file-formats. This package assumes you know how to extract the raw EXIF data from a file, such as a JPEG, and, if you want to update it, know then how to write it back. File-specific formats are not the concern of *go-exif*, though we provide [exif.SearchAndExtractExif](https://godoc.org/github.com/dsoprea/go-exif/v2#SearchAndExtractExif) and [exif.SearchFileAndExtractExif](https://godoc.org/github.com/dsoprea/go-exif/v2#SearchFileAndExtractExif) as brute-force search mechanisms that will help you explore the EXIF information for newer formats that you might not yet have any way to parse.
+This project is concerned only with parsing and encoding raw EXIF data. It does not understand specific file-formats. This package assumes you know how to extract the raw EXIF data from a file, such as a JPEG, and, if you want to update it, know how to write it back. File-specific formats are not the concern of *go-exif*, though we provide [exif.SearchAndExtractExif](https://godoc.org/github.com/dsoprea/go-exif/v2#SearchAndExtractExif) and [exif.SearchFileAndExtractExif](https://godoc.org/github.com/dsoprea/go-exif/v2#SearchFileAndExtractExif) as brute-force search mechanisms that will help you explore the EXIF information for newer formats that you might not yet have any way to parse.
 
 That said, the author also provides [go-jpeg-image-structure](https://github.com/dsoprea/go-jpeg-image-structure) and [go-png-image-structure](https://github.com/dsoprea/go-png-image-structure) to support properly reading and writing JPEG and PNG images. See the [SetExif example in go-jpeg-image-structure](https://godoc.org/github.com/dsoprea/go-jpeg-image-structure#example-SegmentList-SetExif) for practical information on getting started with JPEG files.
 
 
-### Overview
+# Usage
+
+The package provides a set of [working examples](https://godoc.org/github.com/dsoprea/go-exif/v2#pkg-examples) and is covered by unit-tests. Please look to these for getting familiar with how to read and write EXIF.
 
 Create an instance of the `Exif` type and call `Scan()` with a byte-slice, where the first byte is the beginning of the raw EXIF data. You may pass a callback that will be invoked for every tag or `nil` if you do not want one. If no callback is given, you are effectively just validating the structure or parsing of the image.
 
@@ -50,9 +41,9 @@ The library often refers to an IFD with an "IFD path" (e.g. IFD/Exif, IFD/GPSInf
 There is an "IFD mapping" and a "tag index" that must be created and passed to the library from the top. These contain all of the knowledge of the IFD hierarchies and their tag-IDs (the IFD mapping) and the tags that they are allowed to host (the tag index). There are convenience functions to load them with the standard TIFF information, but you, alternatively, may choose something totally different (to support parsing any kind of EXIF data that does not follow or is not relevant to TIFF at all).
 
 
-### Reader Tool
+# Reader Tool
 
-There is a reader implementation included as a runnable tool:
+There is a runnable reading/dumping tool included:
 
 ```
 $ go get github.com/dsoprea/go-exif/v2/exif-read-tool
@@ -96,114 +87,20 @@ Example output:
     },
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD",
-        "ifd_index": 0,
-        "tag_id": 272,
-        "tag_name": "Model",
-        "tag_type_id": 2,
-        "tag_type_name": "ASCII",
-        "unit_count": 22,
-        "value": "Canon EOS 5D Mark III",
-        "value_string": "Canon EOS 5D Mark III"
-    },
 ...
-    {
-        "ifd_path": "IFD/Exif",
-        "fq_ifd_path": "IFD/Exif",
-        "ifd_index": 0,
-        "tag_id": 37121,
-        "tag_name": "ComponentsConfiguration",
-        "tag_type_id": 7,
-        "tag_type_name": "UNDEFINED",
-        "unit_count": 4,
-        "value": {
-            "ConfigurationId": 2,
-            "ConfigurationBytes": "AQIDAA=="
-        },
-        "value_string": "ComponentsConfiguration\u003cID=[YCBCR] BYTES=[1 2 3 0]\u003e"
-    },
-...
-    {
-        "ifd_path": "IFD",
-        "fq_ifd_path": "IFD",
-        "ifd_index": 1,
-        "tag_id": 514,
-        "tag_name": "JPEGInterchangeFormatLength",
-        "tag_type_id": 4,
-        "tag_type_name": "LONG",
-        "unit_count": 1,
-        "value": "21491",
-        "value_string": "21491"
-    }
-]
 ```
 
 
-## Example
+# Testing
 
-```go
-f, err := os.Open(filepathArgument)
-log.PanicIf(err)
+The traditional method:
 
-data, err := ioutil.ReadAll(f)
-log.PanicIf(err)
-
-exifData, err := exif.SearchAndExtractExif(data)
-if err != nil {
-    if err == exif.ErrNoExif {
-        fmt.Printf("EXIF data not found.\n")
-        os.Exit(-1)
-    }
-
-    panic(err)
-}
-
-// Run the parse.
-
-im := exif.NewIfdMappingWithStandard()
-ti := exif.NewTagIndex()
-
-visitor := func(fqIfdPath string, ifdIndex int, tagId uint16, tagType exif.TagType, valueContext exif.ValueContext) (err error) {
-    ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
-    log.PanicIf(err)
-
-    it, err := ti.Get(ifdPath, tagId)
-    if err != nil {
-        if log.Is(err, exif.ErrTagNotFound) {
-            fmt.Printf("WARNING: Unknown tag: [%s] (%04x)\n", ifdPath, tagId)
-            return nil
-        } else {
-            panic(err)
-        }
-    }
-
-    valueString := ""
-    if tagType.Type() == exif.TypeUndefined {
-        value, err := exif.UndefinedValue(ifdPath, tagId, valueContext, tagType.ByteOrder())
-        if log.Is(err, exif.ErrUnhandledUnknownTypedTag) {
-            valueString = "!UNDEFINED!"
-        } else if err != nil {
-            panic(err)
-        } else {
-            valueString = fmt.Sprintf("%v", value)
-        }
-    } else {
-        valueString, err = tagType.ResolveAsString(valueContext, true)
-        if err != nil {
-            panic(err)
-        }
-    }
-
-    fmt.Printf("FQ-IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", fqIfdPath, tagId, it.Name, valueContext.UnitCount, tagType.Name(), valueString)
-    return nil
-}
-
-_, err = exif.Visit(exif.IfdStandard, im, ti, exifData, visitor)
-log.PanicIf(err)
+```
+$ go test github.com/dsoprea/go-exif/v2/...
 ```
 
 
-## *Contributing*
+# *Contributing*
 
 EXIF has an excellently-documented structure but there are a lot of devices and manufacturers out there. There are only so many files that we can personally find to test against, and most of these are images that have been generated only in the past few years. JPEG, being the largest implementor of EXIF, has been around for even longer (but not much). Therefore, there is a lot of compatibility to test for.
 
@@ -211,7 +108,8 @@ EXIF has an excellently-documented structure but there are a lot of devices and 
 
 If you are able to test 100K+ files, I will give you credit on the project. The further back in time your images reach, the higher in the list your name/company will go.
 
-## Contributors/Testing
+
+# Contributors/Testing
 
 Thank you to the following users for providing their non-trivial time or corpus to test go-exif.
 
