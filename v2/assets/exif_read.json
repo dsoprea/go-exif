@@ -248,7 +248,9 @@
         "tag_type_id": 7,
         "tag_type_name": "UNDEFINED",
         "unit_count": 4,
-        "value": {},
+        "value": {
+            "ExifVersion": "0230"
+        },
         "value_string": "0230"
     },
     {
@@ -461,7 +463,9 @@
         "tag_type_id": 7,
         "tag_type_name": "UNDEFINED",
         "unit_count": 4,
-        "value": {},
+        "value": {
+            "FlashpixVersion": "0100"
+        },
         "value_string": "0100"
     },
     {
@@ -541,7 +545,9 @@
         "tag_type_id": 7,
         "tag_type_name": "UNDEFINED",
         "unit_count": 4,
-        "value": {},
+        "value": {
+            "InteropVersion": "0100"
+        },
         "value_string": "0100"
     },
     {

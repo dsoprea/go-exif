@@ -9,7 +9,7 @@ import (
 )
 
 type Tag9000ExifVersion struct {
-	string
+	ExifVersion string
 }
 
 func (Tag9000ExifVersion) EncoderName() string {
@@ -17,7 +17,7 @@ func (Tag9000ExifVersion) EncoderName() string {
 }
 
 func (ev Tag9000ExifVersion) String() string {
-	return ev.string
+	return ev.ExifVersion
 }
 
 type Codec9000ExifVersion struct {
@@ -35,7 +35,7 @@ func (Codec9000ExifVersion) Encode(value interface{}, byteOrder binary.ByteOrder
 		log.Panicf("can only encode a Tag9000ExifVersion")
 	}
 
-	return []byte(s.string), uint32(len(s.string)), nil
+	return []byte(s.ExifVersion), uint32(len(s.ExifVersion)), nil
 }
 
 func (Codec9000ExifVersion) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
@@ -50,7 +50,11 @@ func (Codec9000ExifVersion) Decode(valueContext *exifcommon.ValueContext) (value
 	valueString, err := valueContext.ReadAsciiNoNul()
 	log.PanicIf(err)
 
-	return Tag9000ExifVersion{valueString}, nil
+	ev := Tag9000ExifVersion{
+		ExifVersion: valueString,
+	}
+
+	return ev, nil
 }
 
 func init() {

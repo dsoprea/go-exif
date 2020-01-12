@@ -9,7 +9,7 @@ import (
 )
 
 type TagA000FlashpixVersion struct {
-	string
+	FlashpixVersion string
 }
 
 func (TagA000FlashpixVersion) EncoderName() string {
@@ -17,7 +17,7 @@ func (TagA000FlashpixVersion) EncoderName() string {
 }
 
 func (fv TagA000FlashpixVersion) String() string {
-	return fv.string
+	return fv.FlashpixVersion
 }
 
 type CodecA000FlashpixVersion struct {
@@ -35,7 +35,7 @@ func (CodecA000FlashpixVersion) Encode(value interface{}, byteOrder binary.ByteO
 		log.Panicf("can only encode a TagA000FlashpixVersion")
 	}
 
-	return []byte(s.string), uint32(len(s.string)), nil
+	return []byte(s.FlashpixVersion), uint32(len(s.FlashpixVersion)), nil
 }
 
 func (CodecA000FlashpixVersion) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
@@ -50,7 +50,11 @@ func (CodecA000FlashpixVersion) Decode(valueContext *exifcommon.ValueContext) (v
 	valueString, err := valueContext.ReadAsciiNoNul()
 	log.PanicIf(err)
 
-	return TagA000FlashpixVersion{valueString}, nil
+	fv := TagA000FlashpixVersion{
+		FlashpixVersion: valueString,
+	}
+
+	return fv, nil
 }
 
 func init() {

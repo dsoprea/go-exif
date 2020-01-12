@@ -9,7 +9,7 @@ import (
 )
 
 type Tag0002InteropVersion struct {
-	string
+	InteropVersion string
 }
 
 func (Tag0002InteropVersion) EncoderName() string {
@@ -17,7 +17,7 @@ func (Tag0002InteropVersion) EncoderName() string {
 }
 
 func (iv Tag0002InteropVersion) String() string {
-	return iv.string
+	return iv.InteropVersion
 }
 
 type Codec0002InteropVersion struct {
@@ -35,7 +35,7 @@ func (Codec0002InteropVersion) Encode(value interface{}, byteOrder binary.ByteOr
 		log.Panicf("can only encode a Tag0002InteropVersion")
 	}
 
-	return []byte(s.string), uint32(len(s.string)), nil
+	return []byte(s.InteropVersion), uint32(len(s.InteropVersion)), nil
 }
 
 func (Codec0002InteropVersion) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
@@ -50,7 +50,11 @@ func (Codec0002InteropVersion) Decode(valueContext *exifcommon.ValueContext) (va
 	valueString, err := valueContext.ReadAsciiNoNul()
 	log.PanicIf(err)
 
-	return Tag0002InteropVersion{valueString}, nil
+	iv := Tag0002InteropVersion{
+		InteropVersion: valueString,
+	}
+
+	return iv, nil
 }
 
 func init() {
