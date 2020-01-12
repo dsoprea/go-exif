@@ -51,7 +51,7 @@ func TestCodec9286UserComment_Encode(t *testing.T) {
 	}
 
 	if unitCount != uint32(len(encoded)) {
-		t.Fatalf("Unit-couunt not correct: (%d)", unitCount)
+		t.Fatalf("Unit-count not correct: (%d)", unitCount)
 	}
 
 	exifcommon.DumpBytesClause(encoded)

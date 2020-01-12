@@ -17,7 +17,7 @@ func (TagExifA301SceneType) EncoderName() string {
 }
 
 func (st TagExifA301SceneType) String() string {
-	return fmt.Sprintf("%d", st)
+	return fmt.Sprintf("0x%08x", uint32(st))
 }
 
 const (

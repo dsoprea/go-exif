@@ -49,7 +49,7 @@ func (CodecExifA300FileSource) Encode(value interface{}, byteOrder binary.ByteOr
 
 	// TODO(dustin): Confirm this size against the specification. It's non-specific about what type it is, but it looks to be no more than a single integer scalar. So, we're assuming it's a LONG.
 
-	return ed.Encoded, uint32(int(ed.UnitCount)), nil
+	return ed.Encoded, 1, nil
 }
 
 func (CodecExifA300FileSource) Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {

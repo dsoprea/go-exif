@@ -34,7 +34,7 @@ func TestCodecExifA300FileSource_Encode(t *testing.T) {
 
 		t.Fatalf("Encoding not correct.")
 	} else if unitCount != 1 {
-		t.Fatalf("Unit-couunt not correct: (%d)", unitCount)
+		t.Fatalf("Unit-count not correct: (%d)", unitCount)
 	}
 }
 

@@ -22,7 +22,7 @@ func (TagA302CfaPattern) EncoderName() string {
 }
 
 func (cp TagA302CfaPattern) String() string {
-	return fmt.Sprintf("TagA302CfaPattern<HORZ-REPEAT=(%d) VERT-REPEAT=(%d)>", cp.HorizontalRepeat, cp.VerticalRepeat)
+	return fmt.Sprintf("TagA302CfaPattern<HORZ-REPEAT=(%d) VERT-REPEAT=(%d) CFA-VALUE=(%d)>", cp.HorizontalRepeat, cp.VerticalRepeat, len(cp.CfaValue))
 }
 
 type CodecA302CfaPattern struct {

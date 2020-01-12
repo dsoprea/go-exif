@@ -10,56 +10,52 @@ import (
 	"github.com/dsoprea/go-exif/v2/common"
 )
 
-func TestTagA000FlashpixVersion_String(t *testing.T) {
-	versionPhrase := "some version"
-
-	ut := TagA000FlashpixVersion{versionPhrase}
+func TestTagExifA301SceneType_String(t *testing.T) {
+	ut := TagExifA301SceneType(0x1234)
 
 	s := ut.String()
-	if s != versionPhrase {
+	if s != "0x00001234" {
 		t.Fatalf("String not correct: [%s]", s)
 	}
 }
 
-func TestCodecA000FlashpixVersion_Encode(t *testing.T) {
-	versionPhrase := "some version"
+func TestCodecExifA301SceneType_Encode(t *testing.T) {
+	ut := TagExifA301SceneType(0x1234)
 
-	ut := TagA000FlashpixVersion{versionPhrase}
-
-	codec := CodecA000FlashpixVersion{}
+	codec := CodecExifA301SceneType{}
 
 	encoded, unitCount, err := codec.Encode(ut, exifcommon.TestDefaultByteOrder)
 	log.PanicIf(err)
 
-	if bytes.Equal(encoded, []byte(versionPhrase)) != true {
+	expectedEncoded := []byte{0, 0, 0x12, 0x34}
+
+	if bytes.Equal(encoded, expectedEncoded) != true {
 		exifcommon.DumpBytesClause(encoded)
 
 		t.Fatalf("Encoding not correct.")
-	} else if unitCount != uint32(len(encoded)) {
+	} else if unitCount != 1 {
 		t.Fatalf("Unit-count not correct: (%d)", unitCount)
 	}
 }
 
-func TestCodecA000FlashpixVersion_Decode(t *testing.T) {
-	versionPhrase := "some version"
+func TestCodecExifA301SceneType_Decode(t *testing.T) {
+	expectedUt := TagExifA301SceneType(0x1234)
 
-	expectedUt := TagA000FlashpixVersion{versionPhrase}
+	encoded := []byte{0, 0, 0x12, 0x34}
 
-	encoded := []byte(versionPhrase)
-
-	addressableBytes := encoded
+	rawValueOffset := encoded
 
 	valueContext := exifcommon.NewValueContext(
 		"",
 		0,
-		uint32(len(encoded)),
+		1,
 		0,
+		rawValueOffset,
 		nil,
-		addressableBytes,
 		exifcommon.TypeUndefined,
 		exifcommon.TestDefaultByteOrder)
 
-	codec := CodecA000FlashpixVersion{}
+	codec := CodecExifA301SceneType{}
 
 	decoded, err := codec.Decode(valueContext)
 	log.PanicIf(err)
