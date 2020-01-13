@@ -45,7 +45,7 @@ func Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err e
 	if found == false {
 		// We have no choice but to return the error. We have no way of knowing how
 		// much data there is without already knowing what data-type this tag is.
-		return nil, exifcommon.ErrUnhandledUnknownTypedTag
+		return nil, exifcommon.ErrUnhandledUndefinedTypedTag
 	}
 
 	value, err = decoder.Decode(valueContext)

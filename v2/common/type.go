@@ -25,10 +25,10 @@ var (
     // current type.
     ErrWrongType = errors.New("wrong type, can not parse")
 
-    // ErrUnhandledUnknownTypedTag is used when we try to parse a tag that's
+    // ErrUnhandledUndefinedTypedTag is used when we try to parse a tag that's
     // recorded as an "unknown" type but not a documented tag (therefore
     // leaving us not knowning how to read it).
-    ErrUnhandledUnknownTypedTag = errors.New("not a standard unknown-typed tag")
+    ErrUnhandledUndefinedTypedTag = errors.New("not a standard unknown-typed tag")
 )
 
 // TagTypePrimitive is a type-alias that let's us easily lookup type properties.

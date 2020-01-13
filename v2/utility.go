@@ -131,7 +131,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 
             value, err := ite.Value()
             if err != nil {
-                if err == exifcommon.ErrUnhandledUnknownTypedTag {
+                if err == exifcommon.ErrUnhandledUndefinedTypedTag {
                     value = exifundefined.UnparseableUnknownTagValuePlaceholder
                 } else {
                     log.Panic(err)
