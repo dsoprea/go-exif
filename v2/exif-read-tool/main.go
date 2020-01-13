@@ -46,26 +46,6 @@ type IfdEntry struct {
 	ValueString string                      `json:"value_string"`
 }
 
-type visitorFn func(fqIfdPath string, ifdIndex int, ite *exif.IfdTagEntry) (err error)
-
-type visitorWrapper struct {
-	visitor visitorFn
-}
-
-func (vw *visitorWrapper) Visit(fqIfdPath string, ifdIndex int, ite *exif.IfdTagEntry) (err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-			log.Panic(err)
-		}
-	}()
-
-	err = vw.visitor(fqIfdPath, ifdIndex, ite)
-	log.PanicIf(err)
-
-	return nil
-}
-
 func main() {
 	defer func() {
 		if state := recover(); state != nil {
@@ -154,9 +134,7 @@ func main() {
 		return nil
 	}
 
-	vw := &visitorWrapper{visitor}
-
-	_, err = exif.Visit(exifcommon.IfdStandard, im, ti, rawExif, vw)
+	_, err = exif.Visit(exifcommon.IfdStandard, im, ti, rawExif, visitor)
 	log.PanicIf(err)
 
 	if printAsJsonArg == true {

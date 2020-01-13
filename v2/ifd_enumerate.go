@@ -205,19 +205,12 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, enumerator *
 	return ite, nil
 }
 
-// RawTagWalk is an optional callback that can get hit for every tag we parse
-// through. `addressableData` is the byte array startign after the EXIF header
-// (where the offsets of all IFDs and values are calculated from).
-//
-// This was reimplemented as an interface to allow for simpler change management
-// in the future.
-type RawTagWalk interface {
-	Visit(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
-}
+// TagVisitorFn is called for each tag when enumerating through the EXIF.
+type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *IfdTagEnumerator, visitor RawTagWalk, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *IfdTagEnumerator, visitor TagVisitorFn, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -256,7 +249,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *Ifd
 		}
 
 		if visitor != nil {
-			err := visitor.Visit(fqIfdPath, ifdIndex, ite)
+			err := visitor(fqIfdPath, ifdIndex, ite)
 			log.PanicIf(err)
 		}
 
@@ -316,7 +309,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 }
 
 // Scan enumerates the different EXIF's IFD blocks.
-func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor RawTagWalk) (err error) {
+func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -342,7 +335,7 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor RawTagW
 
 // Scan enumerates the different EXIF blocks (called IFDs). `rootIfdName` will
 // be "IFD" in the TIFF standard.
-func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor RawTagWalk) (err error) {
+func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -1102,7 +1095,7 @@ func (ie *IfdEnumerate) setChildrenIndex(ifd *Ifd) (err error) {
 
 // ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
 // testing.
-func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath string, byteOrder binary.ByteOrder, ifdBlock []byte, visitor RawTagWalk) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
+func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath string, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitorFn) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

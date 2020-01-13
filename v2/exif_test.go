@@ -15,16 +15,6 @@ import (
 	"github.com/dsoprea/go-exif/v2/common"
 )
 
-type innerVisitorCall func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
-
-type visitorWrapper struct {
-	f innerVisitorCall
-}
-
-func (vw *visitorWrapper) Visit(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
-	return vw.f(fqIfdPath, ifdIndex, ite)
-}
-
 func TestVisit(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -105,11 +95,7 @@ func TestVisit(t *testing.T) {
 		return nil
 	}
 
-	vw := &visitorWrapper{
-		f: visitor,
-	}
-
-	_, err = Visit(exifcommon.IfdStandard, im, ti, data[foundAt:], vw)
+	_, err = Visit(exifcommon.IfdStandard, im, ti, data[foundAt:], visitor)
 	log.PanicIf(err)
 
 	expected := []string{
