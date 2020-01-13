@@ -1,6 +1,3 @@
-github.com/dsoprea/go-exif v0.0.0-20200102050106-254a6b902a75 h1:WeCZb0AeChtLIgHhVtGOuJmomEYgEzckxkzSnfuubzc=
-github.com/dsoprea/go-exif v0.0.0-20200102050106-254a6b902a75/go.mod h1:lOaOt7+UEppOgyvRy749v3do836U/hw0YVJNjoyPaEs=
-github.com/dsoprea/go-exif v0.0.0-20200102120628-74567945ac68 h1:A7DoYvhnDGMhePdmSGyoCWhH5pW0VHgT2E6dEJRlzlo=
 github.com/dsoprea/go-logging v0.0.0-20190624164917-c4f10aab7696 h1:VGFnZAcLwPpt1sHlAxml+pGLZz9A2s+K/s1YNhPC91Y=
 github.com/dsoprea/go-logging v0.0.0-20190624164917-c4f10aab7696/go.mod h1:Nm/x2ZUNRW6Fe5C3LxdY1PyZY5wmDv/s5dkPJ/VB3iA=
 github.com/go-errors/errors v1.0.1 h1:LUHzmkK3GUKUrL/1gfBUxAHzcev3apQlezX/+O7ma6w=
