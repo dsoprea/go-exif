@@ -22,6 +22,8 @@ func TestIfdTagEntry_RawBytes_RealData(t *testing.T) {
 		}
 	}()
 
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -61,6 +63,7 @@ func TestIfdTagEntry_RawBytes_RealData(t *testing.T) {
 }
 
 func TestIfd_FindTagWithId_Hit(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -85,6 +88,8 @@ func TestIfd_FindTagWithId_Hit(t *testing.T) {
 }
 
 func TestIfd_FindTagWithId_Miss(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -109,6 +114,8 @@ func TestIfd_FindTagWithId_Miss(t *testing.T) {
 }
 
 func TestIfd_FindTagWithName_Hit(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -133,6 +140,8 @@ func TestIfd_FindTagWithName_Hit(t *testing.T) {
 }
 
 func TestIfd_FindTagWithName_Miss(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -157,6 +166,8 @@ func TestIfd_FindTagWithName_Miss(t *testing.T) {
 }
 
 func TestIfd_FindTagWithName_NonStandard(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -181,6 +192,8 @@ func TestIfd_FindTagWithName_NonStandard(t *testing.T) {
 }
 
 func TestIfd_Thumbnail(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -257,6 +270,8 @@ func TestIfd_GpsInfo(t *testing.T) {
 }
 
 func TestIfd_EnumerateTagsRecursively(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -413,6 +428,8 @@ func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 }
 
 func ExampleIfd_EnumerateTagsRecursively() {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -468,6 +485,8 @@ func ExampleIfd_GpsInfo() {
 }
 
 func ExampleIfd_FindTagWithName() {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 

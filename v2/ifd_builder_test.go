@@ -1293,6 +1293,8 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 		}
 	}()
 
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -1386,6 +1388,8 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 // TODO(dustin): !! Test with an actual GPS-attached image.
 
 func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -1507,6 +1511,8 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 }
 
 // func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
+//	testImageFilepath := getTestImageFilepath()
+
 // 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 // 	log.PanicIf(err)
 
@@ -1644,6 +1650,8 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 // }
 
 func ExampleIfd_Thumbnail() {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -1665,6 +1673,8 @@ func ExampleIfd_Thumbnail() {
 }
 
 func ExampleBuilderTag_SetValue() {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
@@ -1718,6 +1728,8 @@ func ExampleBuilderTag_SetValue() {
 // encodes down to a new EXIF block, reparses, and validates that the value for
 // that tag is what we set it to.
 func ExampleIfdBuilder_SetStandardWithName() {
+	testImageFilepath := getTestImageFilepath()
+
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 

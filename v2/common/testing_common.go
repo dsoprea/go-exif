@@ -13,8 +13,8 @@ import (
 var (
 	assetsPath        = ""
 	testImageFilepath = ""
-
-	testExifData = make([]byte, 0)
+	testExifData      = make([]byte, 0)
+	moduleRootPath    = ""
 
 	// EncodeDefaultByteOrder is the default byte-order for encoding operations.
 	EncodeDefaultByteOrder = binary.BigEndian
@@ -24,6 +24,10 @@ var (
 )
 
 func GetModuleRootPath() string {
+	if moduleRootPath != "" {
+		return moduleRootPath
+	}
+
 	moduleRootPath := os.Getenv("EXIF_MODULE_ROOT_PATH")
 	if moduleRootPath != "" {
 		return moduleRootPath
@@ -56,17 +60,32 @@ func GetModuleRootPath() string {
 	return currentPath
 }
 
-func init() {
-	moduleRootPath := GetModuleRootPath()
-	assetsPath = path.Join(moduleRootPath, "assets")
+func getTestAssetsPath() string {
+	if assetsPath == "" {
+		moduleRootPath := GetModuleRootPath()
+		assetsPath = path.Join(moduleRootPath, "assets")
+	}
 
-	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
+	return assetsPath
+}
 
-	// Load test EXIF data.
+func getTestImageFilepath() string {
+	if testImageFilepath == "" {
+		assetsPath := getTestAssetsPath()
+		testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
+	}
 
+	return testImageFilepath
+}
+
+func getTestExifData() []byte {
+	assetsPath := getTestAssetsPath()
 	filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
 
 	var err error
+
 	testExifData, err = ioutil.ReadFile(filepath)
 	log.PanicIf(err)
+
+	return testExifData
 }

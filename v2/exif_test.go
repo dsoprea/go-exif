@@ -39,6 +39,8 @@ func TestVisit(t *testing.T) {
 
 	// Open the file.
 
+	testImageFilepath := getTestImageFilepath()
+
 	f, err := os.Open(testImageFilepath)
 	log.PanicIf(err)
 
@@ -194,10 +196,14 @@ func TestVisit(t *testing.T) {
 }
 
 func TestSearchFileAndExtractExif(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	// Returns a slice starting with the EXIF data and going to the end of the
 	// image.
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
+
+	testExifData := getTestExifData()
 
 	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
 		t.Fatalf("found EXIF data not correct")
@@ -205,11 +211,15 @@ func TestSearchFileAndExtractExif(t *testing.T) {
 }
 
 func TestSearchAndExtractExif(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
 	imageData, err := ioutil.ReadFile(testImageFilepath)
 	log.PanicIf(err)
 
 	rawExif, err := SearchAndExtractExif(imageData)
 	log.PanicIf(err)
+
+	testExifData := getTestExifData()
 
 	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
 		t.Fatalf("found EXIF data not correct")
@@ -225,6 +235,8 @@ func TestCollect(t *testing.T) {
 			t.Fatalf("Test failure.")
 		}
 	}()
+
+	testImageFilepath := getTestImageFilepath()
 
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
@@ -341,6 +353,8 @@ func TestCollect(t *testing.T) {
 }
 
 func TestParseExifHeader(t *testing.T) {
+	testExifData := getTestExifData()
+
 	eh, err := ParseExifHeader(testExifData)
 	log.PanicIf(err)
 

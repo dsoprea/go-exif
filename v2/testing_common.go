@@ -158,17 +158,32 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 	}
 }
 
-func init() {
-	moduleRootPath := exifcommon.GetModuleRootPath()
-	assetsPath = path.Join(moduleRootPath, "assets")
+func getTestAssetsPath() string {
+	if assetsPath == "" {
+		moduleRootPath := exifcommon.GetModuleRootPath()
+		assetsPath = path.Join(moduleRootPath, "assets")
+	}
 
-	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
+	return assetsPath
+}
 
-	// Load test EXIF data.
+func getTestImageFilepath() string {
+	if testImageFilepath == "" {
+		assetsPath := getTestAssetsPath()
+		testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
+	}
 
+	return testImageFilepath
+}
+
+func getTestExifData() []byte {
+	assetsPath := getTestAssetsPath()
 	filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
 
 	var err error
+
 	testExifData, err = ioutil.ReadFile(filepath)
 	log.PanicIf(err)
+
+	return testExifData
 }
