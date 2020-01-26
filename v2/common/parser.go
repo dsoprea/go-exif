@@ -8,6 +8,10 @@ import (
 	"github.com/dsoprea/go-logging"
 )
 
+var (
+	parserLogger = log.NewLogger("exifcommon.parser")
+)
+
 // Parser knows how to parse all well-defined, encoded EXIF types.
 type Parser struct {
 }
@@ -50,8 +54,10 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 	}
 
 	if len(data) == 0 || data[count-1] != 0 {
-		log.Panicf("ascii not terminated with nul as expected")
-		return "", nil
+		s := string(data[:count])
+		parserLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
+
+		return s, nil
 	} else {
 		// Auto-strip the NUL from the end. It serves no purpose outside of
 		// encoding semantics.
