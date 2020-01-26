@@ -31,6 +31,8 @@ func TestMain(t *testing.T) {
 	cmd.Stderr = b
 
 	err := cmd.Run()
+	log.PanicIf(err)
+
 	actual := b.String()
 
 	if err != nil {
