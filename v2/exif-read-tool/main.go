@@ -78,7 +78,14 @@ func main() {
 	log.PanicIf(err)
 
 	rawExif, err := exif.SearchAndExtractExif(data)
-	log.PanicIf(err)
+	if err != nil {
+		if err == exif.ErrNoExif {
+			fmt.Printf("No EXIF data.\n")
+			os.Exit(1)
+		}
+
+		log.Panic(err)
+	}
 
 	// Run the parse.
 
