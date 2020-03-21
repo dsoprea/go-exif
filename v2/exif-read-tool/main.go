@@ -118,7 +118,14 @@ func main() {
 		}
 
 		value, err := ite.Value()
-		log.PanicIf(err)
+		if err != nil {
+			if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) == true {
+				fmt.Printf("WARNING: Non-standard undefined tag: [%s] (%04x)\n", ifdPath, tagId)
+				return nil
+			}
+
+			log.Panic(err)
+		}
 
 		valueString, err := ite.FormatFirst()
 		log.PanicIf(err)
