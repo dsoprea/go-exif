@@ -1,6 +1,8 @@
 package exifundefined
 
 import (
+	"errors"
+
 	"encoding/binary"
 
 	"github.com/dsoprea/go-exif/v2/common"
@@ -8,6 +10,10 @@ import (
 
 const (
 	UnparseableUnknownTagValuePlaceholder = "!UNKNOWN"
+)
+
+var (
+	ErrUnparseableValue = errors.New("unparseable undefined tag")
 )
 
 // UndefinedValueEncoder knows how to encode an undefined-type tag's value to

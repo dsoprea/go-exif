@@ -49,7 +49,13 @@ func Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err e
 	}
 
 	value, err = decoder.Decode(valueContext)
-	log.PanicIf(err)
+	if err != nil {
+		if err == ErrUnparseableValue {
+			return nil, err
+		}
+
+		log.Panic(err)
+	}
 
 	return value, nil
 }

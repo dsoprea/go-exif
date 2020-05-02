@@ -113,6 +113,8 @@ func (ite *IfdTagEntry) GetRawBytes() (rawBytes []byte, err error) {
 		if err != nil {
 			if err == exifcommon.ErrUnhandledUndefinedTypedTag {
 				ite.setIsUnhandledUnknown(true)
+			} else if err == exifundefined.ErrUnparseableValue {
+				return nil, err
 			} else {
 				log.Panic(err)
 			}
@@ -148,7 +150,7 @@ func (ite *IfdTagEntry) Value() (value interface{}, err error) {
 
 		value, err = exifundefined.Decode(valueContext)
 		if err != nil {
-			if err == exifcommon.ErrUnhandledUndefinedTypedTag {
+			if err == exifcommon.ErrUnhandledUndefinedTypedTag || err == exifundefined.ErrUnparseableValue {
 				return nil, err
 			}
 

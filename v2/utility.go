@@ -127,7 +127,13 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
             }
 
             valueBytes, err := ite.GetRawBytes()
-            log.PanicIf(err)
+            if err != nil {
+                if err == exifundefined.ErrUnparseableValue {
+                    continue
+                }
+
+                log.Panic(err)
+            }
 
             value, err := ite.Value()
             if err != nil {
