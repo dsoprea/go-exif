@@ -25,6 +25,11 @@ import (
 
 	"github.com/dsoprea/go-exif/v2"
 	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v2/undefined"
+)
+
+var (
+	mainLogger = log.NewLogger("main.main")
 )
 
 var (
@@ -69,6 +74,11 @@ func main() {
 	if printLoggingArg == true {
 		cla := log.NewConsoleLogAdapter()
 		log.AddAdapter("console", cla)
+
+		scp := log.NewStaticConfigurationProvider()
+		scp.SetLevelName(log.LevelNameDebug)
+
+		log.LoadConfiguration(scp)
 	}
 
 	f, err := os.Open(filepathArg)
@@ -110,7 +120,7 @@ func main() {
 		it, err := ti.Get(ifdPath, tagId)
 		if err != nil {
 			if log.Is(err, exif.ErrTagNotFound) {
-				fmt.Printf("WARNING: Unknown tag: [%s] (%04x)\n", ifdPath, tagId)
+				mainLogger.Warningf(nil, "Unknown tag: [%s] (%04x)", ifdPath, tagId)
 				return nil
 			} else {
 				log.Panic(err)
@@ -120,7 +130,7 @@ func main() {
 		value, err := ite.Value()
 		if err != nil {
 			if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) == true {
-				fmt.Printf("WARNING: Non-standard undefined tag: [%s] (%04x)\n", ifdPath, tagId)
+				mainLogger.Warningf(nil, "Non-standard undefined tag: [%s] (%04x)", ifdPath, tagId)
 				return nil
 			}
 
