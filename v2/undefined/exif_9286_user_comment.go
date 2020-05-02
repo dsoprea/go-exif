@@ -105,6 +105,10 @@ func (Codec9286UserComment) Decode(valueContext *exifcommon.ValueContext) (value
     valueBytes, err := valueContext.ReadBytes()
     log.PanicIf(err)
 
+    if len(valueBytes) < 8 {
+        return nil, ErrUnparseableValue
+    }
+
     unknownUc := Tag9286UserComment{
         EncodingType:  TagUndefinedType_9286_UserComment_Encoding_UNDEFINED,
         EncodingBytes: []byte{},
