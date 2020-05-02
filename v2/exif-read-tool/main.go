@@ -130,7 +130,10 @@ func main() {
 		value, err := ite.Value()
 		if err != nil {
 			if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) == true {
-				mainLogger.Warningf(nil, "Non-standard undefined tag: [%s] (%04x)", ifdPath, tagId)
+				mainLogger.Warningf(nil, "Skipping non-standard undefined tag: [%s] (%04x)", ifdPath, tagId)
+				return nil
+			} else if err == exifundefined.ErrUnparseableValue {
+				mainLogger.Warningf(nil, "Skipping unparseable undefined tag: [%s] (%04x)", ifdPath, tagId)
 				return nil
 			}
 
