@@ -13,6 +13,7 @@ import (
 	"github.com/dsoprea/go-logging"
 
 	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
 var (
@@ -557,7 +558,17 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 				var err error
 
 				valuePhrase, err = ite.Format()
-				log.PanicIf(err)
+				if err != nil {
+					if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) == true {
+						ifdEnumerateLogger.Warningf(nil, "Skipping non-standard undefined tag: [%s] (%04x)", ifd.IfdPath, ite.TagId())
+						continue
+					} else if err == exifundefined.ErrUnparseableValue {
+						ifdEnumerateLogger.Warningf(nil, "Skipping unparseable undefined tag: [%s] (%04x) [%s]", ifd.IfdPath, ite.TagId(), it.Name)
+						continue
+					}
+
+					log.Panic(err)
+				}
 			} else {
 				valuePhrase = "!UNRESOLVED"
 			}

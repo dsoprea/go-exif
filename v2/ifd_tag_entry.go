@@ -178,6 +178,8 @@ func (ite *IfdTagEntry) Format() (phrase string, err error) {
 	if err != nil {
 		if err == exifcommon.ErrUnhandledUndefinedTypedTag {
 			return exifundefined.UnparseableUnknownTagValuePlaceholder, nil
+		} else if err == exifundefined.ErrUnparseableValue {
+			return exifundefined.UnparseableHandledTagValuePlaceholder, nil
 		}
 
 		log.Panic(err)
