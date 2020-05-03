@@ -111,6 +111,6 @@ If you are able to test 100K+ files, I will give you credit on the project. The 
 
 # Contributors/Testing
 
-Thank you to the following users for providing their non-trivial time or corpus to test go-exif.
+Thank you to the following users for solving non-trivial issues, supporting the project with solving edge-case problems in specific images, or otherwise providing their non-trivial time or image corpus to test go-exif:
 
 - [philip-firstorder](https://github.com/philip-firstorder) (200K images)
