@@ -50,8 +50,7 @@ var (
 func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
-			err := log.Wrap(state.(error))
-			log.Panic(err)
+			err = log.Wrap(state.(error))
 		}
 	}()
 
@@ -75,8 +74,7 @@ func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
 func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
-			err := log.Wrap(state.(error))
-			log.Panic(err)
+			err = log.Wrap(state.(error))
 		}
 	}()
 
@@ -126,8 +124,7 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 func SearchFileAndExtractExif(filepath string) (rawExif []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
-			err := log.Wrap(state.(error))
-			log.Panic(err)
+			err = log.Wrap(state.(error))
 		}
 	}()
 
