@@ -1,9 +1,11 @@
 package exif
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"encoding/binary"
@@ -26,6 +28,12 @@ const (
 	ExifDefaultFirstIfdOffset = uint32(2 + 2 + 4)
 )
 
+const (
+	// ExifSignatureLength is the number of bytes in the EXIF signature (which
+	// customarily includes the first IFD offset).
+	ExifSignatureLength = 8
+)
+
 var (
 	exifLogger = log.NewLogger("exif.exif")
 
@@ -38,9 +46,7 @@ var (
 	ErrExifHeaderError = errors.New("exif header error")
 )
 
-// SearchAndExtractExif returns a slice from the beginning of the EXIF data to
-// end of the file (it's not practical to try and calculate where the data
-// actually ends; it needs to be formally parsed).
+// SearchAndExtractExif searches for an EXIF blob in the byte-slice.
 func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -49,24 +55,69 @@ func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
 		}
 	}()
 
-	// Search for the beginning of the EXIF information. The EXIF is near the
-	// beginning of our/most JPEGs, so this has a very low cost.
+	b := bytes.NewBuffer(data)
 
-	foundAt := -1
-	for i := 0; i < len(data); i++ {
-		if _, err := ParseExifHeader(data[i:]); err == nil {
-			foundAt = i
-			break
-		} else if log.Is(err, ErrNoExif) == false {
+	rawExif, err = SearchAndExtractExifWithReader(b)
+	if err != nil {
+		if err == ErrNoExif {
 			return nil, err
 		}
+
+		log.Panic(err)
 	}
 
-	if foundAt == -1 {
-		return nil, ErrNoExif
+	return rawExif, nil
+}
+
+// SearchAndExtractExifWithReader searches for an EXIF blob using an
+// `io.Reader`. We can't know how much long the EXIF data is without parsing it,
+// so this will likely grab up a lot of the image-data, too.
+func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err := log.Wrap(state.(error))
+			log.Panic(err)
+		}
+	}()
+
+	// Search for the beginning of the EXIF information. The EXIF is near the
+	// beginning of most JPEGs, so this likely doesn't have a high cost (at
+	// least, again, with JPEGs).
+
+	br := bufio.NewReader(r)
+
+	for {
+		window, err := br.Peek(ExifSignatureLength)
+		if err != nil {
+			if err == io.EOF {
+				return nil, ErrNoExif
+			}
+
+			log.Panic(err)
+		}
+
+		_, err = ParseExifHeader(window)
+		if err != nil {
+			if log.Is(err, ErrNoExif) == true {
+				// No EXIF. Move forward by one byte.
+
+				_, err := br.Discard(1)
+				log.PanicIf(err)
+
+				continue
+			}
+
+			// Some other error.
+			log.Panic(err)
+		}
+
+		break
 	}
 
-	return data[foundAt:], nil
+	rawExif, err = ioutil.ReadAll(br)
+	log.PanicIf(err)
+
+	return rawExif, nil
 }
 
 // SearchFileAndExtractExif returns a slice from the beginning of the EXIF data
@@ -87,10 +138,7 @@ func SearchFileAndExtractExif(filepath string) (rawExif []byte, err error) {
 
 	defer f.Close()
 
-	data, err := ioutil.ReadAll(f)
-	log.PanicIf(err)
-
-	rawExif, err = SearchAndExtractExif(data)
+	rawExif, err = SearchAndExtractExifWithReader(f)
 	log.PanicIf(err)
 
 	return rawExif, nil
