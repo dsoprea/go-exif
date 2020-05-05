@@ -29,23 +29,8 @@ const (
 var (
 	exifLogger = log.NewLogger("exif.exif")
 
-	BigEndianBoBytes    = [2]byte{'M', 'M'}
-	LittleEndianBoBytes = [2]byte{'I', 'I'}
-
-	ByteOrderLookup = map[[2]byte]binary.ByteOrder{
-		BigEndianBoBytes:    binary.BigEndian,
-		LittleEndianBoBytes: binary.LittleEndian,
-	}
-
-	ByteOrderLookupR = map[binary.ByteOrder][2]byte{
-		binary.BigEndian:    BigEndianBoBytes,
-		binary.LittleEndian: LittleEndianBoBytes,
-	}
-
-	ExifFixedBytesLookup = map[binary.ByteOrder][2]byte{
-		binary.LittleEndian: [2]byte{0x2a, 0x00},
-		binary.BigEndian:    [2]byte{0x00, 0x2a},
-	}
+	ExifBigEndianSignature    = [4]byte{'M', 'M', 0x00, 0x2a}
+	ExifLittleEndianSignature = [4]byte{'I', 'I', 0x2a, 0x00}
 )
 
 var (
@@ -136,42 +121,20 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	//      CIPA DC-008-2016; JEITA CP-3451D
 	//      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
-	if len(data) < 2 {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header (1): (%d)", len(data))
+	if len(data) < 8 {
+		exifLogger.Warningf(nil, "Not enough data for EXIF header: (%d)", len(data))
 		return eh, ErrNoExif
 	}
 
-	byteOrderBytes := [2]byte{data[0], data[1]}
-
-	byteOrder, found := ByteOrderLookup[byteOrderBytes]
-	if found == false {
-		// exifLogger.Warningf(nil, "EXIF byte-order not recognized: [%v]", byteOrderBytes)
+	if bytes.Equal(data[:4], ExifBigEndianSignature[:]) == true {
+		eh.ByteOrder = binary.BigEndian
+	} else if bytes.Equal(data[:4], ExifLittleEndianSignature[:]) == true {
+		eh.ByteOrder = binary.LittleEndian
+	} else {
 		return eh, ErrNoExif
 	}
 
-	if len(data) < 4 {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header (2): (%d)", len(data))
-		return eh, ErrNoExif
-	}
-
-	fixedBytes := [2]byte{data[2], data[3]}
-	expectedFixedBytes := ExifFixedBytesLookup[byteOrder]
-	if fixedBytes != expectedFixedBytes {
-		// exifLogger.Warningf(nil, "EXIF header fixed-bytes should be [%v] but are: [%v]", expectedFixedBytes, fixedBytes)
-		return eh, ErrNoExif
-	}
-
-	if len(data) < 2 {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header (3): (%d)", len(data))
-		return eh, ErrNoExif
-	}
-
-	firstIfdOffset := byteOrder.Uint32(data[4:8])
-
-	eh = ExifHeader{
-		ByteOrder:      byteOrder,
-		FirstIfdOffset: firstIfdOffset,
-	}
+	eh.FirstIfdOffset = eh.ByteOrder.Uint32(data[4:8])
 
 	return eh, nil
 }
@@ -214,7 +177,7 @@ func Collect(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte) (eh Ex
 	return eh, index, nil
 }
 
-// BuildExifHeader constructs the bytes that go in the very beginning.
+// BuildExifHeader constructs the bytes that go at the front of the stream.
 func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerBytes []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -224,14 +187,14 @@ func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerB
 
 	b := new(bytes.Buffer)
 
-	// This is the point in the data that all offsets are relative to.
-	boBytes := ByteOrderLookupR[byteOrder]
-	_, err = b.WriteString(string(boBytes[:]))
-	log.PanicIf(err)
+	var signatureBytes []byte
+	if byteOrder == binary.BigEndian {
+		signatureBytes = ExifBigEndianSignature[:]
+	} else {
+		signatureBytes = ExifLittleEndianSignature[:]
+	}
 
-	fixedBytes := ExifFixedBytesLookup[byteOrder]
-
-	_, err = b.Write(fixedBytes[:])
+	_, err = b.Write(signatureBytes)
 	log.PanicIf(err)
 
 	err = binary.Write(b, byteOrder, firstIfdOffset)
