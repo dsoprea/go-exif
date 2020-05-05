@@ -235,7 +235,7 @@ func TestIfd_GpsInfo(t *testing.T) {
 		}
 	}()
 
-	filepath := path.Join(assetsPath, "gps.jpg")
+	filepath := getTestGpsImageFilepath()
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
@@ -457,7 +457,7 @@ func ExampleIfd_EnumerateTagsRecursively() {
 }
 
 func ExampleIfd_GpsInfo() {
-	filepath := path.Join(assetsPath, "gps.jpg")
+	filepath := getTestGpsImageFilepath()
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)

@@ -1285,7 +1285,7 @@ func TestIfdBuilder_DeleteAll(t *testing.T) {
 	}
 }
 
-func TestIfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
+func TestIfdBuilder_NewIfdBuilderFromExistingChain(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
@@ -1385,9 +1385,171 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain(t *testing.T) {
 	}
 }
 
-// TODO(dustin): !! Test with an actual GPS-attached image.
+func TestIfdBuilder_NewIfdBuilderFromExistingChain_updateGps(t *testing.T) {
+	defer func() {
+		if state := recover(); state != nil {
+			err := log.Wrap(state.(error))
+			log.PrintErrorf(err, "Test failure.")
+		}
+	}()
 
-func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
+	// Check initial value.
+
+	filepath := getTestGpsImageFilepath()
+
+	rawExif, err := SearchFileAndExtractExif(filepath)
+	log.PanicIf(err)
+
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	rootIfd := index.RootIfd
+
+	gpsIfd, err := rootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	log.PanicIf(err)
+
+	initialGi, err := gpsIfd.GpsInfo()
+	log.PanicIf(err)
+
+	initialGpsLatitudePhrase := "Degrees<O=[N] D=(26) M=(35) S=(12)>"
+
+	if initialGi.Latitude.String() != initialGpsLatitudePhrase {
+		t.Fatalf("Initial GPS latitude not correct: [%s]", initialGi.Latitude)
+	}
+
+	// Update the value.
+
+	rootIb := NewIfdBuilderFromExistingChain(rootIfd)
+
+	gpsIb, err := rootIb.ChildWithTagId(exifcommon.IfdGpsId)
+	log.PanicIf(err)
+
+	updatedGi := GpsDegrees{
+		Degrees: 11,
+		Minutes: 22,
+		Seconds: 33,
+	}
+
+	raw := updatedGi.Raw()
+
+	err = gpsIb.SetStandardWithName("GPSLatitude", raw)
+	log.PanicIf(err)
+
+	// Encode to bytes.
+
+	ibe := NewIfdByteEncoder()
+
+	updatedRawExif, err := ibe.EncodeToExif(rootIb)
+	log.PanicIf(err)
+
+	// Decode from bytes.
+
+	_, updatedIndex, err := Collect(im, ti, updatedRawExif)
+	log.PanicIf(err)
+
+	updatedRootIfd := updatedIndex.RootIfd
+
+	// Test.
+
+	updatedGpsIfd, err := updatedRootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	log.PanicIf(err)
+
+	recoveredUpdatedGi, err := updatedGpsIfd.GpsInfo()
+	log.PanicIf(err)
+
+	updatedGpsLatitudePhrase := "Degrees<O=[N] D=(11) M=(22) S=(33)>"
+
+	if recoveredUpdatedGi.Latitude.String() != updatedGpsLatitudePhrase {
+		t.Fatalf("Updated GPS latitude not set or recovered correctly: [%s]", recoveredUpdatedGi.Latitude)
+	}
+}
+
+func ExampleIfdBuilder_NewIfdBuilderFromExistingChain_updateGps() {
+	// Check initial value.
+
+	filepath := getTestGpsImageFilepath()
+
+	rawExif, err := SearchFileAndExtractExif(filepath)
+	log.PanicIf(err)
+
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	rootIfd := index.RootIfd
+
+	gpsIfd, err := rootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	log.PanicIf(err)
+
+	initialGi, err := gpsIfd.GpsInfo()
+	log.PanicIf(err)
+
+	fmt.Printf("Original:\n%s\n\n", initialGi.Latitude.String())
+
+	// Update the value.
+
+	rootIb := NewIfdBuilderFromExistingChain(rootIfd)
+
+	gpsIb, err := rootIb.ChildWithTagId(exifcommon.IfdGpsId)
+	log.PanicIf(err)
+
+	updatedGi := GpsDegrees{
+		Degrees: 11,
+		Minutes: 22,
+		Seconds: 33,
+	}
+
+	raw := updatedGi.Raw()
+
+	err = gpsIb.SetStandardWithName("GPSLatitude", raw)
+	log.PanicIf(err)
+
+	// Encode to bytes.
+
+	ibe := NewIfdByteEncoder()
+
+	updatedRawExif, err := ibe.EncodeToExif(rootIb)
+	log.PanicIf(err)
+
+	// Decode from bytes.
+
+	_, updatedIndex, err := Collect(im, ti, updatedRawExif)
+	log.PanicIf(err)
+
+	updatedRootIfd := updatedIndex.RootIfd
+
+	// Test.
+
+	updatedGpsIfd, err := updatedRootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	log.PanicIf(err)
+
+	recoveredUpdatedGi, err := updatedGpsIfd.GpsInfo()
+	log.PanicIf(err)
+
+	fmt.Printf("Updated, written, and re-read:\n%s\n", recoveredUpdatedGi.Latitude.String())
+
+	// Output:
+	// Original:
+	// Degrees<O=[N] D=(26) M=(35) S=(12)>
+	//
+	// Updated, written, and re-read:
+	// Degrees<O=[N] D=(11) M=(22) S=(33)>
+}
+
+func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	testImageFilepath := getTestImageFilepath()
 
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
@@ -1510,7 +1672,7 @@ func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	}
 }
 
-// func TestIfdBuilder_CreateIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
+// func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData_WithUpdate(t *testing.T) {
 //	testImageFilepath := getTestImageFilepath()
 
 // 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)

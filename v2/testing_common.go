@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	assetsPath        = ""
-	testImageFilepath = ""
+	assetsPath           = ""
+	testImageFilepath    = ""
+	testGpsImageFilepath = ""
 
 	testExifData = make([]byte, 0)
 )
@@ -186,4 +187,13 @@ func getTestExifData() []byte {
 	log.PanicIf(err)
 
 	return testExifData
+}
+
+func getTestGpsImageFilepath() string {
+	if testGpsImageFilepath == "" {
+		assetsPath := getTestAssetsPath()
+		testGpsImageFilepath = path.Join(assetsPath, "gps.jpg")
+	}
+
+	return testGpsImageFilepath
 }
