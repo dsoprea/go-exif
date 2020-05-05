@@ -782,21 +782,13 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	latitudeRaw := latitudeValue.([]exifcommon.Rational)
 
-	gi.Latitude = GpsDegrees{
-		Orientation: latitudeRefValue.(string)[0],
-		Degrees:     float64(latitudeRaw[0].Numerator) / float64(latitudeRaw[0].Denominator),
-		Minutes:     float64(latitudeRaw[1].Numerator) / float64(latitudeRaw[1].Denominator),
-		Seconds:     float64(latitudeRaw[2].Numerator) / float64(latitudeRaw[2].Denominator),
-	}
+	gi.Latitude, err = NewGpsDegreesFromRationals(latitudeRefValue.(string), latitudeRaw)
+	log.PanicIf(err)
 
 	longitudeRaw := longitudeValue.([]exifcommon.Rational)
 
-	gi.Longitude = GpsDegrees{
-		Orientation: longitudeRefValue.(string)[0],
-		Degrees:     float64(longitudeRaw[0].Numerator) / float64(longitudeRaw[0].Denominator),
-		Minutes:     float64(longitudeRaw[1].Numerator) / float64(longitudeRaw[1].Denominator),
-		Seconds:     float64(longitudeRaw[2].Numerator) / float64(longitudeRaw[2].Denominator),
-	}
+	gi.Longitude, err = NewGpsDegreesFromRationals(longitudeRefValue.(string), longitudeRaw)
+	log.PanicIf(err)
 
 	// Parse altitude.
 
