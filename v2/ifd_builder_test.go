@@ -1385,7 +1385,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain(t *testing.T) {
 	}
 }
 
-func TestIfdBuilder_NewIfdBuilderFromExistingChain_updateGps(t *testing.T) {
+func TestIfdBuilder_SetStandardWithName_UpdateGps(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
@@ -1471,7 +1471,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_updateGps(t *testing.T) {
 	}
 }
 
-func ExampleIfdBuilder_NewIfdBuilderFromExistingChain_updateGps() {
+func ExampleIfdBuilder_SetStandardWithName_updateGps() {
 	// Check initial value.
 
 	filepath := getTestGpsImageFilepath()
