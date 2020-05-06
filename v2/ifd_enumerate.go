@@ -21,9 +21,17 @@ var (
 )
 
 var (
-	ErrNoThumbnail     = errors.New("no thumbnail")
-	ErrNoGpsTags       = errors.New("no gps tags")
+	// ErrNoThumbnail means that no thumbnail was found.
+	ErrNoThumbnail = errors.New("no thumbnail")
+
+	// ErrNoGpsTags means that no GPS info was found.
+	ErrNoGpsTags = errors.New("no gps tags")
+
+	// ErrTagTypeNotValid means that the tag-type is not valid.
 	ErrTagTypeNotValid = errors.New("tag type invalid")
+
+	// ErrOffsetInvalid means that the file offset is not valid.
+	ErrOffsetInvalid = errors.New("file offset invalid")
 )
 
 var (
@@ -71,14 +79,18 @@ type IfdTagEnumerator struct {
 	buffer          *bytes.Buffer
 }
 
-func NewIfdTagEnumerator(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (enumerator *IfdTagEnumerator) {
+func NewIfdTagEnumerator(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (enumerator *IfdTagEnumerator, err error) {
+	if ifdOffset >= uint32(len(addressableData)) {
+		return nil, ErrOffsetInvalid
+	}
+
 	enumerator = &IfdTagEnumerator{
 		addressableData: addressableData,
 		byteOrder:       byteOrder,
 		buffer:          bytes.NewBuffer(addressableData[ifdOffset:]),
 	}
 
-	return enumerator
+	return enumerator, nil
 }
 
 // getUint16 reads a uint16 and advances both our current and our current
@@ -152,13 +164,28 @@ func NewIfdEnumerate(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte
 	}
 }
 
-func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (enumerator *IfdTagEnumerator) {
-	enumerator = NewIfdTagEnumerator(
-		ie.exifData[ExifAddressableAreaStart:],
-		ie.byteOrder,
-		ifdOffset)
+func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (enumerator *IfdTagEnumerator, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
 
-	return enumerator
+	enumerator, err =
+		NewIfdTagEnumerator(
+			ie.exifData[ExifAddressableAreaStart:],
+			ie.byteOrder,
+			ifdOffset)
+
+	if err != nil {
+		if err == ErrOffsetInvalid {
+			return nil, err
+		}
+
+		log.Panic(err)
+	}
+
+	return enumerator, nil
 }
 
 func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, enumerator *IfdTagEnumerator) (ite *IfdTagEntry, err error) {
@@ -331,8 +358,17 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisi
 	}()
 
 	for ifdIndex := 0; ; ifdIndex++ {
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", fqIfdName, ifdIndex, ifdOffset)
-		enumerator := ie.getTagEnumerator(ifdOffset)
+		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x) (scan).", fqIfdName, ifdIndex, ifdOffset)
+
+		enumerator, err := ie.getTagEnumerator(ifdOffset)
+		if err != nil {
+			if err == ErrOffsetInvalid {
+				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (%04x) has an unreachable offset. Terminating scan.", fqIfdName, ifdIndex, ifdOffset)
+				break
+			}
+
+			log.Panic(err)
+		}
 
 		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdName, ifdIndex, enumerator, visitor, true)
 		log.PanicIf(err)
@@ -943,16 +979,24 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		ifdPath := qi.IfdPath
 		fqIfdPath := qi.FqIfdPath
 
-		index := qi.Index
+		currentIndex := qi.Index
 		offset := qi.Offset
 		parentIfd := qi.Parent
 
 		queue = queue[1:]
 
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x).", ifdPath, index, offset)
-		enumerator := ie.getTagEnumerator(offset)
+		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x) (Collect).", ifdPath, currentIndex, offset)
 
-		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, index, enumerator, nil, false)
+		enumerator, err := ie.getTagEnumerator(offset)
+		if err != nil {
+			if err == ErrOffsetInvalid {
+				return index, err
+			}
+
+			log.Panic(err)
+		}
+
+		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, currentIndex, enumerator, nil, false)
 		log.PanicIf(err)
 
 		id := len(ifds)
@@ -983,7 +1027,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 			ParentIfd:      parentIfd,
 			ParentTagIndex: qi.ParentTagIndex,
 
-			Index:          index,
+			Index:          currentIndex,
 			Offset:         offset,
 			Entries:        entries,
 			EntriesByTagId: entriesByTagId,
@@ -1052,7 +1096,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 			// Allow the next link to know what the previous link was.
 			edges[nextIfdOffset] = ifd
 
-			siblingIndex := index + 1
+			siblingIndex := currentIndex + 1
 
 			var fqIfdPath string
 			if parentIfd != nil {
@@ -1117,7 +1161,15 @@ func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 	}()
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, make([]byte, 0), byteOrder)
-	enumerator := NewIfdTagEnumerator(ifdBlock, byteOrder, 0)
+
+	enumerator, err := NewIfdTagEnumerator(ifdBlock, byteOrder, 0)
+	if err != nil {
+		if err == ErrOffsetInvalid {
+			return 0, nil, err
+		}
+
+		log.Panic(err)
+	}
 
 	nextIfdOffset, entries, _, err = ie.ParseIfd(fqIfdPath, 0, enumerator, visitor, true)
 	log.PanicIf(err)
@@ -1134,7 +1186,15 @@ func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 	}()
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, make([]byte, 0), byteOrder)
-	enumerator := NewIfdTagEnumerator(tagBlock, byteOrder, 0)
+
+	enumerator, err := NewIfdTagEnumerator(tagBlock, byteOrder, 0)
+	if err != nil {
+		if err == ErrOffsetInvalid {
+			return nil, err
+		}
+
+		log.Panic(err)
+	}
 
 	tag, err = ie.parseTag(fqIfdPath, 0, enumerator)
 	log.PanicIf(err)
