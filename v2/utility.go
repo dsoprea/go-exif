@@ -2,6 +2,7 @@ package exif
 
 import (
     "fmt"
+    "math"
     "strconv"
     "strings"
     "time"
@@ -170,4 +171,24 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
     }
 
     return exifTags, nil
+}
+
+func GpsDegreesEquals(gi1, gi2 GpsDegrees) bool {
+    if gi2.Orientation != gi1.Orientation {
+        return false
+    }
+
+    degreesRightBound := math.Nextafter(gi1.Degrees, gi1.Degrees+1)
+    minutesRightBound := math.Nextafter(gi1.Minutes, gi1.Minutes+1)
+    secondsRightBound := math.Nextafter(gi1.Seconds, gi1.Seconds+1)
+
+    if gi2.Degrees < gi1.Degrees || gi2.Degrees >= degreesRightBound {
+        return false
+    } else if gi2.Minutes < gi1.Minutes || gi2.Minutes >= minutesRightBound {
+        return false
+    } else if gi2.Seconds < gi1.Seconds || gi2.Seconds >= secondsRightBound {
+        return false
+    }
+
+    return true
 }
