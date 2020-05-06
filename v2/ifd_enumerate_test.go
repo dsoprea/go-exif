@@ -278,7 +278,7 @@ func TestIfd_GpsInfo__2_0_0_0(t *testing.T) {
 	}()
 
 	assetsPath := getTestAssetsPath()
-	filepath := path.Join(assetsPath, "gps-2200-scaled.jpg")
+	filepath := path.Join(assetsPath, "gps-2000-scaled.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
