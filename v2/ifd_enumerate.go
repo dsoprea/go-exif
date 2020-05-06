@@ -363,7 +363,7 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisi
 		enumerator, err := ie.getTagEnumerator(ifdOffset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
-				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (%04x) has an unreachable offset. Terminating scan.", fqIfdName, ifdIndex, ifdOffset)
+				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (%04x) is unreachable. Terminating scan.", fqIfdName, ifdIndex, ifdOffset)
 				break
 			}
 
