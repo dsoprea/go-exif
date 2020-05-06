@@ -269,6 +269,61 @@ func TestIfd_GpsInfo(t *testing.T) {
 	}
 }
 
+func TestIfd_GpsInfo__2_0_0_0(t *testing.T) {
+	defer func() {
+		if state := recover(); state != nil {
+			err := log.Wrap(state.(error))
+			log.PrintErrorf(err, "Test failure.")
+		}
+	}()
+
+	assetsPath := getTestAssetsPath()
+	filepath := path.Join(assetsPath, "gps-2200-scaled.jpg")
+
+	rawExif, err := SearchFileAndExtractExif(filepath)
+	log.PanicIf(err)
+
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	log.PanicIf(err)
+
+	gi, err := ifd.GpsInfo()
+	log.PanicIf(err)
+
+	expectedLatitude := GpsDegrees{
+		Orientation: 'S',
+		Degrees:     38.0,
+		Minutes:     24.311687,
+		Seconds:     0.0,
+	}
+
+	expectedLongitude := GpsDegrees{
+		Orientation: 'E',
+		Degrees:     144.0,
+		Minutes:     11.33748,
+		Seconds:     0.0,
+	}
+
+	if GpsDegreesEquals(gi.Latitude, expectedLatitude) != true {
+		t.Fatalf("Latitude not correct: %v", gi.Latitude)
+	} else if GpsDegreesEquals(gi.Longitude, expectedLongitude) != true {
+		t.Fatalf("Longitude not correct: %v", gi.Longitude)
+	} else if gi.Altitude != 0 {
+		t.Fatalf("Altitude not correct: (%d)", gi.Altitude)
+	} else if gi.Timestamp.Unix() != -62135596800 {
+		t.Fatalf("Timestamp not correct: (%d)", gi.Timestamp.Unix())
+	}
+}
+
 func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 	testImageFilepath := getTestImageFilepath()
 

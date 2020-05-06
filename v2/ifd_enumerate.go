@@ -28,6 +28,19 @@ var (
 
 var (
 	ValidGpsVersions = [][4]byte{
+		// 2.0.0.0 appears to have a very similar format to 2.2.0.0, so enabling
+		// it under that assumption.
+		//
+		// IFD-PATH=[IFD] ID=(0x8825) NAME=[GPSTag] COUNT=(1) TYPE=[LONG] VALUE=[114]
+		// IFD-PATH=[IFD/GPSInfo] ID=(0x0000) NAME=[GPSVersionID] COUNT=(4) TYPE=[BYTE] VALUE=[02 00 00 00]
+		// IFD-PATH=[IFD/GPSInfo] ID=(0x0001) NAME=[GPSLatitudeRef] COUNT=(2) TYPE=[ASCII] VALUE=[S]
+		// IFD-PATH=[IFD/GPSInfo] ID=(0x0002) NAME=[GPSLatitude] COUNT=(3) TYPE=[RATIONAL] VALUE=[38/1...]
+		// IFD-PATH=[IFD/GPSInfo] ID=(0x0003) NAME=[GPSLongitudeRef] COUNT=(2) TYPE=[ASCII] VALUE=[E]
+		// IFD-PATH=[IFD/GPSInfo] ID=(0x0004) NAME=[GPSLongitude] COUNT=(3) TYPE=[RATIONAL] VALUE=[144/1...]
+		// IFD-PATH=[IFD/GPSInfo] ID=(0x0012) NAME=[GPSMapDatum] COUNT=(7) TYPE=[ASCII] VALUE=[WGS-84]
+		//
+		{2, 0, 0, 0},
+
 		{2, 2, 0, 0},
 
 		// Suddenly appeared at the default in 2.31: https://home.jeita.or.jp/tsc/std-pdf/CP-3451D.pdf
