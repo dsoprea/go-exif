@@ -6,8 +6,6 @@ go:
   - "1.12"
   - "1.11"
   - "1.10"
-  - "1.9"
-  - "1.8"
 install:
   - go get -t ./...
   - go get github.com/mattn/goveralls
