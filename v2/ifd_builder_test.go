@@ -1647,7 +1647,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 		originalIte := originalTags[i]
 
 		if recoveredIte.IfdPath() != originalIte.IfdPath() {
-			t.Fatalf("IfdIdentity not as expected: %s != %s  ITE=%s", recoveredIte.IfdPath(), originalIte.IfdPath(), recoveredIte)
+			t.Fatalf("IfdPath not as expected: %s != %s  ITE=%s", recoveredIte.IfdPath(), originalIte.IfdPath(), recoveredIte)
 		} else if recoveredIte.TagId() != originalIte.TagId() {
 			t.Fatalf("Tag-ID not as expected: %d != %d  ITE=%s", recoveredIte.TagId(), originalIte.TagId(), recoveredIte)
 		} else if recoveredIte.TagType() != originalIte.TagType() {
