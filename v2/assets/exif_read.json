@@ -818,5 +818,33 @@
             2
         ],
         "value_string": "2"
+    },
+    {
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD1",
+        "ifd_index": 1,
+        "tag_id": 513,
+        "tag_name": "JPEGInterchangeFormat",
+        "tag_type_id": 4,
+        "tag_type_name": "LONG",
+        "unit_count": 1,
+        "value": [
+            11444
+        ],
+        "value_string": "11444"
+    },
+    {
+        "ifd_path": "IFD",
+        "fq_ifd_path": "IFD1",
+        "ifd_index": 1,
+        "tag_id": 514,
+        "tag_name": "JPEGInterchangeFormatLength",
+        "tag_type_id": 4,
+        "tag_type_name": "LONG",
+        "unit_count": 1,
+        "value": [
+            21491
+        ],
+        "value_string": "21491"
     }
 ]

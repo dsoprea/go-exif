@@ -12,6 +12,7 @@ import (
 const (
 	// IFD1
 
+	ThumbnailFqIfdPath   = "IFD1"
 	ThumbnailOffsetTagId = 0x0201
 	ThumbnailSizeTagId   = 0x0202
 

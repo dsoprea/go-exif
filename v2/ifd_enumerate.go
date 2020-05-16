@@ -301,19 +301,22 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			log.Panic(err)
 		}
 
-		tagId := ite.TagId()
-		if tagId == ThumbnailOffsetTagId {
-			enumeratorThumbnailOffset = ite
-
-			continue
-		} else if tagId == ThumbnailSizeTagId {
-			enumeratorThumbnailSize = ite
-			continue
-		}
-
 		if visitor != nil {
 			err := visitor(fqIfdPath, ifdIndex, ite)
 			log.PanicIf(err)
+		}
+
+		tagId := ite.TagId()
+		if tagId == ThumbnailOffsetTagId && fqIfdPath == ThumbnailFqIfdPath {
+			enumeratorThumbnailOffset = ite
+			entries = append(entries, ite)
+
+			continue
+		} else if tagId == ThumbnailSizeTagId && fqIfdPath == ThumbnailFqIfdPath {
+			enumeratorThumbnailSize = ite
+			entries = append(entries, ite)
+
+			continue
 		}
 
 		if ite.TagType() != exifcommon.TypeUndefined {
