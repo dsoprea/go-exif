@@ -388,8 +388,8 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 	return thumbnailData, nil
 }
 
-// Scan enumerates the different IFD blocks.
-func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
+// scan enumerates the different IFD blocks.
+func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -399,19 +399,21 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisi
 	// TODO(dustin): Add test
 
 	for ifdIndex := 0; ; ifdIndex++ {
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (scan).", fqIfdName, ifdIndex, ifdOffset)
+		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (scan).", ifdName, ifdIndex, ifdOffset)
 
 		bp, err := ie.getByteParser(ifdOffset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
-				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (0x%04x) is unreachable. Terminating scan.", fqIfdName, ifdIndex, ifdOffset)
+				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (0x%04x) is unreachable. Terminating scan.", ifdName, ifdIndex, ifdOffset)
 				break
 			}
 
 			log.Panic(err)
 		}
 
-		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdName, ifdIndex, bp, visitor, true)
+		fqIfdPath := FqIfdPath("", ifdName, ifdIndex)
+
+		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
 		log.PanicIf(err)
 
 		currentOffset := bp.CurrentOffset()
@@ -1151,12 +1153,12 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 			siblingIndex := currentIndex + 1
 
-			var fqIfdPath string
+			var parentFqIfdName string
 			if parentIfd != nil {
-				fqIfdPath = fmt.Sprintf("%s/%s%d", parentIfd.FqIfdPath, name, siblingIndex)
-			} else {
-				fqIfdPath = fmt.Sprintf("%s%d", name, siblingIndex)
+				parentFqIfdName = parentIfd.FqIfdPath
 			}
+
+			fqIfdPath := FqIfdPath(parentFqIfdName, name, siblingIndex)
 
 			qi := QueuedIfd{
 				Name:      name,

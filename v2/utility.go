@@ -192,3 +192,19 @@ func GpsDegreesEquals(gi1, gi2 GpsDegrees) bool {
 
     return true
 }
+
+// FqIfdPath returns a fully-qualified IFD path expression.
+func FqIfdPath(parentFqIfdName, ifdName string, ifdIndex int) string {
+    var currentIfd string
+    if parentFqIfdName != "" {
+        currentIfd = fmt.Sprintf("%s/%s", parentFqIfdName, ifdName)
+    } else {
+        currentIfd = ifdName
+    }
+
+    if ifdIndex > 0 {
+        currentIfd = fmt.Sprintf("%s%d", currentIfd, ifdIndex)
+    }
+
+    return currentIfd
+}

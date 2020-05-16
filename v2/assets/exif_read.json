@@ -759,7 +759,7 @@
     },
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD",
+        "fq_ifd_path": "IFD1",
         "ifd_index": 1,
         "tag_id": 259,
         "tag_name": "Compression",
@@ -773,7 +773,7 @@
     },
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD",
+        "fq_ifd_path": "IFD1",
         "ifd_index": 1,
         "tag_id": 282,
         "tag_name": "XResolution",
@@ -790,7 +790,7 @@
     },
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD",
+        "fq_ifd_path": "IFD1",
         "ifd_index": 1,
         "tag_id": 283,
         "tag_name": "YResolution",
@@ -807,7 +807,7 @@
     },
     {
         "ifd_path": "IFD",
-        "fq_ifd_path": "IFD",
+        "fq_ifd_path": "IFD1",
         "ifd_index": 1,
         "tag_id": 296,
         "tag_name": "ResolutionUnit",

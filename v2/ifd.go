@@ -216,6 +216,7 @@ func (im *IfdMapping) ResolvePath(pathPhrase string) (lineage []IfdTagIdAndIndex
 	return lineage, nil
 }
 
+// FqPathPhraseFromLineage returns the fully-qualified IFD path from the slice.
 func (im *IfdMapping) FqPathPhraseFromLineage(lineage []IfdTagIdAndIndex) (fqPathPhrase string) {
 	fqPathParts := make([]string, len(lineage))
 	for i, itii := range lineage {
@@ -229,6 +230,8 @@ func (im *IfdMapping) FqPathPhraseFromLineage(lineage []IfdTagIdAndIndex) (fqPat
 	return strings.Join(fqPathParts, "/")
 }
 
+// PathPhraseFromLineage returns the non-fully-qualified IFD path from the
+// slice.
 func (im *IfdMapping) PathPhraseFromLineage(lineage []IfdTagIdAndIndex) (pathPhrase string) {
 	pathParts := make([]string, len(lineage))
 	for i, itii := range lineage {
