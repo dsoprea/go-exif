@@ -77,6 +77,7 @@ type byteParser struct {
 	addressableData []byte
 	ifdOffset       uint32
 	buffer          *bytes.Buffer
+	currentOffset   uint32
 }
 
 func newByteParser(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (bp *byteParser, err error) {
@@ -90,6 +91,7 @@ func newByteParser(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset
 		addressableData: addressableData,
 		byteOrder:       byteOrder,
 		buffer:          bytes.NewBuffer(addressableData[ifdOffset:]),
+		currentOffset:   ifdOffset,
 	}
 
 	return bp, nil
@@ -120,6 +122,8 @@ func (bp *byteParser) getUint16() (value uint16, raw []byte, err error) {
 
 	value = bp.byteOrder.Uint16(raw)
 
+	bp.currentOffset += uint32(needBytes)
+
 	return value, raw, nil
 }
 
@@ -148,15 +152,24 @@ func (bp *byteParser) getUint32() (value uint32, raw []byte, err error) {
 
 	value = bp.byteOrder.Uint32(raw)
 
+	bp.currentOffset += uint32(needBytes)
+
 	return value, raw, nil
 }
 
+// CurrentOffset returns the starting offset but the number of bytes that we
+// have parsed. This is arithmetic-based tracking, not a seek(0) operation.
+func (bp *byteParser) CurrentOffset() uint32 {
+	return bp.currentOffset
+}
+
 type IfdEnumerate struct {
-	exifData   []byte
-	buffer     *bytes.Buffer
-	byteOrder  binary.ByteOrder
-	tagIndex   *TagIndex
-	ifdMapping *IfdMapping
+	exifData       []byte
+	buffer         *bytes.Buffer
+	byteOrder      binary.ByteOrder
+	tagIndex       *TagIndex
+	ifdMapping     *IfdMapping
+	furthestOffset uint32
 }
 
 func NewIfdEnumerate(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
@@ -303,6 +316,23 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			log.PanicIf(err)
 		}
 
+		if ite.TagType() != exifcommon.TypeUndefined {
+			// If this tag's value is an offset, bump our max-offset value to
+			// what that offset is plus however large that value is.
+
+			vc := ite.getValueContext()
+
+			farOffset, err := vc.GetFarOffset()
+			if err == nil {
+				candidateOffset := farOffset + uint32(vc.SizeInBytes())
+				if candidateOffset > ie.furthestOffset {
+					ie.furthestOffset = candidateOffset
+				}
+			} else if err != exifcommon.ErrNotFarValue {
+				log.PanicIf(err)
+			}
+		}
+
 		// If it's an IFD but not a standard one, it'll just be seen as a LONG
 		// (the standard IFD tag type), later, unless we skip it because it's
 		// [likely] not even in the standard list of known tags.
@@ -383,6 +413,11 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisi
 
 		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdName, ifdIndex, bp, visitor, true)
 		log.PanicIf(err)
+
+		currentOffset := bp.CurrentOffset()
+		if currentOffset > ie.furthestOffset {
+			ie.furthestOffset = currentOffset
+		}
 
 		if nextIfdOffset == 0 {
 			break
@@ -1012,6 +1047,11 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, currentIndex, bp, nil, false)
 		log.PanicIf(err)
 
+		currentOffset := bp.CurrentOffset()
+		if currentOffset > ie.furthestOffset {
+			ie.furthestOffset = currentOffset
+		}
+
 		id := len(ifds)
 
 		entriesByTagId := make(map[uint16][]*IfdTagEntry)
@@ -1162,6 +1202,21 @@ func (ie *IfdEnumerate) setChildrenIndex(ifd *Ifd) (err error) {
 	}
 
 	return nil
+}
+
+// FurthestOffset returns the furthest offset visited in the EXIF blob. This
+// *does not* account for the locations of any undefined tags since we always
+// evaluate the furthest offset, whether or not the user wants to know it.
+//
+// We are not willing to incur the cost of actually parsing those tags just to
+// know their length when there are still undefined tags that are out there
+// that we still won't have any idea how to parse, thus making this an
+// approximation regardless of how clever we get.
+func (ie *IfdEnumerate) FurthestOffset() uint32 {
+
+	// TODO(dustin): Add test
+
+	return ie.furthestOffset
 }
 
 // ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for

@@ -163,8 +163,10 @@ func main() {
 		return nil
 	}
 
-	_, err = exif.Visit(exifcommon.IfdStandard, im, ti, rawExif, visitor)
+	_, furthestOffset, err := exif.Visit(exifcommon.IfdStandard, im, ti, rawExif, visitor)
 	log.PanicIf(err)
+
+	mainLogger.Debugf(nil, "EXIF blob is approximately (%d) bytes.", furthestOffset)
 
 	if printAsJsonArg == true {
 		data, err := json.MarshalIndent(entries, "", "    ")
@@ -175,5 +177,8 @@ func main() {
 		for _, entry := range entries {
 			fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdPath, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.ValueString)
 		}
+
+		fmt.Printf("\n")
+		fmt.Printf("EXIF blob is approximately (%d) bytes.\n", furthestOffset)
 	}
 }

@@ -1,6 +1,8 @@
 package exifcommon
 
 import (
+	"errors"
+
 	"encoding/binary"
 
 	"github.com/dsoprea/go-logging"
@@ -8,6 +10,10 @@ import (
 
 var (
 	parser *Parser
+)
+
+var (
+	ErrNotFarValue = errors.New("not a far value")
 )
 
 // ValueContext embeds all of the parameters required to find and extract the
@@ -102,6 +108,15 @@ func (vc *ValueContext) isEmbedded() bool {
 	return (tagType.Size() * int(vc.unitCount)) <= 4
 }
 
+// SizeInBytes returns the number of bytes that this value requires. The
+// underlying call will panic if the type is UNDEFINED. It is the
+// responsibility of the caller to preemptively check that.
+func (vc *ValueContext) SizeInBytes() int {
+	tagType := vc.effectiveValueType()
+
+	return tagType.Size() * int(vc.unitCount)
+}
+
 // effectiveValueType returns the effective type of the unknown-type tag or, if
 // not unknown, the actual type.
 func (vc *ValueContext) effectiveValueType() (tagType TagTypePrimitive) {
@@ -136,6 +151,16 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 	} else {
 		return vc.addressableData[vc.valueOffset : vc.valueOffset+vc.unitCount*unitSizeRaw], nil
 	}
+}
+
+// GetFarOffset returns the offset if the value is not embedded [within the
+// pointer itself] or an error if an embedded value.
+func (vc *ValueContext) GetFarOffset() (offset uint32, err error) {
+	if vc.isEmbedded() == true {
+		return 0, ErrNotFarValue
+	}
+
+	return vc.valueOffset, nil
 }
 
 // ReadRawEncoded returns the encoded bytes for the value that we represent.

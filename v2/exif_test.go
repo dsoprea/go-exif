@@ -95,8 +95,12 @@ func TestVisit(t *testing.T) {
 		return nil
 	}
 
-	_, err = Visit(exifcommon.IfdStandard, im, ti, data[foundAt:], visitor)
+	_, furthestOffset, err := Visit(exifcommon.IfdStandard, im, ti, data[foundAt:], visitor)
 	log.PanicIf(err)
+
+	if furthestOffset != 11442 {
+		t.Fatalf("Furthest-offset is not valid: (%d)", furthestOffset)
+	}
 
 	expected := []string{
 		"IFD-PATH=[IFD] ID=(0x010f) NAME=[Make] COUNT=(6) TYPE=[ASCII] VALUE=[Canon]",
