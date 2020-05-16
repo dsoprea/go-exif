@@ -83,12 +83,15 @@ type ExifTag struct {
     Value       interface{}                 `json:"value"`
     ValueBytes  []byte                      `json:"value_bytes"`
 
+    FormattedFirst string `json:"formatted_first"`
+    Formatted      string `json:"formatted"`
+
     ChildIfdPath string `json:"child_ifd_path"`
 }
 
 // String returns a string representation.
 func (et ExifTag) String() string {
-    return fmt.Sprintf("ExifTag<IFD-PATH=[%s] TAG-ID=(0x%02x) TAG-NAME=[%s] TAG-TYPE=[%s] VALUE=[%v] VALUE-BYTES=(%d) CHILD-IFD-PATH=[%s]", et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.Value, len(et.ValueBytes), et.ChildIfdPath)
+    return fmt.Sprintf("ExifTag<IFD-PATH=[%s] TAG-ID=(0x%02x) TAG-NAME=[%s] TAG-TYPE=[%s] VALUE=[%v] VALUE-BYTES=(%d) CHILD-IFD-PATH=[%s]", et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.FormattedFirst, len(et.ValueBytes), et.ChildIfdPath)
 }
 
 // GetFlatExifData returns a simple, flat representation of all tags.
@@ -157,6 +160,12 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
                 ValueBytes:   valueBytes,
                 ChildIfdPath: ite.ChildIfdPath(),
             }
+
+            et.Formatted, err = ite.Format()
+            log.PanicIf(err)
+
+            et.FormattedFirst, err = ite.FormatFirst()
+            log.PanicIf(err)
 
             exifTags = append(exifTags, et)
         }
