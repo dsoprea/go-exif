@@ -18,15 +18,6 @@ var (
 	ErrChildIfdNotMapped = errors.New("no child-IFD for that tag-ID under parent")
 )
 
-// type IfdIdentity struct {
-// 	ParentIfdName string
-// 	IfdName       string
-// }
-
-// func (ii IfdIdentity) String() string {
-// 	return fmt.Sprintf("IfdIdentity<PARENT-NAME=[%s] NAME=[%s]>", ii.ParentIfdName, ii.IfdName)
-// }
-
 type MappedIfd struct {
 	ParentTagId uint16
 	Placement   []uint16
