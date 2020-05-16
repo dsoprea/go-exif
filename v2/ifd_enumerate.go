@@ -146,12 +146,11 @@ func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
 }
 
 type IfdEnumerate struct {
-	exifData      []byte
-	buffer        *bytes.Buffer
-	byteOrder     binary.ByteOrder
-	currentOffset uint32
-	tagIndex      *TagIndex
-	ifdMapping    *IfdMapping
+	exifData   []byte
+	buffer     *bytes.Buffer
+	byteOrder  binary.ByteOrder
+	tagIndex   *TagIndex
+	ifdMapping *IfdMapping
 }
 
 func NewIfdEnumerate(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
@@ -353,7 +352,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 	return thumbnailData, nil
 }
 
-// Scan enumerates the different EXIF's IFD blocks.
+// Scan enumerates the different IFD blocks.
 func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -361,13 +360,15 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisi
 		}
 	}()
 
+	// TODO(dustin): Add test
+
 	for ifdIndex := 0; ; ifdIndex++ {
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x) (scan).", fqIfdName, ifdIndex, ifdOffset)
+		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (scan).", fqIfdName, ifdIndex, ifdOffset)
 
 		enumerator, err := ie.getTagEnumerator(ifdOffset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
-				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (%04x) is unreachable. Terminating scan.", fqIfdName, ifdIndex, ifdOffset)
+				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (0x%04x) is unreachable. Terminating scan.", fqIfdName, ifdIndex, ifdOffset)
 				break
 			}
 
@@ -395,6 +396,8 @@ func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor TagVi
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	// TODO(dustin): Add test
 
 	err = ie.scan(rootIfdName, ifdOffset, visitor)
 	log.PanicIf(err)
@@ -989,7 +992,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 		queue = queue[1:]
 
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (%04x) (Collect).", ifdPath, currentIndex, offset)
+		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (Collect).", ifdPath, currentIndex, offset)
 
 		enumerator, err := ie.getTagEnumerator(offset)
 		if err != nil {
