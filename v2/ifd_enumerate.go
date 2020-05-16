@@ -65,56 +65,60 @@ var (
 	}
 )
 
-// IfdTagEnumerator knows how to decode an IFD and all of the tags it
+// byteParser knows how to decode an IFD and all of the tags it
 // describes.
 //
 // The IFDs and the actual values can float throughout the EXIF block, but the
 // IFD itself is just a minor header followed by a set of repeating,
 // statically-sized records. So, the tags (though notnecessarily their values)
 // are fairly simple to enumerate.
-type IfdTagEnumerator struct {
+type byteParser struct {
 	byteOrder       binary.ByteOrder
 	addressableData []byte
 	ifdOffset       uint32
 	buffer          *bytes.Buffer
 }
 
-func NewIfdTagEnumerator(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (enumerator *IfdTagEnumerator, err error) {
+func newByteParser(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (bp *byteParser, err error) {
 	if ifdOffset >= uint32(len(addressableData)) {
 		return nil, ErrOffsetInvalid
 	}
 
-	enumerator = &IfdTagEnumerator{
+	// TODO(dustin): Add test
+
+	bp = &byteParser{
 		addressableData: addressableData,
 		byteOrder:       byteOrder,
 		buffer:          bytes.NewBuffer(addressableData[ifdOffset:]),
 	}
 
-	return enumerator, nil
+	return bp, nil
 }
 
 // getUint16 reads a uint16 and advances both our current and our current
 // accumulator (which allows us to know how far to seek to the beginning of the
 // next IFD when it's time to jump).
-func (ife *IfdTagEnumerator) getUint16() (value uint16, raw []byte, err error) {
+func (bp *byteParser) getUint16() (value uint16, raw []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
+	// TODO(dustin): Add test
+
 	needBytes := 2
 	offset := 0
 	raw = make([]byte, needBytes)
 
 	for offset < needBytes {
-		n, err := ife.buffer.Read(raw[offset:])
+		n, err := bp.buffer.Read(raw[offset:])
 		log.PanicIf(err)
 
 		offset += n
 	}
 
-	value = ife.byteOrder.Uint16(raw)
+	value = bp.byteOrder.Uint16(raw)
 
 	return value, raw, nil
 }
@@ -122,25 +126,27 @@ func (ife *IfdTagEnumerator) getUint16() (value uint16, raw []byte, err error) {
 // getUint32 reads a uint32 and advances both our current and our current
 // accumulator (which allows us to know how far to seek to the beginning of the
 // next IFD when it's time to jump).
-func (ife *IfdTagEnumerator) getUint32() (value uint32, raw []byte, err error) {
+func (bp *byteParser) getUint32() (value uint32, raw []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
+	// TODO(dustin): Add test
+
 	needBytes := 4
 	offset := 0
 	raw = make([]byte, needBytes)
 
 	for offset < needBytes {
-		n, err := ife.buffer.Read(raw[offset:])
+		n, err := bp.buffer.Read(raw[offset:])
 		log.PanicIf(err)
 
 		offset += n
 	}
 
-	value = ife.byteOrder.Uint32(raw)
+	value = bp.byteOrder.Uint32(raw)
 
 	return value, raw, nil
 }
@@ -163,15 +169,15 @@ func NewIfdEnumerate(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte
 	}
 }
 
-func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (enumerator *IfdTagEnumerator, err error) {
+func (ie *IfdEnumerate) getByteParser(ifdOffset uint32) (bp *byteParser, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	enumerator, err =
-		NewIfdTagEnumerator(
+	bp, err =
+		newByteParser(
 			ie.exifData[ExifAddressableAreaStart:],
 			ie.byteOrder,
 			ifdOffset)
@@ -184,28 +190,28 @@ func (ie *IfdEnumerate) getTagEnumerator(ifdOffset uint32) (enumerator *IfdTagEn
 		log.Panic(err)
 	}
 
-	return enumerator, nil
+	return bp, nil
 }
 
-func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, enumerator *IfdTagEnumerator) (ite *IfdTagEntry, err error) {
+func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, bp *byteParser) (ite *IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	tagId, _, err := enumerator.getUint16()
+	tagId, _, err := bp.getUint16()
 	log.PanicIf(err)
 
-	tagTypeRaw, _, err := enumerator.getUint16()
+	tagTypeRaw, _, err := bp.getUint16()
 	log.PanicIf(err)
 
 	tagType := exifcommon.TagTypePrimitive(tagTypeRaw)
 
-	unitCount, _, err := enumerator.getUint32()
+	unitCount, _, err := bp.getUint32()
 	log.PanicIf(err)
 
-	valueOffset, rawValueOffset, err := enumerator.getUint32()
+	valueOffset, rawValueOffset, err := bp.getUint32()
 	log.PanicIf(err)
 
 	if tagType.IsValid() == false {
@@ -254,14 +260,14 @@ type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err er
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *IfdTagEnumerator, visitor TagVisitorFn, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser, visitor TagVisitorFn, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
 		}
 	}()
 
-	tagCount, _, err := enumerator.getUint16()
+	tagCount, _, err := bp.getUint16()
 	log.PanicIf(err)
 
 	ifdEnumerateLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
@@ -272,7 +278,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *Ifd
 	var enumeratorThumbnailSize *IfdTagEntry
 
 	for i := 0; i < int(tagCount); i++ {
-		ite, err := ie.parseTag(fqIfdPath, i, enumerator)
+		ite, err := ie.parseTag(fqIfdPath, i, bp)
 		if err != nil {
 			if log.Is(err, ErrTagTypeNotValid) == true {
 				ifdEnumerateLogger.Warningf(nil, "Tag in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", fqIfdPath, i, ite.tagType)
@@ -317,7 +323,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *Ifd
 		log.PanicIf(err)
 	}
 
-	nextIfdOffset, _, err = enumerator.getUint32()
+	nextIfdOffset, _, err = bp.getUint32()
 	log.PanicIf(err)
 
 	ifdEnumerateLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
@@ -365,7 +371,7 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisi
 	for ifdIndex := 0; ; ifdIndex++ {
 		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (scan).", fqIfdName, ifdIndex, ifdOffset)
 
-		enumerator, err := ie.getTagEnumerator(ifdOffset)
+		bp, err := ie.getByteParser(ifdOffset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
 				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (0x%04x) is unreachable. Terminating scan.", fqIfdName, ifdIndex, ifdOffset)
@@ -375,7 +381,7 @@ func (ie *IfdEnumerate) scan(fqIfdName string, ifdOffset uint32, visitor TagVisi
 			log.Panic(err)
 		}
 
-		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdName, ifdIndex, enumerator, visitor, true)
+		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdName, ifdIndex, bp, visitor, true)
 		log.PanicIf(err)
 
 		if nextIfdOffset == 0 {
@@ -994,7 +1000,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (Collect).", ifdPath, currentIndex, offset)
 
-		enumerator, err := ie.getTagEnumerator(offset)
+		bp, err := ie.getByteParser(offset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
 				return index, err
@@ -1003,7 +1009,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 			log.Panic(err)
 		}
 
-		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, currentIndex, enumerator, nil, false)
+		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, currentIndex, bp, nil, false)
 		log.PanicIf(err)
 
 		id := len(ifds)
@@ -1169,7 +1175,7 @@ func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, make([]byte, 0), byteOrder)
 
-	enumerator, err := NewIfdTagEnumerator(ifdBlock, byteOrder, 0)
+	bp, err := newByteParser(ifdBlock, byteOrder, 0)
 	if err != nil {
 		if err == ErrOffsetInvalid {
 			return 0, nil, err
@@ -1178,7 +1184,7 @@ func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 		log.Panic(err)
 	}
 
-	nextIfdOffset, entries, _, err = ie.ParseIfd(fqIfdPath, 0, enumerator, visitor, true)
+	nextIfdOffset, entries, _, err = ie.ParseIfd(fqIfdPath, 0, bp, visitor, true)
 	log.PanicIf(err)
 
 	return nextIfdOffset, entries, nil
@@ -1194,7 +1200,7 @@ func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, make([]byte, 0), byteOrder)
 
-	enumerator, err := NewIfdTagEnumerator(tagBlock, byteOrder, 0)
+	bp, err := newByteParser(tagBlock, byteOrder, 0)
 	if err != nil {
 		if err == ErrOffsetInvalid {
 			return nil, err
@@ -1203,7 +1209,7 @@ func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 		log.Panic(err)
 	}
 
-	tag, err = ie.parseTag(fqIfdPath, 0, enumerator)
+	tag, err = ie.parseTag(fqIfdPath, 0, bp)
 	log.PanicIf(err)
 
 	return tag, nil
