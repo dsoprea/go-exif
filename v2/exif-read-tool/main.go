@@ -97,6 +97,8 @@ func main() {
 		log.Panic(err)
 	}
 
+	mainLogger.Debugf(nil, "EXIF blob is (%d) bytes.", len(rawExif))
+
 	// Run the parse.
 
 	im := exif.NewIfdMappingWithStandard()
