@@ -83,6 +83,7 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 	// least, again, with JPEGs).
 
 	br := bufio.NewReader(r)
+	discarded := 0
 
 	for {
 		window, err := br.Peek(ExifSignatureLength)
@@ -102,6 +103,8 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 				_, err := br.Discard(1)
 				log.PanicIf(err)
 
+				discarded++
+
 				continue
 			}
 
@@ -111,6 +114,8 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 
 		break
 	}
+
+	exifLogger.Debugf(nil, "Found EXIF blob (%d) bytes from initial position.", discarded)
 
 	rawExif, err = ioutil.ReadAll(br)
 	log.PanicIf(err)
