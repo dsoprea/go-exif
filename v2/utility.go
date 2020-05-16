@@ -148,7 +148,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
             tagType := ite.TagType()
 
             et := ExifTag{
-                IfdPath:      ifd.IfdPath,
+                IfdPath:      ifd.FqIfdPath,
                 TagId:        ite.TagId(),
                 TagName:      tagName,
                 TagTypeId:    tagType,

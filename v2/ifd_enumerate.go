@@ -283,7 +283,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 	tagCount, _, err := bp.getUint16()
 	log.PanicIf(err)
 
-	ifdEnumerateLogger.Debugf(nil, "Current IFD tag-count: (%d)", tagCount)
+	ifdEnumerateLogger.Debugf(nil, "IFD [%s] tag-count: (%d)", fqIfdPath, tagCount)
 
 	entries = make([]*IfdTagEntry, 0)
 
@@ -402,19 +402,19 @@ func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisito
 	// TODO(dustin): Add test
 
 	for ifdIndex := 0; ; ifdIndex++ {
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (scan).", ifdName, ifdIndex, ifdOffset)
+		fqIfdPath := FqIfdPath("", ifdName, ifdIndex)
+
+		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] at offset (0x%04x) (scan).", fqIfdPath, ifdOffset)
 
 		bp, err := ie.getByteParser(ifdOffset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
-				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] (%d) at offset (0x%04x) is unreachable. Terminating scan.", ifdName, ifdIndex, ifdOffset)
+				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] at offset (0x%04x) is unreachable. Terminating scan.", fqIfdPath, ifdOffset)
 				break
 			}
 
 			log.Panic(err)
 		}
-
-		fqIfdPath := FqIfdPath("", ifdName, ifdIndex)
 
 		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
 		log.PanicIf(err)
