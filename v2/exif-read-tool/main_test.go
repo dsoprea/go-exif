@@ -99,7 +99,7 @@ IFD-PATH=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2
 IFD-PATH=[IFD] ID=(0x0201) NAME=[JPEGInterchangeFormat] COUNT=(1) TYPE=[LONG] VALUE=[11444]
 IFD-PATH=[IFD] ID=(0x0202) NAME=[JPEGInterchangeFormatLength] COUNT=(1) TYPE=[LONG] VALUE=[21491]
 
-EXIF blob is approximately (11442) bytes.
+EXIF blob is approximately (32935) bytes.
 `
 
 	if actual != expected {

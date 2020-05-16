@@ -1642,6 +1642,12 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	originalTagPhrases := make([]string, 0)
 	for _, ite := range originalTags {
+		// Adds a lot of noise if/when debugging, and we're already checking the
+		// thumbnail bytes separately.
+		if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() == true {
+			continue
+		}
+
 		phrase := ite.String()
 
 		// The value (the offset) of IFDs will almost never be the same after
@@ -1660,6 +1666,12 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	recoveredTagPhrases := make([]string, 0)
 	for _, ite := range recoveredTags {
+		// Adds a lot of noise if/when debugging, and we're already checking the
+		// thumbnail bytes separately.
+		if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() == true {
+			continue
+		}
+
 		phrase := ite.String()
 
 		// The value (the offset) of IFDs will almost never be the same after

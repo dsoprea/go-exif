@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sort"
 	"testing"
 
 	"encoding/binary"
@@ -98,7 +99,7 @@ func TestVisit(t *testing.T) {
 	_, furthestOffset, err := Visit(exifcommon.IfdStandard, im, ti, data[foundAt:], visitor)
 	log.PanicIf(err)
 
-	if furthestOffset != 11442 {
+	if furthestOffset != 32935 {
 		t.Fatalf("Furthest-offset is not valid: (%d)", furthestOffset)
 	}
 
@@ -276,8 +277,27 @@ func TestCollect(t *testing.T) {
 		t.Fatalf("The IFD list is not the right size: (%d)", len(ifds))
 	} else if len(tree) != 5 {
 		t.Fatalf("The IFD tree is not the right size: (%d)", len(tree))
-	} else if len(lookup) != 4 {
-		t.Fatalf("The IFD lookup is not the right size: (%d)", len(lookup))
+	}
+
+	actualIfdPaths := make([]string, len(lookup))
+	i := 0
+	for ifdPath, _ := range lookup {
+		actualIfdPaths[i] = ifdPath
+		i++
+	}
+
+	sort.Strings(actualIfdPaths)
+
+	expectedIfdPaths := []string{
+		"IFD",
+		"IFD/Exif",
+		"IFD/Exif/Iop",
+		"IFD/GPSInfo",
+		"IFD1",
+	}
+
+	if reflect.DeepEqual(actualIfdPaths, expectedIfdPaths) != true {
+		t.Fatalf("The IFD lookup is not the right size: %v", actualIfdPaths)
 	}
 
 	if rootIfd.NextIfdOffset != 0x2c54 {
@@ -302,27 +322,27 @@ func TestCollect(t *testing.T) {
 		t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children[0].Children[0].IfdPath)
 	}
 
-	if lookup[exifcommon.IfdPathStandard][0].IfdPath != exifcommon.IfdPathStandard {
+	if lookup[exifcommon.IfdPathStandard].IfdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("Lookup for standard IFD not correct.")
-	} else if lookup[exifcommon.IfdPathStandard][1].IfdPath != exifcommon.IfdPathStandard {
+	} else if lookup[exifcommon.IfdPathStandard+"1"].IfdPath != exifcommon.IfdPathStandard {
 		t.Fatalf("Lookup for standard IFD not correct.")
 	}
 
-	if lookup[exifcommon.IfdPathStandardExif][0].IfdPath != exifcommon.IfdPathStandardExif {
+	if lookup[exifcommon.IfdPathStandardExif].IfdPath != exifcommon.IfdPathStandardExif {
 		t.Fatalf("Lookup for EXIF IFD not correct.")
 	}
 
-	if lookup[exifcommon.IfdPathStandardGps][0].IfdPath != exifcommon.IfdPathStandardGps {
+	if lookup[exifcommon.IfdPathStandardGps].IfdPath != exifcommon.IfdPathStandardGps {
 		t.Fatalf("Lookup for GPS IFD not correct.")
 	}
 
-	if lookup[exifcommon.IfdPathStandardExifIop][0].IfdPath != exifcommon.IfdPathStandardExifIop {
+	if lookup[exifcommon.IfdPathStandardExifIop].IfdPath != exifcommon.IfdPathStandardExifIop {
 		t.Fatalf("Lookup for IOP IFD not correct.")
 	}
 
 	foundExif := 0
 	foundGps := 0
-	for _, ite := range lookup[exifcommon.IfdPathStandard][0].Entries {
+	for _, ite := range lookup[exifcommon.IfdPathStandard].Entries {
 		if ite.ChildIfdPath() == exifcommon.IfdPathStandardExif {
 			foundExif++
 
@@ -347,7 +367,7 @@ func TestCollect(t *testing.T) {
 	}
 
 	foundIop := 0
-	for _, ite := range lookup[exifcommon.IfdPathStandardExif][0].Entries {
+	for _, ite := range lookup[exifcommon.IfdPathStandardExif].Entries {
 		if ite.ChildIfdPath() == exifcommon.IfdPathStandardExifIop {
 			foundIop++
 

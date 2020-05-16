@@ -179,10 +179,8 @@ func main() {
 		log.PanicIf(err)
 
 		var thumbnail []byte
-		if matches, found := index.Lookup[exif.ThumbnailFqIfdPath]; found == true {
-			ifd1 := matches[0]
-
-			thumbnail, err = ifd1.Thumbnail()
+		if ifd, found := index.Lookup[exif.ThumbnailFqIfdPath]; found == true {
+			thumbnail, err = ifd.Thumbnail()
 			if err != nil && err != exif.ErrNoThumbnail {
 				log.Panic(err)
 			}

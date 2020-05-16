@@ -240,7 +240,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, bp *bytePars
 	log.PanicIf(err)
 
 	ite = newIfdTagEntry(
-		ifdPath,
+		fqIfdPath,
 		tagId,
 		tagPosition,
 		tagType,
@@ -310,13 +310,12 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			log.PanicIf(err)
 		}
 
-		tagId := ite.TagId()
-		if tagId == ThumbnailOffsetTagId && fqIfdPath == ThumbnailFqIfdPath {
+		if ite.IsThumbnailOffset() == true {
 			enumeratorThumbnailOffset = ite
 			entries = append(entries, ite)
 
 			continue
-		} else if tagId == ThumbnailSizeTagId && fqIfdPath == ThumbnailFqIfdPath {
+		} else if ite.IsThumbnailSize() == true {
 			enumeratorThumbnailSize = ite
 			entries = append(entries, ite)
 
@@ -1006,7 +1005,7 @@ type IfdIndex struct {
 	RootIfd *Ifd
 	Ifds    []*Ifd
 	Tree    map[int]*Ifd
-	Lookup  map[string][]*Ifd
+	Lookup  map[string]*Ifd
 }
 
 // Scan enumerates the different EXIF blocks (called IFDs).
@@ -1019,7 +1018,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 	tree := make(map[int]*Ifd)
 	ifds := make([]*Ifd, 0)
-	lookup := make(map[string][]*Ifd)
+	lookup := make(map[string]*Ifd)
 
 	queue := []QueuedIfd{
 		{
@@ -1122,14 +1121,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		tree[id] = ifd
 
 		// Install into by-name buckets.
-
-		if list_, found := lookup[fqIfdPath]; found == true {
-			lookup[fqIfdPath] = append(list_, ifd)
-		} else {
-			lookup[fqIfdPath] = []*Ifd{
-				ifd,
-			}
-		}
+		lookup[fqIfdPath] = ifd
 
 		// Add a link from the previous IFD in the chain to us.
 		if previousIfd, found := edges[offset]; found == true {
