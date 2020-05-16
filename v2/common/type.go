@@ -55,6 +55,8 @@ const (
     // interpretation.
     TypeUndefined TagTypePrimitive = 7
 
+    // We've seen type-8, but have no documentation on it.
+
     // TypeSignedLong describes an encoded list of signed longs.
     TypeSignedLong TagTypePrimitive = 9
 

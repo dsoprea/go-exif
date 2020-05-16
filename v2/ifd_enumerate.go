@@ -210,6 +210,10 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, enumerator *
 	log.PanicIf(err)
 
 	if tagType.IsValid() == false {
+		ite = &IfdTagEntry{
+			tagType: tagType,
+		}
+
 		log.Panic(ErrTagTypeNotValid)
 	}
 
@@ -272,7 +276,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, enumerator *Ifd
 		ite, err := ie.parseTag(fqIfdPath, i, enumerator)
 		if err != nil {
 			if log.Is(err, ErrTagTypeNotValid) == true {
-				ifdEnumerateLogger.Warningf(nil, "Tag in IFD [%s] at position (%d) has invalid type and will be skipped.", fqIfdPath, i)
+				ifdEnumerateLogger.Warningf(nil, "Tag in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", fqIfdPath, i, ite.tagType)
 				continue
 			}
 
