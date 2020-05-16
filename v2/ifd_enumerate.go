@@ -229,6 +229,7 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, bp *bytePars
 
 	if tagType.IsValid() == false {
 		ite = &IfdTagEntry{
+			tagId:   tagId,
 			tagType: tagType,
 		}
 
@@ -294,7 +295,10 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 		ite, err := ie.parseTag(fqIfdPath, i, bp)
 		if err != nil {
 			if log.Is(err, ErrTagTypeNotValid) == true {
-				ifdEnumerateLogger.Warningf(nil, "Tag in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", fqIfdPath, i, ite.tagType)
+				// Technically, we have the type on-file in the tags-index, but
+				// if the type stored alongside the data disagrees with it,
+				// which it apparently does, all bets are off.
+				ifdEnumerateLogger.Warningf(nil, "Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", ite.tagId, fqIfdPath, i, ite.tagType)
 				continue
 			}
 
@@ -341,10 +345,12 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 		// [likely] not even in the standard list of known tags.
 		if ite.ChildIfdPath() != "" {
 			if doDescend == true {
-				ifdEnumerateLogger.Debugf(nil, "Descending to IFD [%s].", ite.ChildIfdPath())
+				ifdEnumerateLogger.Debugf(nil, "Descending from IFD [%s] to IFD [%s].", fqIfdPath, ite.ChildIfdPath())
 
 				err := ie.scan(ite.ChildFqIfdPath(), ite.getValueOffset(), visitor)
 				log.PanicIf(err)
+
+				ifdEnumerateLogger.Debugf(nil, "Ascending from IFD [%s] to IFD [%s].", ite.ChildIfdPath(), fqIfdPath)
 			}
 		}
 
@@ -354,6 +360,20 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 	if enumeratorThumbnailOffset != nil && enumeratorThumbnailSize != nil {
 		thumbnailData, err = ie.parseThumbnail(enumeratorThumbnailOffset, enumeratorThumbnailSize)
 		log.PanicIf(err)
+
+		// In this case, the value is always an offset.
+		offset := enumeratorThumbnailOffset.getValueOffset()
+
+		// This this case, the value is always a length.
+		length := enumeratorThumbnailSize.getValueOffset()
+
+		ifdEnumerateLogger.Debugf(nil, "Found thumbnail in IFD [%s]. Its offset is (%d) and is (%d) bytes.", fqIfdPath, offset, length)
+
+		furthestOffset := offset + length
+
+		if furthestOffset > ie.furthestOffset {
+			ie.furthestOffset = furthestOffset
+		}
 	}
 
 	nextIfdOffset, _, err = bp.getUint32()
@@ -575,14 +595,9 @@ func (ifd *Ifd) String() string {
 }
 
 func (ifd *Ifd) Thumbnail() (data []byte, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
 
 	if ifd.thumbnailData == nil {
-		log.Panic(ErrNoThumbnail)
+		return nil, ErrNoThumbnail
 	}
 
 	return ifd.thumbnailData, nil
@@ -1108,13 +1123,12 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 		// Install into by-name buckets.
 
-		if list_, found := lookup[ifdPath]; found == true {
-			lookup[ifdPath] = append(list_, ifd)
+		if list_, found := lookup[fqIfdPath]; found == true {
+			lookup[fqIfdPath] = append(list_, ifd)
 		} else {
-			list_ = make([]*Ifd, 1)
-			list_[0] = ifd
-
-			lookup[ifdPath] = list_
+			lookup[fqIfdPath] = []*Ifd{
+				ifd,
+			}
 		}
 
 		// Add a link from the previous IFD in the chain to us.
@@ -1225,7 +1239,10 @@ func (ie *IfdEnumerate) FurthestOffset() uint32 {
 }
 
 // ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
-// testing.
+// testing. The fqIfdPath ("fully-qualified IFD path") will be less qualified
+// in that the numeric index will always be zero (the zeroth child) rather than
+// the proper number (if its actually a sibling to the first child, for
+// instance).
 func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath string, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitorFn) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -1329,7 +1346,7 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdPath string) (ifd *Ifd, err error) {
 		// If we didn't find the sibling, add it.
 		for i = 0; i < itii.Index; i++ {
 			if thisIfd.NextIfd == nil {
-				log.Panicf("IFD [%s] does not have (%d) occurrences/siblings\n", thisIfd.IfdPath, itii.Index)
+				log.Panicf("IFD [%s] does not have (%d) occurrences/siblings", thisIfd.IfdPath, itii.Index)
 			}
 
 			thisIfd = thisIfd.NextIfd
