@@ -28,14 +28,19 @@ import (
 	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
+const (
+	thumbnailFilenameIndexPlaceholder = "<index>"
+)
+
 var (
 	mainLogger = log.NewLogger("main.main")
 )
 
 var (
-	filepathArg     = ""
-	printAsJsonArg  = false
-	printLoggingArg = false
+	filepathArg                = ""
+	printAsJsonArg             = false
+	printLoggingArg            = false
+	thumbnailOutputFilepathArg = ""
 )
 
 type IfdEntry struct {
@@ -63,6 +68,7 @@ func main() {
 	flag.StringVar(&filepathArg, "filepath", "", "File-path of image")
 	flag.BoolVar(&printAsJsonArg, "json", false, "Print JSON")
 	flag.BoolVar(&printLoggingArg, "verbose", false, "Print logging")
+	flag.StringVar(&thumbnailOutputFilepathArg, "thumbnail-output-filepath", "", "File-path to write a thumbnail to if found.")
 
 	flag.Parse()
 
@@ -122,7 +128,7 @@ func main() {
 		it, err := ti.Get(ifdPath, tagId)
 		if err != nil {
 			if log.Is(err, exif.ErrTagNotFound) {
-				mainLogger.Warningf(nil, "Unknown tag: [%s] (%04x)", ifdPath, tagId)
+				mainLogger.Warningf(nil, "Unknown tag: [%s] (0x%04x)", ifdPath, tagId)
 				return nil
 			} else {
 				log.Panic(err)
@@ -167,6 +173,33 @@ func main() {
 	log.PanicIf(err)
 
 	mainLogger.Debugf(nil, "EXIF blob is approximately (%d) bytes.", furthestOffset)
+
+	if thumbnailOutputFilepathArg != "" {
+		_, index, err := exif.Collect(im, ti, rawExif)
+		log.PanicIf(err)
+
+		var thumbnail []byte
+		if matches, found := index.Lookup[exif.ThumbnailFqIfdPath]; found == true {
+			ifd1 := matches[0]
+
+			thumbnail, err = ifd1.Thumbnail()
+			if err != nil && err != exif.ErrNoThumbnail {
+				log.Panic(err)
+			}
+		}
+
+		if thumbnail == nil {
+			mainLogger.Debugf(nil, "No thumbnails found.")
+		} else {
+			if printAsJsonArg == false {
+				fmt.Printf("Writing (%d) bytes for thumbnail: [%s]\n", len(thumbnail), thumbnailOutputFilepathArg)
+				fmt.Printf("\n")
+			}
+
+			err := ioutil.WriteFile(thumbnailOutputFilepathArg, thumbnail, 0644)
+			log.PanicIf(err)
+		}
+	}
 
 	if printAsJsonArg == true {
 		data, err := json.MarshalIndent(entries, "", "    ")
