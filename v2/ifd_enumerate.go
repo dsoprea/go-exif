@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	ifdEnumerateLogger = log.NewLogger("exifjpeg.ifd")
+	ifdEnumerateLogger = log.NewLogger("exif.ifd_enumerate")
 )
 
 var (
