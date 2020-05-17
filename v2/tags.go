@@ -12,23 +12,45 @@ import (
 const (
 	// IFD1
 
-	ThumbnailFqIfdPath   = "IFD1"
+	// ThumbnailFqIfdPath is the fully-qualified IFD path that the thumbnail
+	// must be found in.
+	ThumbnailFqIfdPath = "IFD1"
+
+	// ThumbnailOffsetTagId returns the tag-ID of the thumbnail offset.
 	ThumbnailOffsetTagId = 0x0201
-	ThumbnailSizeTagId   = 0x0202
 
-	// Exif
+	// ThumbnailSizeTagId returns the tag-ID of the thumbnail size.
+	ThumbnailSizeTagId = 0x0202
+)
 
+const (
+	// GPS
+
+	// TagGpsVersionId is the ID of the GPS version tag.
 	TagGpsVersionId = 0x0000
 
-	TagLatitudeId     = 0x0002
-	TagLatitudeRefId  = 0x0001
-	TagLongitudeId    = 0x0004
+	// TagLatitudeId is the ID of the GPS latitude tag.
+	TagLatitudeId = 0x0002
+
+	// TagLatitudeRefId is the ID of the GPS latitude orientation tag.
+	TagLatitudeRefId = 0x0001
+
+	// TagLongitudeId is the ID of the GPS longitude tag.
+	TagLongitudeId = 0x0004
+
+	// TagLongitudeRefId is the ID of the GPS longitude-orientation tag.
 	TagLongitudeRefId = 0x0003
 
+	// TagTimestampId is the ID of the GPS time tag.
 	TagTimestampId = 0x0007
+
+	// TagDatestampId is the ID of the GPS date tag.
 	TagDatestampId = 0x001d
 
-	TagAltitudeId    = 0x0006
+	// TagAltitudeId is the ID of the GPS altitude tag.
+	TagAltitudeId = 0x0006
+
+	// TagAltitudeRefId is the ID of the GPS altitude-orientation tag.
 	TagAltitudeRefId = 0x0005
 )
 
@@ -58,6 +80,7 @@ type encodedTag struct {
 
 // Indexing structures.
 
+// IndexedTag describes one index lookup result.
 type IndexedTag struct {
 	Id      uint16
 	Name    string
@@ -65,23 +88,28 @@ type IndexedTag struct {
 	Type    exifcommon.TagTypePrimitive
 }
 
+// String returns a descriptive string.
 func (it *IndexedTag) String() string {
 	return fmt.Sprintf("TAG<ID=(0x%04x) NAME=[%s] IFD=[%s]>", it.Id, it.Name, it.IfdPath)
 }
 
+// IsName returns true if this tag matches the given tag name.
 func (it *IndexedTag) IsName(ifdPath, name string) bool {
 	return it.Name == name && it.IfdPath == ifdPath
 }
 
+// Is returns true if this tag matched the given tag ID.
 func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 	return it.Id == id && it.IfdPath == ifdPath
 }
 
+// TagIndex is a tag-lookup facility.
 type TagIndex struct {
 	tagsByIfd  map[string]map[uint16]*IndexedTag
 	tagsByIfdR map[string]map[string]*IndexedTag
 }
 
+// NewTagIndex returns a new TagIndex struct.
 func NewTagIndex() *TagIndex {
 	ti := new(TagIndex)
 
@@ -91,6 +119,7 @@ func NewTagIndex() *TagIndex {
 	return ti
 }
 
+// Add registers a new tag to be recognized during the parse.
 func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -129,7 +158,7 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	return nil
 }
 
-// Get returns information about the non-IFD tag.
+// Get returns information about the non-IFD tag given a tag ID.
 func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -144,18 +173,18 @@ func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
 
 	family, found := ti.tagsByIfd[ifdPath]
 	if found == false {
-		log.Panic(ErrTagNotFound)
+		return nil, ErrTagNotFound
 	}
 
 	it, found = family[id]
 	if found == false {
-		log.Panic(ErrTagNotFound)
+		return nil, ErrTagNotFound
 	}
 
 	return it, nil
 }
 
-// Get returns information about the non-IFD tag.
+// GetWithName returns information about the non-IFD tag given a tag name.
 func (ti *TagIndex) GetWithName(ifdPath string, name string) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
