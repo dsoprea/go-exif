@@ -662,6 +662,12 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 		if ite.ChildIfdPath() != "" {
 			fmt.Printf("%s - TAG: %s\n", indent, ite)
 		} else {
+			// This will just add noise to the output (byte-tags are fully
+			// dumped).
+			if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() == true {
+				continue
+			}
+
 			it, err := ifd.tagIndex.Get(ifd.IfdPath, ite.TagId())
 
 			tagName := ""
