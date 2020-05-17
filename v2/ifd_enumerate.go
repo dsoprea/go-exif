@@ -305,6 +305,35 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			log.Panic(err)
 		}
 
+		// TODO(dustin): This is inefficient. Our IFD paths should have their own type where we can render whatever path we need.
+		ifdPath, err := ie.ifdMapping.StripPathPhraseIndices(fqIfdPath)
+		log.PanicIf(err)
+
+		it, err := ie.tagIndex.Get(ifdPath, ite.TagId())
+		if err == nil {
+			// This is a known tag (from the standard, unless the user did
+			// something different).
+
+			// Skip any tags that have a type that doesn't match the type in the
+			// index (which is loaded with the standard and accept tag
+			// information unless configured otherwise).
+			//
+			// We've run into multiple instances of the same tag, where a) no
+			// tag should ever be repeated, and b) all but one had an incorrect
+			// type and caused parsing/conversion woes. So, this is a quick fix
+			// for those scenarios.
+			if ite.TagType() != it.Type {
+				ifdEnumerateLogger.Warningf(nil,
+					"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: (%d) [%s] != (%d) [%s]",
+					ifdPath, ite.TagId(), it.Name,
+					ite.TagType(), ite.TagType(), it.Type, it.Type)
+
+				continue
+			}
+		} else if err != ErrTagNotFound {
+			log.Panic(err)
+		}
+
 		if visitor != nil {
 			err := visitor(fqIfdPath, ifdIndex, ite)
 			log.PanicIf(err)
@@ -924,6 +953,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 		altitudeRaw := altitudeValue.([]exifcommon.Rational)
 		altitude := int(altitudeRaw[0].Numerator / altitudeRaw[0].Denominator)
+
 		if altitudeRefValue.([]byte)[0] == 1 {
 			altitude *= -1
 		}
