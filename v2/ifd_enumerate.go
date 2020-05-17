@@ -328,8 +328,8 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			if it.DoesSupportType(tagType) == false {
 				ifdEnumerateLogger.Warningf(nil,
 					"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
-					ifdPath, ite.TagId(), it.Name,
-					ite.TagType(), it.SupportedTypes)
+					ifdPath, tagId, it.Name,
+					tagType, it.SupportedTypes)
 
 				continue
 			}
@@ -343,11 +343,15 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 		}
 
 		if ite.IsThumbnailOffset() == true {
+			ifdEnumerateLogger.Debugf(nil, "Skipping the thumbnail offset tag (0x%04x). Use accessors to get it or set it.", tagId)
+
 			enumeratorThumbnailOffset = ite
 			entries = append(entries, ite)
 
 			continue
 		} else if ite.IsThumbnailSize() == true {
+			ifdEnumerateLogger.Debugf(nil, "Skipping the thumbnail size tag (0x%04x). Use accessors to get it or set it.", tagId)
+
 			enumeratorThumbnailSize = ite
 			entries = append(entries, ite)
 
