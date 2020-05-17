@@ -13,6 +13,10 @@ import (
     "github.com/dsoprea/go-exif/v2/undefined"
 )
 
+var (
+    utilityLogger = log.NewLogger("exif.utility")
+)
+
 // ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49" into a UTC
 // `time.Time` struct.
 func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, err error) {
@@ -118,14 +122,28 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 
         ti := NewTagIndex()
         for _, ite := range ifd.Entries {
+            tagId := ite.TagId()
+            tagType := ite.TagType()
+
             tagName := ""
 
-            it, err := ti.Get(ifd.IfdPath, ite.TagId())
+            it, err := ti.Get(ifd.IfdPath, ite.tagId)
             if err != nil {
-                // If it's a non-standard tag, just leave the name blank.
                 if log.Is(err, ErrTagNotFound) != true {
-                    log.PanicIf(err)
+                    log.Panic(err)
                 }
+
+                // This is an unknown tag.
+
+                // This is supposed to be a convenience function and if we were
+                // to keep the name empty or set it to some placeholder, it
+                // might be mismanaged by the package that is calling us. If
+                // they want to specifically manage these types of tags, they
+                // can use more advanced functionality to specifically -handle
+                // unknown tags.
+                utilityLogger.Warningf(nil, "Tag with ID (0x%04x) in IFD [%s] is not recognized and will be ignored.", tagId, ifd.FqIfdPath)
+
+                continue
             } else {
                 tagName = it.Name
             }
@@ -148,11 +166,9 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
                 }
             }
 
-            tagType := ite.TagType()
-
             et := ExifTag{
                 IfdPath:      ifd.FqIfdPath,
-                TagId:        ite.TagId(),
+                TagId:        tagId,
                 TagName:      tagName,
                 TagTypeId:    tagType,
                 TagTypeName:  tagType.String(),
