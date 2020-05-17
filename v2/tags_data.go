@@ -327,10 +327,10 @@ IFD:
   type_name: SHORT
 - id: 0x0100
   name: ImageWidth
-  type_name: LONG
+  type_names: [LONG, SHORT]
 - id: 0x0101
   name: ImageLength
-  type_name: LONG
+  type_names: [LONG, SHORT]
 - id: 0x0102
   name: BitsPerSample
   type_name: SHORT
@@ -366,7 +366,7 @@ IFD:
   type_name: ASCII
 - id: 0x0111
   name: StripOffsets
-  type_name: LONG
+  type_names: [LONG, SHORT]
 - id: 0x0112
   name: Orientation
   type_name: SHORT
@@ -375,10 +375,10 @@ IFD:
   type_name: SHORT
 - id: 0x0116
   name: RowsPerStrip
-  type_name: LONG
+  type_names: [LONG, SHORT]
 - id: 0x0117
   name: StripByteCounts
-  type_name: LONG
+  type_names: [LONG, SHORT]
 - id: 0x011a
   name: XResolution
   type_name: RATIONAL
