@@ -121,10 +121,10 @@ IFD/Exif:
   type_name: SHORT
 - id: 0xa002
   name: PixelXDimension
-  type_name: LONG
+  type_names: [LONG, SHORT]
 - id: 0xa003
   name: PixelYDimension
-  type_name: LONG
+  type_names: [LONG, SHORT]
 - id: 0xa004
   name: RelatedSoundFile
   type_name: ASCII

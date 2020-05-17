@@ -185,8 +185,12 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 // NewStandardBuilderTag constructs a `BuilderTag` instance. The type is looked
 // up. `ii` is the type of IFD that owns this tag.
 func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
+	if len(it.SupportedTypes) != 1 {
+		log.Panicf("NewStandardBuilderTag() IndexedTag argument must have exactly one supported-type: %v", it.SupportedTypes)
+	}
+
 	var rawBytes []byte
-	if it.Type == exifcommon.TypeUndefined {
+	if it.DoesSupportType(exifcommon.TypeUndefined) == true {
 		encodeable := value.(exifundefined.EncodeableValue)
 
 		var err error
@@ -207,7 +211,7 @@ func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.Byte
 	return NewBuilderTag(
 		ifdPath,
 		it.Id,
-		it.Type,
+		it.SupportedTypes[0],
 		tagValue,
 		byteOrder)
 }

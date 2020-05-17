@@ -309,7 +309,10 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 		ifdPath, err := ie.ifdMapping.StripPathPhraseIndices(fqIfdPath)
 		log.PanicIf(err)
 
-		it, err := ie.tagIndex.Get(ifdPath, ite.TagId())
+		tagId := ite.TagId()
+		tagType := ite.TagType()
+
+		it, err := ie.tagIndex.Get(ifdPath, tagId)
 		if err == nil {
 			// This is a known tag (from the standard, unless the user did
 			// something different).
@@ -322,11 +325,11 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			// tag should ever be repeated, and b) all but one had an incorrect
 			// type and caused parsing/conversion woes. So, this is a quick fix
 			// for those scenarios.
-			if ite.TagType() != it.Type {
+			if it.DoesSupportType(tagType) == false {
 				ifdEnumerateLogger.Warningf(nil,
-					"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: (%d) [%s] != (%d) [%s]",
+					"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
 					ifdPath, ite.TagId(), it.Name,
-					ite.TagType(), ite.TagType(), it.Type, it.Type)
+					ite.TagType(), it.SupportedTypes)
 
 				continue
 			}

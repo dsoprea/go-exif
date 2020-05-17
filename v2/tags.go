@@ -73,19 +73,27 @@ var (
 type encodedTag struct {
 	// id is signed, here, because YAML doesn't have enough information to
 	// support unsigned.
-	Id       int    `yaml:"id"`
-	Name     string `yaml:"name"`
-	TypeName string `yaml:"type_name"`
+	Id        int      `yaml:"id"`
+	Name      string   `yaml:"name"`
+	TypeName  string   `yaml:"type_name"`
+	TypeNames []string `yaml:"type_names"`
 }
 
 // Indexing structures.
 
 // IndexedTag describes one index lookup result.
 type IndexedTag struct {
-	Id      uint16
-	Name    string
+	// Id is the tag-ID.
+	Id uint16
+
+	// Name is the tag name.
+	Name string
+
+	// IfdPath is the proper IFD path of this tag. This is not fully-qualified.
 	IfdPath string
-	Type    exifcommon.TagTypePrimitive
+
+	// SupportedTypes is an unsorted list of allowed tag-types.
+	SupportedTypes []exifcommon.TagTypePrimitive
 }
 
 // String returns a descriptive string.
@@ -101,6 +109,18 @@ func (it *IndexedTag) IsName(ifdPath, name string) bool {
 // Is returns true if this tag matched the given tag ID.
 func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 	return it.Id == id && it.IfdPath == ifdPath
+}
+
+// DoesSupportType returns true if this tag can be found/decoded with this type.
+func (it *IndexedTag) DoesSupportType(tagType exifcommon.TagTypePrimitive) bool {
+	// This is always a very small collection. So, we keep it unsorted.
+	for _, thisTagType := range it.SupportedTypes {
+		if thisTagType == tagType {
+			return true
+		}
+	}
+
+	return false
 }
 
 // TagIndex is a tag-lookup facility.
@@ -229,23 +249,43 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 			tagId := uint16(tagInfo.Id)
 			tagName := tagInfo.Name
 			tagTypeName := tagInfo.TypeName
+			tagTypeNames := tagInfo.TypeNames
 
-			// TODO(dustin): !! Non-standard types, but found in real data. Ignore for right now.
-			if tagTypeName == "SSHORT" || tagTypeName == "FLOAT" || tagTypeName == "DOUBLE" {
-				continue
+			if tagTypeNames == nil {
+				if tagTypeName == "" {
+					log.Panicf("no tag-types were given for standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
+				}
+
+				tagTypeNames = []string{
+					tagTypeName,
+				}
+			} else if tagTypeName != "" {
+				log.Panicf("both 'type_names' and 'type_name' were given for standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
 			}
 
-			tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
-			if found == false {
-				log.Panicf("type [%s] for [%s] not valid", tagTypeName, tagName)
+			tagTypes := make([]exifcommon.TagTypePrimitive, 0)
+			for _, tagTypeName := range tagTypeNames {
+
+				// TODO(dustin): Discard unsupported types. This helps us with non-standard types that have actually been found in real data, that we ignore for right now. e.g. SSHORT, FLOAT, DOUBLE
+				tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
+				if found == false {
+					tagsLogger.Warningf(nil, "Type [%s] for tag [%s] is not valid and will be ignored.", tagTypeName, tagName)
+					continue
+				}
+
+				tagTypes = append(tagTypes, tagTypeId)
+			}
+
+			if len(tagTypes) == 0 {
+				tagsLogger.Warningf(nil, "Standard tag [%s] (0x%04x) [%s] does not have any supported types and will be skipped.", ifdPath, tagId, tagName)
 				continue
 			}
 
 			it := &IndexedTag{
-				IfdPath: ifdPath,
-				Id:      tagId,
-				Name:    tagName,
-				Type:    tagTypeId,
+				IfdPath:        ifdPath,
+				Id:             tagId,
+				Name:           tagName,
+				SupportedTypes: tagTypes,
 			}
 
 			err = ti.Add(it)
