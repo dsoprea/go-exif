@@ -35,6 +35,7 @@ var (
 )
 
 var (
+	// ValidGpsVersions is the list of recognized EXIF GPS versions/signatures.
 	ValidGpsVersions = [][4]byte{
 		// 2.0.0.0 appears to have a very similar format to 2.2.0.0, so enabling
 		// it under that assumption.
@@ -163,6 +164,8 @@ func (bp *byteParser) CurrentOffset() uint32 {
 	return bp.currentOffset
 }
 
+// IfdEnumerate is the main enumeration type. It knows how to parse the IFD
+// containers in the EXIF blob.
 type IfdEnumerate struct {
 	exifData       []byte
 	buffer         *bytes.Buffer
@@ -172,6 +175,7 @@ type IfdEnumerate struct {
 	furthestOffset uint32
 }
 
+// NewIfdEnumerate returns a new instance of IfdEnumerate.
 func NewIfdEnumerate(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
 	return &IfdEnumerate{
 		exifData:   exifData,
@@ -446,7 +450,8 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 	return thumbnailData, nil
 }
 
-// scan enumerates the different IFD blocks.
+// scan parses and enumerates the different IFD blocks out of a byte-slice and
+// invokes a visitor callback along the way. No information is kept or returned.
 func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -506,7 +511,7 @@ func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor TagVi
 	return nil
 }
 
-// Ifd represents a single parsed IFD.
+// Ifd represents a single, parsed IFD.
 type Ifd struct {
 
 	// TODO(dustin): !! Why are all of these exported? Stop doing this in the next release.
@@ -556,6 +561,8 @@ type Ifd struct {
 	tagIndex   *TagIndex
 }
 
+// ChildWithIfdPath returns an `Ifd` struct for the given child of the current
+// IFD.
 func (ifd *Ifd) ChildWithIfdPath(ifdPath string) (childIfd *Ifd, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -620,6 +627,7 @@ func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err err
 	return results, nil
 }
 
+// String returns a description string.
 func (ifd *Ifd) String() string {
 	parentOffset := uint32(0)
 	if ifd.ParentIfd != nil {
@@ -629,6 +637,8 @@ func (ifd *Ifd) String() string {
 	return fmt.Sprintf("Ifd<ID=(%d) IFD-PATH=[%s] INDEX=(%d) COUNT=(%d) OFF=(0x%04x) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)>", ifd.Id, ifd.IfdPath, ifd.Index, len(ifd.Entries), ifd.Offset, len(ifd.Children), parentOffset, ifd.NextIfdOffset)
 }
 
+// Thumbnail returns the raw thumbnail bytes. This is typically directly
+// readable by any standard image viewer.
 func (ifd *Ifd) Thumbnail() (data []byte, err error) {
 
 	if ifd.thumbnailData == nil {
@@ -1000,8 +1010,12 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	return gi, nil
 }
 
+// ParsedTagVisitor is a callback used if wanting to visit through all tags and
+// child IFDs from the current IFD and going down.
 type ParsedTagVisitor func(*Ifd, *IfdTagEntry) error
 
+// EnumerateTagsRecursively calls the given visitor function for every tag and
+// IFD in the current IFD, recursively.
 func (ifd *Ifd) EnumerateTagsRecursively(visitor ParsedTagVisitor) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -1027,6 +1041,7 @@ func (ifd *Ifd) EnumerateTagsRecursively(visitor ParsedTagVisitor) (err error) {
 	return nil
 }
 
+// QueuedIfd is one IFD that has been identified but yet to be processed.
 type QueuedIfd struct {
 	Name      string
 	IfdPath   string
@@ -1044,6 +1059,8 @@ type QueuedIfd struct {
 	ParentTagIndex int
 }
 
+// IfdIndex collects a bunch of IFD and tag information stored in several
+// different ways in order to provide convenient lookups.
 type IfdIndex struct {
 	RootIfd *Ifd
 	Ifds    []*Ifd
@@ -1051,7 +1068,8 @@ type IfdIndex struct {
 	Lookup  map[string]*Ifd
 }
 
-// Scan enumerates the different EXIF blocks (called IFDs).
+// Collect enumerates the different EXIF blocks (called IFDs) and builds out an
+// index struct for referencing all of the parsed data.
 func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -1327,6 +1345,8 @@ func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 	return tag, nil
 }
 
+// FindIfdFromRootIfd returns the given `Ifd` given the root-IFD and path of the
+// desired IFD.
 func FindIfdFromRootIfd(rootIfd *Ifd, ifdPath string) (ifd *Ifd, err error) {
 	defer func() {
 		if state := recover(); state != nil {
