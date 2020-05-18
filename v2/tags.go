@@ -253,14 +253,14 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 
 			if tagTypeNames == nil {
 				if tagTypeName == "" {
-					log.Panicf("no tag-types were given for standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
+					log.Panicf("no tag-types were given when registering standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
 				}
 
 				tagTypeNames = []string{
 					tagTypeName,
 				}
 			} else if tagTypeName != "" {
-				log.Panicf("both 'type_names' and 'type_name' were given for standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
+				log.Panicf("both 'type_names' and 'type_name' were given when registering standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
 			}
 
 			tagTypes := make([]exifcommon.TagTypePrimitive, 0)
@@ -269,7 +269,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 				// TODO(dustin): Discard unsupported types. This helps us with non-standard types that have actually been found in real data, that we ignore for right now. e.g. SSHORT, FLOAT, DOUBLE
 				tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
 				if found == false {
-					tagsLogger.Warningf(nil, "Type [%s] for tag [%s] is not valid and will be ignored.", tagTypeName, tagName)
+					tagsLogger.Warningf(nil, "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
 					continue
 				}
 
@@ -277,7 +277,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 			}
 
 			if len(tagTypes) == 0 {
-				tagsLogger.Warningf(nil, "Standard tag [%s] (0x%04x) [%s] does not have any supported types and will be skipped.", ifdPath, tagId, tagName)
+				tagsLogger.Warningf(nil, "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
 				continue
 			}
 
