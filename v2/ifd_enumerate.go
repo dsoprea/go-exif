@@ -450,8 +450,8 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 	return thumbnailData, nil
 }
 
-// scan parses and enumerates the different IFD blocks out of a byte-slice and
-// invokes a visitor callback along the way. No information is kept or returned.
+// scan parses and enumerates the different IFD blocks and invokes a visitor
+// callback for each tag. No information is kept or returned.
 func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -507,6 +507,8 @@ func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor TagVi
 
 	err = ie.scan(rootIfdName, ifdOffset, visitor)
 	log.PanicIf(err)
+
+	ifdEnumerateLogger.Debugf(nil, "Scan: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d) (Scan).", ie.FurthestOffset())
 
 	return nil
 }
@@ -1250,6 +1252,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 	err = ie.setChildrenIndex(index.RootIfd)
 	log.PanicIf(err)
+
+	ifdEnumerateLogger.Debugf(nil, "Collect: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d).", ie.FurthestOffset())
 
 	return index, nil
 }
