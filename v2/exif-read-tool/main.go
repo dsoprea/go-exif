@@ -25,7 +25,6 @@ import (
 
 	"github.com/dsoprea/go-exif/v2"
 	"github.com/dsoprea/go-exif/v2/common"
-	"github.com/dsoprea/go-exif/v2/undefined"
 )
 
 const (
@@ -106,75 +105,16 @@ func main() {
 
 	// Run the parse.
 
-	im := exif.NewIfdMappingWithStandard()
-	ti := exif.NewTagIndex()
-
-	entries := make([]IfdEntry, 0)
-	visitor := func(fqIfdPath string, ifdIndex int, ite *exif.IfdTagEntry) (err error) {
-		defer func() {
-			if state := recover(); state != nil {
-				err = log.Wrap(state.(error))
-				log.Panic(err)
-			}
-		}()
-
-		tagId := ite.TagId()
-		tagType := ite.TagType()
-
-		ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
-		log.PanicIf(err)
-
-		it, err := ti.Get(ifdPath, tagId)
-		if err != nil {
-			if log.Is(err, exif.ErrTagNotFound) {
-				mainLogger.Warningf(nil, "Unknown tag: [%s] (0x%04x)", ifdPath, tagId)
-				return nil
-			} else {
-				log.Panic(err)
-			}
-		}
-
-		value, err := ite.Value()
-		if err != nil {
-			if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) == true {
-				mainLogger.Warningf(nil, "Skipping non-standard undefined tag: [%s] (%04x)", ifdPath, tagId)
-				return nil
-			} else if err == exifundefined.ErrUnparseableValue {
-				mainLogger.Warningf(nil, "Skipping unparseable undefined tag: [%s] (%04x)", ifdPath, tagId)
-				return nil
-			}
-
-			log.Panic(err)
-		}
-
-		valueString, err := ite.FormatFirst()
-		log.PanicIf(err)
-
-		entry := IfdEntry{
-			IfdPath:     ifdPath,
-			FqIfdPath:   fqIfdPath,
-			IfdIndex:    ifdIndex,
-			TagId:       tagId,
-			TagName:     it.Name,
-			TagTypeId:   tagType,
-			TagTypeName: tagType.String(),
-			UnitCount:   ite.UnitCount(),
-			Value:       value,
-			ValueString: valueString,
-		}
-
-		entries = append(entries, entry)
-
-		return nil
-	}
-
-	_, furthestOffset, err := exif.Visit(exifcommon.IfdStandard, im, ti, rawExif, visitor)
+	entries, err := exif.GetFlatExifData(rawExif)
 	log.PanicIf(err)
 
-	mainLogger.Debugf(nil, "EXIF blob is approximately (%d) bytes.", furthestOffset)
+	// Write the thumbnail is requested and present.
 
 	thumbnailOutputFilepath := arguments.ThumbnailOutputFilepath
 	if thumbnailOutputFilepath != "" {
+		im := exif.NewIfdMappingWithStandard()
+		ti := exif.NewTagIndex()
+
 		_, index, err := exif.Collect(im, ti, rawExif)
 		log.PanicIf(err)
 
@@ -206,12 +146,22 @@ func main() {
 
 			fmt.Println(string(data))
 		} else {
+			thumbnailTags := 0
 			for _, entry := range entries {
-				fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdPath, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.ValueString)
+				if (entry.TagId == exif.ThumbnailOffsetTagId || entry.TagId == exif.ThumbnailSizeTagId) && entry.IfdPath == exif.ThumbnailFqIfdPath {
+					thumbnailTags++
+					continue
+				}
+
+				fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdPath, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.Formatted)
 			}
 
 			fmt.Printf("\n")
-			fmt.Printf("EXIF blob is approximately (%d) bytes.\n", furthestOffset)
+
+			if thumbnailTags == 2 {
+				fmt.Printf("There is a thumbnail.\n")
+				fmt.Printf("\n")
+			}
 		}
 	}
 }
