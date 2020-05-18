@@ -14,7 +14,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -22,6 +21,7 @@ import (
 	"io/ioutil"
 
 	"github.com/dsoprea/go-logging"
+	"github.com/jessevdk/go-flags"
 
 	"github.com/dsoprea/go-exif/v2"
 	"github.com/dsoprea/go-exif/v2/common"
@@ -34,13 +34,6 @@ const (
 
 var (
 	mainLogger = log.NewLogger("main.main")
-)
-
-var (
-	filepathArg                = ""
-	printAsJsonArg             = false
-	printLoggingArg            = false
-	thumbnailOutputFilepathArg = ""
 )
 
 type IfdEntry struct {
@@ -56,28 +49,33 @@ type IfdEntry struct {
 	ValueString string                      `json:"value_string"`
 }
 
+type parameters struct {
+	Filepath                string `short:"f" long:"filepath" required:"true" description:"File-path of image"`
+	PrintAsJson             bool   `short:"j" long:"json" description:"Print out as JSON"`
+	IsVerbose               bool   `short:"v" long:"verbose" description:"Print logging"`
+	ThumbnailOutputFilepath string `short:"t" long:"thumbnail-output-filepath" description:"File-path to write thumbnail to (if present)"`
+}
+
+var (
+	arguments = new(parameters)
+)
+
 func main() {
 	defer func() {
-		if state := recover(); state != nil {
-			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Program error.")
-			os.Exit(1)
+		if errRaw := recover(); errRaw != nil {
+			err := errRaw.(error)
+			log.PrintError(err)
+
+			os.Exit(-2)
 		}
 	}()
 
-	flag.StringVar(&filepathArg, "filepath", "", "File-path of image")
-	flag.BoolVar(&printAsJsonArg, "json", false, "Print JSON")
-	flag.BoolVar(&printLoggingArg, "verbose", false, "Print logging")
-	flag.StringVar(&thumbnailOutputFilepathArg, "thumbnail-output-filepath", "", "File-path to write a thumbnail to if found.")
-
-	flag.Parse()
-
-	if filepathArg == "" {
-		fmt.Printf("Please provide a file-path for an image.\n")
-		os.Exit(1)
+	_, err := flags.Parse(arguments)
+	if err != nil {
+		os.Exit(-1)
 	}
 
-	if printLoggingArg == true {
+	if arguments.IsVerbose == true {
 		cla := log.NewConsoleLogAdapter()
 		log.AddAdapter("console", cla)
 
@@ -87,7 +85,7 @@ func main() {
 		log.LoadConfiguration(scp)
 	}
 
-	f, err := os.Open(filepathArg)
+	f, err := os.Open(arguments.Filepath)
 	log.PanicIf(err)
 
 	data, err := ioutil.ReadAll(f)
@@ -174,7 +172,8 @@ func main() {
 
 	mainLogger.Debugf(nil, "EXIF blob is approximately (%d) bytes.", furthestOffset)
 
-	if thumbnailOutputFilepathArg != "" {
+	thumbnailOutputFilepath := arguments.ThumbnailOutputFilepath
+	if thumbnailOutputFilepath != "" {
 		_, index, err := exif.Collect(im, ti, rawExif)
 		log.PanicIf(err)
 
@@ -189,17 +188,17 @@ func main() {
 		if thumbnail == nil {
 			mainLogger.Debugf(nil, "No thumbnails found.")
 		} else {
-			if printAsJsonArg == false {
-				fmt.Printf("Writing (%d) bytes for thumbnail: [%s]\n", len(thumbnail), thumbnailOutputFilepathArg)
+			if arguments.PrintAsJson == false {
+				fmt.Printf("Writing (%d) bytes for thumbnail: [%s]\n", len(thumbnail), thumbnailOutputFilepath)
 				fmt.Printf("\n")
 			}
 
-			err := ioutil.WriteFile(thumbnailOutputFilepathArg, thumbnail, 0644)
+			err := ioutil.WriteFile(thumbnailOutputFilepath, thumbnail, 0644)
 			log.PanicIf(err)
 		}
 	}
 
-	if printAsJsonArg == true {
+	if arguments.PrintAsJson == true {
 		data, err := json.MarshalIndent(entries, "", "    ")
 		log.PanicIf(err)
 
