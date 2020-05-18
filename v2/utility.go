@@ -122,7 +122,6 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
         var ifd *Ifd
         ifd, q = q[0], q[1:]
 
-        ti := NewTagIndex()
         for _, ite := range ifd.Entries {
             tagId := ite.TagId()
             tagType := ite.TagType()
