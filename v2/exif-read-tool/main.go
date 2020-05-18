@@ -54,6 +54,7 @@ type parameters struct {
 	PrintAsJson             bool   `short:"j" long:"json" description:"Print out as JSON"`
 	IsVerbose               bool   `short:"v" long:"verbose" description:"Print logging"`
 	ThumbnailOutputFilepath string `short:"t" long:"thumbnail-output-filepath" description:"File-path to write thumbnail to (if present)"`
+	DoNotPrintTags          bool   `short:"n" long:"no-tags" description:"Do not actually print tags. Good for auditing the logs or merely checking the EXIF structure for errors"`
 }
 
 var (
@@ -198,17 +199,19 @@ func main() {
 		}
 	}
 
-	if arguments.PrintAsJson == true {
-		data, err := json.MarshalIndent(entries, "", "    ")
-		log.PanicIf(err)
+	if arguments.DoNotPrintTags == false {
+		if arguments.PrintAsJson == true {
+			data, err := json.MarshalIndent(entries, "", "    ")
+			log.PanicIf(err)
 
-		fmt.Println(string(data))
-	} else {
-		for _, entry := range entries {
-			fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdPath, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.ValueString)
+			fmt.Println(string(data))
+		} else {
+			for _, entry := range entries {
+				fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdPath, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.ValueString)
+			}
+
+			fmt.Printf("\n")
+			fmt.Printf("EXIF blob is approximately (%d) bytes.\n", furthestOffset)
 		}
-
-		fmt.Printf("\n")
-		fmt.Printf("EXIF blob is approximately (%d) bytes.\n", furthestOffset)
 	}
 }
