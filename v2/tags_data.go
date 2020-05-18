@@ -564,10 +564,12 @@ IFD:
   type_name: ASCII
 - id: 0x829a
   name: ExposureTime
-  type_name: RATIONAL
+# NOTE(dustin): SRATIONAL isn't mentioned in the standard, but we have seen it in real data.
+  type_names: [RATIONAL, SRATIONAL]
 - id: 0x829d
   name: FNumber
-  type_name: RATIONAL
+# NOTE(dustin): SRATIONAL isn't mentioned in the standard, but we have seen it in real data.
+  type_names: [RATIONAL, SRATIONAL]
 - id: 0x83bb
   name: IPTCNAA
   type_name: LONG
