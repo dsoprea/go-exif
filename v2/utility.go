@@ -82,6 +82,8 @@ type ExifTag struct {
     TagId   uint16 `json:"id"`
     TagName string `json:"name"`
 
+    UnitCount uint32 `json:"unit_count"`
+
     TagTypeId   exifcommon.TagTypePrimitive `json:"type_id"`
     TagTypeName string                      `json:"type_name"`
     Value       interface{}                 `json:"value"`
@@ -170,6 +172,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
                 IfdPath:      ifd.FqIfdPath,
                 TagId:        tagId,
                 TagName:      tagName,
+                UnitCount:    ite.UnitCount(),
                 TagTypeId:    tagType,
                 TagTypeName:  tagType.String(),
                 Value:        value,
