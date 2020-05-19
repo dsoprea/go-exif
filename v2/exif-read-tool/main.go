@@ -148,11 +148,6 @@ func main() {
 		} else {
 			thumbnailTags := 0
 			for _, entry := range entries {
-				if (entry.TagId == exif.ThumbnailOffsetTagId || entry.TagId == exif.ThumbnailSizeTagId) && entry.IfdPath == exif.ThumbnailFqIfdPath {
-					thumbnailTags++
-					continue
-				}
-
 				fmt.Printf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]\n", entry.IfdPath, entry.TagId, entry.TagName, entry.UnitCount, entry.TagTypeName, entry.Formatted)
 			}
 
