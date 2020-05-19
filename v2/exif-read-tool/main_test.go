@@ -25,7 +25,7 @@ var (
 func TestMain(t *testing.T) {
 	cmd := exec.Command(
 		"go", "run", appFilepath,
-		"-filepath", testImageFilepath)
+		"--filepath", testImageFilepath)
 
 	b := new(bytes.Buffer)
 	cmd.Stdout = b
@@ -110,8 +110,8 @@ EXIF blob is approximately (32935) bytes.
 func TestMainJson(t *testing.T) {
 	cmd := exec.Command(
 		"go", "run", appFilepath,
-		"-filepath", testImageFilepath,
-		"-json")
+		"--filepath", testImageFilepath,
+		"--json")
 
 	b := new(bytes.Buffer)
 	cmd.Stdout = b
