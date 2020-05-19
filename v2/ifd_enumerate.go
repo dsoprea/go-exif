@@ -276,9 +276,9 @@ func (ie *IfdEnumerate) parseTag(fqIfdPath string, tagPosition int, bp *bytePars
 // TagVisitorFn is called for each tag when enumerating through the EXIF.
 type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
 
-// ParseIfd decodes the IFD block that we're currently sitting on the first
+// parseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser, visitor TagVisitorFn, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) parseIfd(fqIfdPath string, ifdIndex int, bp *byteParser, visitor TagVisitorFn, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -476,7 +476,7 @@ func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisito
 			log.Panic(err)
 		}
 
-		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
+		nextIfdOffset, _, _, err := ie.parseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
 		log.PanicIf(err)
 
 		currentOffset := bp.CurrentOffset()
@@ -1126,7 +1126,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 			log.Panic(err)
 		}
 
-		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, currentIndex, bp, nil, false)
+		nextIfdOffset, entries, thumbnailData, err := ie.parseIfd(fqIfdPath, currentIndex, bp, nil, false)
 		log.PanicIf(err)
 
 		currentOffset := bp.CurrentOffset()
@@ -1318,7 +1318,7 @@ func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 		log.Panic(err)
 	}
 
-	nextIfdOffset, entries, _, err = ie.ParseIfd(fqIfdPath, 0, bp, visitor, true)
+	nextIfdOffset, entries, _, err = ie.parseIfd(fqIfdPath, 0, bp, visitor, true)
 	log.PanicIf(err)
 
 	return nextIfdOffset, entries, nil
