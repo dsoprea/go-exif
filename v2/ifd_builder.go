@@ -185,9 +185,10 @@ func (bt *BuilderTag) SetValue(byteOrder binary.ByteOrder, value interface{}) (e
 // NewStandardBuilderTag constructs a `BuilderTag` instance. The type is looked
 // up. `ii` is the type of IFD that owns this tag.
 func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.ByteOrder, value interface{}) *BuilderTag {
-	if len(it.SupportedTypes) != 1 {
-		log.Panicf("NewStandardBuilderTag() IndexedTag argument must have exactly one supported-type: %v", it.SupportedTypes)
-	}
+	// If there is more than one supported type, we'll go with the larger to
+	// encode with. It'll use the same amount of fixed-space, and we'll
+	// eliminate unnecessary overflows/issues.
+	tagType := it.WidestSupportedType()
 
 	var rawBytes []byte
 	if it.DoesSupportType(exifcommon.TypeUndefined) == true {
@@ -211,7 +212,7 @@ func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.Byte
 	return NewBuilderTag(
 		ifdPath,
 		it.Id,
-		it.SupportedTypes[0],
+		tagType,
 		tagValue,
 		byteOrder)
 }

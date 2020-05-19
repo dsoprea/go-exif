@@ -111,6 +111,34 @@ func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 	return it.Id == id && it.IfdPath == ifdPath
 }
 
+func (it *IndexedTag) WidestSupportedType() exifcommon.TagTypePrimitive {
+	if len(it.SupportedTypes) == 0 {
+		log.Panicf("IndexedTag [%s] (%d) has no supported types.", it.IfdPath, it.Id)
+	} else if len(it.SupportedTypes) == 1 {
+		return it.SupportedTypes[0]
+	}
+
+	supportsLong := false
+	supportsShort := false
+	for _, supportedType := range it.SupportedTypes {
+		if supportedType == exifcommon.TypeLong {
+			supportsLong = true
+		} else if supportedType == exifcommon.TypeShort {
+			supportsShort = true
+		}
+	}
+
+	// If it supports both long and short ints. This is currently our common
+	// and only case. The moment more are added to our tags database, we'll have
+	// to add more checks here if we add more than just a LONG and just a SHORT.
+	if supportsLong == true && supportsShort == true {
+		return exifcommon.TypeLong
+	}
+
+	log.Panicf("WidestSupportedType() case is not handled for tag [%s] (0x%04x): %v", it.IfdPath, it.Id, it.SupportedTypes)
+	return 0
+}
+
 // DoesSupportType returns true if this tag can be found/decoded with this type.
 func (it *IndexedTag) DoesSupportType(tagType exifcommon.TagTypePrimitive) bool {
 	// This is always a very small collection. So, we keep it unsorted.
@@ -178,7 +206,8 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	return nil
 }
 
-// Get returns information about the non-IFD tag given a tag ID.
+// Get returns information about the non-IFD tag given a tag ID. `ifdPath` must
+// not be fully-qualified.
 func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
