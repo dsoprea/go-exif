@@ -66,6 +66,16 @@ var (
 	}
 )
 
+var (
+	// TagSkipReasonInvalidType is used if the tag has a type that we can not
+	// process.
+	TagSkipReasonInvalidType string = "invalid_type"
+
+	// TagSkipReasonMismatchedType is used if the tag has a type that is
+	// different than what we expected.
+	TagSkipReasonMismatchedType string = "mismatched_type"
+)
+
 // byteParser knows how to decode an IFD and all of the tags it
 // describes.
 //
@@ -278,7 +288,7 @@ type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err er
 
 // ParseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser, visitor TagVisitorFn, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser, visitor TagVisitorFn, doDescend bool, skippedTags map[uint16][2]string) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -302,7 +312,16 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 				// Technically, we have the type on-file in the tags-index, but
 				// if the type stored alongside the data disagrees with it,
 				// which it apparently does, all bets are off.
+
+				if skippedTags != nil {
+					skippedTags[ite.tagId] = []string{
+						TagSkipReasonInvalidType,
+						fmt.Sprintf("tag type (%d) not valid", ite.tagType),
+					}
+				}
+
 				ifdEnumerateLogger.Warningf(nil, "Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", ite.tagId, fqIfdPath, i, ite.tagType)
+
 				continue
 			}
 
@@ -321,7 +340,7 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			// This is a known tag (from the standard, unless the user did
 			// something different).
 
-			// Skip any tags that have a type that doesn't match the type in the
+			// Skip any tags that have a type that don't match the type in the
 			// index (which is loaded with the standard and accept tag
 			// information unless configured otherwise).
 			//
@@ -330,6 +349,13 @@ func (ie *IfdEnumerate) ParseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			// type and caused parsing/conversion woes. So, this is a quick fix
 			// for those scenarios.
 			if it.DoesSupportType(tagType) == false {
+				if skippedTags != nil {
+					skippedTags[ite.tagId] = []string{
+						TagSkipReasonMismatchedType,
+						fmt.Sprintf("tag does not support type (%d) [%s]", tagType, tagType),
+					}
+				}
+
 				ifdEnumerateLogger.Warningf(nil,
 					"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
 					ifdPath, tagId, it.Name,
@@ -476,7 +502,7 @@ func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisito
 			log.Panic(err)
 		}
 
-		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
+		nextIfdOffset, _, _, err := ie.ParseIfd(fqIfdPath, ifdIndex, bp, visitor, true, nil)
 		log.PanicIf(err)
 
 		currentOffset := bp.CurrentOffset()
@@ -561,6 +587,17 @@ type Ifd struct {
 
 	ifdMapping *IfdMapping
 	tagIndex   *TagIndex
+
+	skippedTags map[uint16][2]string
+}
+
+// SkippedTags returns any tags that were skipped while parsing the IFD and the
+// reasons.
+func (ifd *Ifd) SkippedTags() map[uint16]string {
+
+	// TODO(dustin): Add test.
+
+	return ifd.skippedTags
 }
 
 // ChildWithIfdPath returns an `Ifd` struct for the given child of the current
@@ -1070,6 +1107,40 @@ type IfdIndex struct {
 	Lookup  map[string]*Ifd
 }
 
+// SkippedTag represents a single tag that was skipped while processing.
+type SkippedTag struct {
+	// FqIfdPath is the fully-qualified IFD.
+	FqIfdPath string
+
+	// TagId is the tag-ID.
+	TagId uint16
+
+	// Reason is the standardized reason for the skip.
+	Reason string
+
+	// Message is a descriptive message with more information.
+	Message string
+}
+
+// SkippedTags is the complete list of skipped-tags found for all IFDs.
+func (ii IfdIndex) SkippedTags() (skippedTags []SkippedTag) {
+	skippedTags = make([]SkippedTag, 0)
+	for _, ifd := range ii.Ifds {
+		for tagId, skipInfo := range ifd.SkippedTags {
+			st := SkippedTag{
+				FqIfdPath: ifd.fqIfdPath,
+				TagId:     tagId,
+				Reason:    skipInfo[0],
+				Message:   skipInfo[1],
+			}
+
+			skippedTags = append(skippedTags, st)
+		}
+	}
+
+	return skippedTags
+}
+
 // Collect enumerates the different EXIF blocks (called IFDs) and builds out an
 // index struct for referencing all of the parsed data.
 func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error) {
@@ -1126,7 +1197,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 			log.Panic(err)
 		}
 
-		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, currentIndex, bp, nil, false)
+		skippedTags := make(map[uint16][2]string)
+		nextIfdOffset, entries, thumbnailData, err := ie.ParseIfd(fqIfdPath, currentIndex, bp, nil, false, skippedTags)
 		log.PanicIf(err)
 
 		currentOffset := bp.CurrentOffset()
@@ -1175,6 +1247,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 			ifdMapping: ie.ifdMapping,
 			tagIndex:   ie.tagIndex,
+
+			skippedTags: skippedTags,
 		}
 
 		// Add ourselves to a big list of IFDs.
@@ -1318,7 +1392,7 @@ func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath, ifdPath 
 		log.Panic(err)
 	}
 
-	nextIfdOffset, entries, _, err = ie.ParseIfd(fqIfdPath, 0, bp, visitor, true)
+	nextIfdOffset, entries, _, err = ie.ParseIfd(fqIfdPath, 0, bp, visitor, true, nil)
 	log.PanicIf(err)
 
 	return nextIfdOffset, entries, nil

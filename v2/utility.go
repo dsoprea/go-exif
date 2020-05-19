@@ -119,15 +119,19 @@ func (et ExifTag) String() string {
     return fmt.Sprintf("ExifTag<IFD-PATH=[%s] TAG-ID=(0x%02x) TAG-NAME=[%s] TAG-TYPE=[%s] VALUE=[%v] VALUE-BYTES=(%d) CHILD-IFD-PATH=[%s]", et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.FormattedFirst, len(et.ValueBytes), et.ChildIfdPath)
 }
 
-// TODO(dustin): In the next release, make this return a list of skipped tags, too.
+type SimplifiedExifInfo struct {
+    SkippedTags []SkippedTags
+}
 
 // GetFlatExifData returns a simple, flat representation of all tags.
-func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
+func GetFlatExifData(exifData []byte) (exifTags []ExifTag, , err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
         }
     }()
+
+// TODO(dustin): Return a SimplifiedExifInfo. scan() just discards the Ifd instance. Update to pass it to the visitor. That's still within the scope of Scan(), which provides all normal functionality but just doesn't store anything.
 
     eh, err := ParseExifHeader(exifData)
     log.PanicIf(err)
