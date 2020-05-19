@@ -77,21 +77,40 @@ func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
 
 // ExifTag is one simple representation of a tag in a flat list of all of them.
 type ExifTag struct {
+    // IfdPath is the fully-qualified IFD path (even though it is not named as
+    // such).
     IfdPath string `json:"ifd_path"`
 
-    TagId   uint16 `json:"id"`
+    // TagId is the tag-ID.
+    TagId uint16 `json:"id"`
+
+    // TagName is the tag-name. This is never empty.
     TagName string `json:"name"`
 
+    // UnitCount is the recorded number of units constution of the value.
     UnitCount uint32 `json:"unit_count"`
 
-    TagTypeId   exifcommon.TagTypePrimitive `json:"type_id"`
-    TagTypeName string                      `json:"type_name"`
-    Value       interface{}                 `json:"value"`
-    ValueBytes  []byte                      `json:"value_bytes"`
+    // TagTypeId is the type-ID.
+    TagTypeId exifcommon.TagTypePrimitive `json:"type_id"`
 
+    // TagTypeName is the type name.
+    TagTypeName string `json:"type_name"`
+
+    // Value is the decoded value.
+    Value interface{} `json:"value"`
+
+    // ValueBytes is the raw, encoded value.
+    ValueBytes []byte `json:"value_bytes"`
+
+    // Formatted is the human representation of the first value (tag values are
+    // always an array).
     FormattedFirst string `json:"formatted_first"`
-    Formatted      string `json:"formatted"`
 
+    // Formatted is the human representation of the complete value.
+    Formatted string `json:"formatted"`
+
+    // ChildIfdPath is the name of the child IFD this tag represents (if it
+    // represents any). Otherwise, this is empty.
     ChildIfdPath string `json:"child_ifd_path"`
 }
 
@@ -99,6 +118,8 @@ type ExifTag struct {
 func (et ExifTag) String() string {
     return fmt.Sprintf("ExifTag<IFD-PATH=[%s] TAG-ID=(0x%02x) TAG-NAME=[%s] TAG-TYPE=[%s] VALUE=[%v] VALUE-BYTES=(%d) CHILD-IFD-PATH=[%s]", et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.FormattedFirst, len(et.ValueBytes), et.ChildIfdPath)
 }
+
+// TODO(dustin): In the next release, make this return a list of skipped tags, too.
 
 // GetFlatExifData returns a simple, flat representation of all tags.
 func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
@@ -108,94 +129,91 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
         }
     }()
 
+    eh, err := ParseExifHeader(exifData)
+    log.PanicIf(err)
+
     im := NewIfdMappingWithStandard()
     ti := NewTagIndex()
 
-    _, index, err := Collect(im, ti, exifData)
-    log.PanicIf(err)
-
-    q := []*Ifd{index.RootIfd}
+    ie := NewIfdEnumerate(im, ti, exifData, eh.ByteOrder)
 
     exifTags = make([]ExifTag, 0)
 
-    for len(q) > 0 {
-        var ifd *Ifd
-        ifd, q = q[0], q[1:]
+    visitor := func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
+        tagId := ite.TagId()
 
-        for _, ite := range ifd.Entries {
-            tagId := ite.TagId()
-            tagType := ite.TagType()
+        // TODO(dustin): This is inefficient. Our IFD paths should have their own type where we can render whatever path we need.
+        ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
+        log.PanicIf(err)
 
-            tagName := ""
-
-            it, err := ti.Get(ifd.IfdPath, ite.tagId)
-            if err != nil {
-                if log.Is(err, ErrTagNotFound) != true {
-                    log.Panic(err)
-                }
-
-                // This is an unknown tag.
-
-                // This is supposed to be a convenience function and if we were
-                // to keep the name empty or set it to some placeholder, it
-                // might be mismanaged by the package that is calling us. If
-                // they want to specifically manage these types of tags, they
-                // can use more advanced functionality to specifically -handle
-                // unknown tags.
-                utilityLogger.Warningf(nil, "Tag with ID (0x%04x) in IFD [%s] is not recognized and will be ignored.", tagId, ifd.FqIfdPath)
-
-                continue
-            } else {
-                tagName = it.Name
-            }
-
-            valueBytes, err := ite.GetRawBytes()
-            if err != nil {
-                if err == exifundefined.ErrUnparseableValue {
-                    continue
-                }
-
+        it, err := ti.Get(ifdPath, ite.tagId)
+        if err != nil {
+            if log.Is(err, ErrTagNotFound) != true {
                 log.Panic(err)
             }
 
-            value, err := ite.Value()
-            if err != nil {
-                if err == exifcommon.ErrUnhandledUndefinedTypedTag {
-                    value = exifundefined.UnparseableUnknownTagValuePlaceholder
-                } else {
-                    log.Panic(err)
-                }
+            // This is an unknown tag.
+
+            // This is supposed to be a convenience function and if we were
+            // to keep the name empty or set it to some placeholder, it
+            // might be mismanaged by the package that is calling us. If
+            // they want to specifically manage these types of tags, they
+            // can use more advanced functionality to specifically -handle
+            // unknown tags.
+            utilityLogger.Warningf(nil, "Tag with ID (0x%04x) in IFD [%s] is not recognized and will be ignored.", tagId, fqIfdPath)
+
+            return nil
+        }
+
+        tagName := it.Name
+
+        // This encodes down to base64. Since this an example tool and we do not
+        // expect to ever decode the output, we are not worried about
+        // specifically base64-encoding it in order to have a measure of
+        // control.
+        valueBytes, err := ite.GetRawBytes()
+        if err != nil {
+            if err == exifundefined.ErrUnparseableValue {
+                return nil
             }
 
-            et := ExifTag{
-                IfdPath:      ifd.FqIfdPath,
-                TagId:        tagId,
-                TagName:      tagName,
-                UnitCount:    ite.UnitCount(),
-                TagTypeId:    tagType,
-                TagTypeName:  tagType.String(),
-                Value:        value,
-                ValueBytes:   valueBytes,
-                ChildIfdPath: ite.ChildIfdPath(),
+            log.Panic(err)
+        }
+
+        value, err := ite.Value()
+        if err != nil {
+            if err == exifcommon.ErrUnhandledUndefinedTypedTag {
+                value = exifundefined.UnparseableUnknownTagValuePlaceholder
+            } else {
+                log.Panic(err)
             }
-
-            et.Formatted, err = ite.Format()
-            log.PanicIf(err)
-
-            et.FormattedFirst, err = ite.FormatFirst()
-            log.PanicIf(err)
-
-            exifTags = append(exifTags, et)
         }
 
-        for _, childIfd := range ifd.Children {
-            q = append(q, childIfd)
+        et := ExifTag{
+            IfdPath:      fqIfdPath,
+            TagId:        tagId,
+            TagName:      tagName,
+            UnitCount:    ite.UnitCount(),
+            TagTypeId:    ite.TagType(),
+            TagTypeName:  ite.TagType().String(),
+            Value:        value,
+            ValueBytes:   valueBytes,
+            ChildIfdPath: ite.ChildIfdPath(),
         }
 
-        if ifd.NextIfd != nil {
-            q = append(q, ifd.NextIfd)
-        }
+        et.Formatted, err = ite.Format()
+        log.PanicIf(err)
+
+        et.FormattedFirst, err = ite.FormatFirst()
+        log.PanicIf(err)
+
+        exifTags = append(exifTags, et)
+
+        return nil
     }
+
+    err = ie.Scan(exifcommon.IfdStandard, eh.FirstIfdOffset, visitor)
+    log.PanicIf(err)
 
     return exifTags, nil
 }
