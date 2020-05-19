@@ -386,8 +386,17 @@ func (ie *IfdEnumerate) parseIfd(fqIfdPath string, ifdIndex int, bp *byteParser,
 			if doDescend == true {
 				ifdEnumerateLogger.Debugf(nil, "Descending from IFD [%s] to IFD [%s].", fqIfdPath, ite.ChildIfdPath())
 
-				err := ie.scan(ite.ChildFqIfdPath(), ite.getValueOffset(), visitor)
-				log.PanicIf(err)
+				ifdOffset := ite.getValueOffset()
+				for ifdNumber := 0; ; ifdNumber++ {
+					nextIfdOffset, err := ie.scan(ite.ChildFqIfdPath(), ifdNumber, ifdOffset, visitor)
+					log.PanicIf(err)
+
+					if nextIfdOffset == 0 {
+						break
+					}
+
+					ifdOffset = nextIfdOffset
+				}
 
 				ifdEnumerateLogger.Debugf(nil, "Ascending from IFD [%s] to IFD [%s].", ite.ChildIfdPath(), fqIfdPath)
 			}
@@ -452,7 +461,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 
 // scan parses and enumerates the different IFD blocks and invokes a visitor
 // callback for each tag. No information is kept or returned.
-func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisitorFn) (err error) {
+func (ie *IfdEnumerate) scan(ifdName string, ifdIndex int, ifdOffset uint32, visitor TagVisitorFn) (nextIfdOffset uint32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -461,37 +470,29 @@ func (ie *IfdEnumerate) scan(ifdName string, ifdOffset uint32, visitor TagVisito
 
 	// TODO(dustin): Add test
 
-	for ifdIndex := 0; ; ifdIndex++ {
-		fqIfdPath := FqIfdPath("", ifdName, ifdIndex)
+	fqIfdPath := FqIfdPath("", ifdName, ifdIndex)
 
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] at offset (0x%04x) (scan).", fqIfdPath, ifdOffset)
+	ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] at offset (0x%04x) (scan).", fqIfdPath, ifdOffset)
 
-		bp, err := ie.getByteParser(ifdOffset)
-		if err != nil {
-			if err == ErrOffsetInvalid {
-				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] at offset (0x%04x) is unreachable. Terminating scan.", fqIfdPath, ifdOffset)
-				break
-			}
-
-			log.Panic(err)
+	bp, err := ie.getByteParser(ifdOffset)
+	if err != nil {
+		if err == ErrOffsetInvalid {
+			ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] at offset (0x%04x) is unreachable. Terminating scan.", fqIfdPath, ifdOffset)
+			return 0, nil
 		}
 
-		nextIfdOffset, _, _, err := ie.parseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
-		log.PanicIf(err)
-
-		currentOffset := bp.CurrentOffset()
-		if currentOffset > ie.furthestOffset {
-			ie.furthestOffset = currentOffset
-		}
-
-		if nextIfdOffset == 0 {
-			break
-		}
-
-		ifdOffset = nextIfdOffset
+		log.Panic(err)
 	}
 
-	return nil
+	nextIfdOffset, _, _, err = ie.parseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
+	log.PanicIf(err)
+
+	currentOffset := bp.CurrentOffset()
+	if currentOffset > ie.furthestOffset {
+		ie.furthestOffset = currentOffset
+	}
+
+	return nextIfdOffset, nil
 }
 
 // Scan enumerates the different EXIF blocks (called IFDs). `rootIfdName` will
@@ -505,8 +506,16 @@ func (ie *IfdEnumerate) Scan(rootIfdName string, ifdOffset uint32, visitor TagVi
 
 	// TODO(dustin): Add test
 
-	err = ie.scan(rootIfdName, ifdOffset, visitor)
-	log.PanicIf(err)
+	for ifdNumber := 0; ; ifdNumber++ {
+		nextIfdOffset, err := ie.scan(rootIfdName, ifdNumber, ifdOffset, visitor)
+		log.PanicIf(err)
+
+		if nextIfdOffset == 0 {
+			break
+		}
+
+		ifdOffset = nextIfdOffset
+	}
 
 	ifdEnumerateLogger.Debugf(nil, "Scan: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d) (Scan).", ie.FurthestOffset())
 
