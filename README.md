@@ -7,11 +7,6 @@
 This package provides native Go functionality to parse an existing EXIF block, update an existing EXIF block, or add a new EXIF block.
 
 
-# *NOTICE*
-
-**This project is modulized and v2 is now available (in v2/). This features a heavily reflowed interface that makes usage much simpler.** The undefined-type tag-processing (which affects most photographic images) has also been overhauled and streamlined. It is now complete and stable. Adoption is strongly encouraged.
-
-
 # Getting
 
 To get the project and dependencies:
@@ -39,6 +34,13 @@ Obviously, it is most efficient to properly parse the media file and then provid
 The library often refers to an IFD with an "IFD path" (e.g. IFD/Exif, IFD/GPSInfo). A "fully-qualified" IFD-path is one that includes an index describing which specific sibling IFD is being referred to if not the first one (e.g. IFD1, the IFD where the thumbnail is expressed per the TIFF standard).
 
 There is an "IFD mapping" and a "tag index" that must be created and passed to the library from the top. These contain all of the knowledge of the IFD hierarchies and their tag-IDs (the IFD mapping) and the tags that they are allowed to host (the tag index). There are convenience functions to load them with the standard TIFF information, but you, alternatively, may choose something totally different (to support parsing any kind of EXIF data that does not follow or is not relevant to TIFF at all).
+
+
+# Standards and Customization
+
+This project is configuration driven. By default, it has no knowledge of tags and IDs until you load them prior to using (which is incorporated in the examples). You are just as easily able to add additional custom IFDs and custom tags for them. If desired, you could completely ignore the standard information and load *totally* non-standard IFDs and tags.
+
+This would be useful for divergent implementations that add non-standard information to images. It would also be useful if there is some need to just store a flat list of tags in an image for simplified, proprietary usage.
 
 
 # Reader Tool
@@ -98,6 +100,13 @@ The traditional method:
 ```
 $ go test github.com/dsoprea/go-exif/v2/...
 ```
+
+
+# Release Notes
+
+## v2 Release
+
+**This project is modulized and v2 is now available (in v2/). This features a heavily reflowed interface that makes usage much simpler.** The undefined-type tag-processing (which affects most photographic images) has also been overhauled and streamlined. It is now complete and stable. Adoption is strongly encouraged.
 
 
 # *Contributing*
