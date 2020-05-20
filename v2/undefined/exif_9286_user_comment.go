@@ -136,7 +136,7 @@ func init() {
         Codec9286UserComment{})
 
     registerDecoder(
-        exifcommon.IfdPathStandardExif,
+        exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
         0x9286,
         Codec9286UserComment{})
 }

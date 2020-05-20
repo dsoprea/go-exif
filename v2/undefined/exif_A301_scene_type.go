@@ -70,7 +70,7 @@ func init() {
 		CodecExifA301SceneType{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0xa301,
 		CodecExifA301SceneType{})
 }

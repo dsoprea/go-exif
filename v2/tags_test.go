@@ -11,10 +11,10 @@ import (
 func TestGet(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.Get(exifcommon.IfdPathStandard, 0x10f)
+	it, err := ti.Get(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f)
 	log.PanicIf(err)
 
-	if it.Is(exifcommon.IfdPathStandard, 0x10f) == false || it.IsName(exifcommon.IfdPathStandard, "Make") == false {
+	if it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) == false || it.IsName(exifcommon.IfdStandardIfdIdentity.UnindexedString(), "Make") == false {
 		t.Fatalf("tag info not correct")
 	}
 }
@@ -22,10 +22,10 @@ func TestGet(t *testing.T) {
 func TestGetWithName(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.GetWithName(exifcommon.IfdPathStandard, "Make")
+	it, err := ti.GetWithName(exifcommon.IfdStandardIfdIdentity.UnindexedString(), "Make")
 	log.PanicIf(err)
 
-	if it.Is(exifcommon.IfdPathStandard, 0x10f) == false {
+	if it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) == false {
 		t.Fatalf("tag info not correct")
 	}
 }

@@ -273,13 +273,13 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 		if nextIfdOffsetToWrite > 0 {
 			var err error
 
-			ibe.pushToJournal("encodeTagToBytes", ">", "[%s]->[%s]", ib.ifdPath, bt.value.Ib().ifdPath)
+			ibe.pushToJournal("encodeTagToBytes", ">", "[%s]->[%s]", ib.IfdIdentity().UnindexedString(), bt.value.Ib().IfdIdentity().UnindexedString())
 
 			// Create the block of IFD data and everything it requires.
 			childIfdBlock, err = ibe.encodeAndAttachIfd(bt.value.Ib(), nextIfdOffsetToWrite)
 			log.PanicIf(err)
 
-			ibe.pushToJournal("encodeTagToBytes", "<", "[%s]->[%s]", bt.value.Ib().ifdPath, ib.ifdPath)
+			ibe.pushToJournal("encodeTagToBytes", "<", "[%s]->[%s]", bt.value.Ib().IfdIdentity().UnindexedString(), ib.IfdIdentity().UnindexedString())
 
 			// Use the next-IFD offset for it. The IFD will actually get
 			// attached after we return.
@@ -290,7 +290,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 			// No child-IFDs are to be allocated. Finish the entry with a NULL
 			// pointer.
 
-			ibe.pushToJournal("encodeTagToBytes", "-", "*Not* descending to child: [%s]", bt.value.Ib().ifdPath)
+			ibe.pushToJournal("encodeTagToBytes", "-", "*Not* descending to child: [%s]", bt.value.Ib().IfdIdentity().UnindexedString())
 
 			err = bw.WriteUint32(0)
 			log.PanicIf(err)
@@ -426,14 +426,14 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
 		// Do a dry-run in order to pre-determine its size requirement.
 
-		ibe.pushToJournal("encodeAndAttachIfd", ">", "Beginning encoding process: (%d) [%s]", i, thisIb.ifdPath)
+		ibe.pushToJournal("encodeAndAttachIfd", ">", "Beginning encoding process: (%d) [%s]", i, thisIb.IfdIdentity().UnindexedString())
 
-		ibe.pushToJournal("encodeAndAttachIfd", ">", "Calculating size: (%d) [%s]", i, thisIb.ifdPath)
+		ibe.pushToJournal("encodeAndAttachIfd", ">", "Calculating size: (%d) [%s]", i, thisIb.IfdIdentity().UnindexedString())
 
 		_, tableSize, allocatedDataSize, _, err := ibe.encodeIfdToBytes(thisIb, ifdAddressableOffset, 0, false)
 		log.PanicIf(err)
 
-		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finished calculating size: (%d) [%s]", i, thisIb.ifdPath)
+		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finished calculating size: (%d) [%s]", i, thisIb.IfdIdentity().UnindexedString())
 
 		ifdAddressableOffset += tableSize
 		nextIfdOffsetToWrite := ifdAddressableOffset + allocatedDataSize
@@ -445,7 +445,7 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
 		setNextIb := thisIb.nextIb != nil
 
-		ibe.pushToJournal("encodeAndAttachIfd", ">", "Encoding starting: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.ifdPath, nextIfdOffsetToWrite)
+		ibe.pushToJournal("encodeAndAttachIfd", ">", "Encoding starting: (%d) [%s] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, thisIb.IfdIdentity().UnindexedString(), nextIfdOffsetToWrite)
 
 		tableAndAllocated, effectiveTableSize, effectiveAllocatedDataSize, childIfdSizes, err :=
 			ibe.encodeIfdToBytes(thisIb, ifdAddressableOffset, nextIfdOffsetToWrite, setNextIb)
@@ -458,7 +458,7 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 			log.Panicf("written allocated-data size does not match the pre-calculated allocated-data size: (%d) != (%d) %s", effectiveAllocatedDataSize, allocatedDataSize, ib)
 		}
 
-		ibe.pushToJournal("encodeAndAttachIfd", "<", "Encoding done: (%d) [%s]", i, thisIb.ifdPath)
+		ibe.pushToJournal("encodeAndAttachIfd", "<", "Encoding done: (%d) [%s]", i, thisIb.IfdIdentity().UnindexedString())
 
 		totalChildIfdSize := uint32(0)
 		for _, childIfdSize := range childIfdSizes {
@@ -478,7 +478,7 @@ func (ibe *IfdByteEncoder) encodeAndAttachIfd(ib *IfdBuilder, ifdAddressableOffs
 
 		ifdAddressableOffset += allocatedDataSize + totalChildIfdSize
 
-		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finishing encoding process: (%d) [%s] [FINAL:] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, ib.ifdPath, nextIfdOffsetToWrite)
+		ibe.pushToJournal("encodeAndAttachIfd", "<", "Finishing encoding process: (%d) [%s] [FINAL:] NEXT-IFD-OFFSET-TO-WRITE=(0x%08x)", i, ib.IfdIdentity().UnindexedString(), nextIfdOffsetToWrite)
 
 		i++
 	}

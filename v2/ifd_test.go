@@ -108,12 +108,17 @@ func TestIfdMapping_Get(t *testing.T) {
 	err := LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	mi, err := im.Get([]uint16{exifcommon.IfdRootId, exifcommon.IfdExifId, exifcommon.IfdIopId})
+	mi, err := im.Get([]uint16{
+		exifcommon.IfdStandardIfdIdentity.TagId(),
+		exifcommon.IfdExifStandardIfdIdentity.TagId(),
+		exifcommon.IfdExifIopStandardIfdIdentity.TagId(),
+	})
+
 	log.PanicIf(err)
 
-	if mi.ParentTagId != exifcommon.IfdExifId {
+	if mi.ParentTagId != exifcommon.IfdExifStandardIfdIdentity.TagId() {
 		t.Fatalf("Parent tag-ID not correct")
-	} else if mi.TagId != exifcommon.IfdIopId {
+	} else if mi.TagId != exifcommon.IfdExifIopStandardIfdIdentity.TagId() {
 		t.Fatalf("Tag-ID not correct")
 	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")
@@ -131,9 +136,9 @@ func TestIfdMapping_GetWithPath(t *testing.T) {
 	mi, err := im.GetWithPath("IFD/Exif/Iop")
 	log.PanicIf(err)
 
-	if mi.ParentTagId != exifcommon.IfdExifId {
+	if mi.ParentTagId != exifcommon.IfdExifStandardIfdIdentity.TagId() {
 		t.Fatalf("Parent tag-ID not correct")
-	} else if mi.TagId != exifcommon.IfdIopId {
+	} else if mi.TagId != exifcommon.IfdExifIopStandardIfdIdentity.TagId() {
 		t.Fatalf("Tag-ID not correct")
 	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")

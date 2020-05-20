@@ -59,7 +59,7 @@ func init() {
 		Codec001CGPSAreaInformation{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardGps,
+		exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString(),
 		0x001c,
 		Codec001CGPSAreaInformation{})
 }

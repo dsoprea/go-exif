@@ -47,9 +47,9 @@ type IfdTagEntry struct {
 	byteOrder       binary.ByteOrder
 }
 
-func newIfdTagEntry(fqIfdPath string, tagId uint16, tagIndex int, tagType exifcommon.TagTypePrimitive, unitCount uint32, valueOffset uint32, rawValueOffset []byte, addressableData []byte, byteOrder binary.ByteOrder) *IfdTagEntry {
+func newIfdTagEntry(ii *exifcommon.IfdIdentity, tagId uint16, tagIndex int, tagType exifcommon.TagTypePrimitive, unitCount uint32, valueOffset uint32, rawValueOffset []byte, addressableData []byte, byteOrder binary.ByteOrder) *IfdTagEntry {
 	return &IfdTagEntry{
-		fqIfdPath:       fqIfdPath,
+		fqIfdPath:       ii.String(),
 		tagId:           tagId,
 		tagIndex:        tagIndex,
 		tagType:         tagType,
@@ -231,10 +231,10 @@ func (ite *IfdTagEntry) setIsUnhandledUnknown(isUnhandledUnknown bool) {
 }
 
 // SetChildIfd sets child-IFD information (if we represent a child IFD).
-func (ite *IfdTagEntry) SetChildIfd(childFqIfdPath, childIfdPath, childIfdName string) {
-	ite.childFqIfdPath = childFqIfdPath
-	ite.childIfdPath = childIfdPath
-	ite.childIfdName = childIfdName
+func (ite *IfdTagEntry) SetChildIfd(ii *exifcommon.IfdIdentity) {
+	ite.childFqIfdPath = ii.String()
+	ite.childIfdPath = ii.UnindexedString()
+	ite.childIfdName = ii.Name()
 }
 
 // ChildIfdName returns the name of the child IFD

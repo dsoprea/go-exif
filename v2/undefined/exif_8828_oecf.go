@@ -142,7 +142,7 @@ func (Codec8828Oecf) Decode(valueContext *exifcommon.ValueContext) (value Encode
 
 func init() {
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0x8828,
 		Codec8828Oecf{})
 }

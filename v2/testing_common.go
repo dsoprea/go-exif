@@ -34,7 +34,7 @@ func getExifSimpleTestIb() *IfdBuilder {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder)
 
 	err = ib.AddStandard(0x000b, "asciivalue")
 	log.PanicIf(err)
@@ -65,7 +65,7 @@ func getExifSimpleTestIbBytes() []byte {
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
-	ib := NewIfdBuilder(im, ti, exifcommon.IfdPathStandard, exifcommon.TestDefaultByteOrder)
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder)
 
 	err = ib.AddStandard(0x000b, "asciivalue")
 	log.PanicIf(err)
@@ -119,10 +119,10 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 
 	if ifd.ByteOrder != exifcommon.TestDefaultByteOrder {
 		t.Fatalf("IFD byte-order not correct.")
-	} else if ifd.IfdPath != exifcommon.IfdStandard {
+	} else if ifd.ifdIdentity.UnindexedString() != exifcommon.IfdStandardIfdIdentity.UnindexedString() {
 		t.Fatalf("IFD name not correct.")
-	} else if ifd.Index != 0 {
-		t.Fatalf("IFD index not zero: (%d)", ifd.Index)
+	} else if ifd.ifdIdentity.Index() != 0 {
+		t.Fatalf("IFD index not zero: (%d)", ifd.ifdIdentity.Index())
 	} else if ifd.Offset != uint32(0x0008) {
 		t.Fatalf("IFD offset not correct.")
 	} else if len(ifd.Entries) != 4 {

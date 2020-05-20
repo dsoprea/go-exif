@@ -212,7 +212,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
         return nil
     }
 
-    err = ie.Scan(exifcommon.IfdStandard, eh.FirstIfdOffset, visitor)
+    err = ie.Scan(exifcommon.IfdStandardIfdIdentity, eh.FirstIfdOffset, visitor)
     log.PanicIf(err)
 
     return exifTags, nil

@@ -63,7 +63,7 @@ func init() {
 		CodecA000FlashpixVersion{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0xa000,
 		CodecA000FlashpixVersion{})
 }

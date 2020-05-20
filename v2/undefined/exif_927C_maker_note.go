@@ -108,7 +108,7 @@ func init() {
         Codec927CMakerNote{})
 
     registerDecoder(
-        exifcommon.IfdPathStandardExif,
+        exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
         0x927c,
         Codec927CMakerNote{})
 }

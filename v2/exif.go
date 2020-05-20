@@ -12,6 +12,8 @@ import (
 	"io/ioutil"
 
 	"github.com/dsoprea/go-logging"
+
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 const (
@@ -190,7 +192,7 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 }
 
 // Visit recursively invokes a callback for every tag.
-func Visit(rootIfdName string, ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte, visitor TagVisitorFn) (eh ExifHeader, furthestOffset uint32, err error) {
+func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte, visitor TagVisitorFn) (eh ExifHeader, furthestOffset uint32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -202,7 +204,7 @@ func Visit(rootIfdName string, ifdMapping *IfdMapping, tagIndex *TagIndex, exifD
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, exifData, eh.ByteOrder)
 
-	err = ie.Scan(rootIfdName, eh.FirstIfdOffset, visitor)
+	err = ie.Scan(rootIfdIdentity, eh.FirstIfdOffset, visitor)
 	log.PanicIf(err)
 
 	furthestOffset = ie.FurthestOffset()

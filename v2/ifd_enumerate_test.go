@@ -250,7 +250,7 @@ func TestIfd_GpsInfo(t *testing.T) {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdGpsInfoStandardIfdIdentity)
 	log.PanicIf(err)
 
 	gi, err := ifd.GpsInfo()
@@ -293,7 +293,7 @@ func TestIfd_GpsInfo__2_0_0_0(t *testing.T) {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdGpsInfoStandardIfdIdentity)
 	log.PanicIf(err)
 
 	gi, err := ifd.GpsInfo()
@@ -344,7 +344,7 @@ func TestIfd_EnumerateTagsRecursively(t *testing.T) {
 
 	cb := func(ifd *Ifd, ite *IfdTagEntry) error {
 		item := [2]interface{}{
-			ifd.IfdPath,
+			ifd.ifdIdentity.UnindexedString(),
 			int(ite.TagId()),
 		}
 
@@ -527,7 +527,7 @@ func ExampleIfd_GpsInfo() {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdPathStandardGps)
+	ifd, err := index.RootIfd.ChildWithIfdPath(exifcommon.IfdGpsInfoStandardIfdIdentity)
 	log.PanicIf(err)
 
 	gi, err := ifd.GpsInfo()

@@ -63,7 +63,7 @@ func init() {
 		Codec0002InteropVersion{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExifIop,
+		exifcommon.IfdExifIopStandardIfdIdentity.UnindexedString(),
 		0x0002,
 		Codec0002InteropVersion{})
 }

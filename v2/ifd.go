@@ -375,16 +375,28 @@ func LoadStandardIfds(im *IfdMapping) (err error) {
 		}
 	}()
 
-	err = im.Add([]uint16{}, exifcommon.IfdRootId, exifcommon.IfdStandard)
+	err = im.Add(
+		[]uint16{},
+		exifcommon.IfdStandardIfdIdentity.TagId(), exifcommon.IfdStandardIfdIdentity.Name())
+
 	log.PanicIf(err)
 
-	err = im.Add([]uint16{exifcommon.IfdRootId}, exifcommon.IfdExifId, exifcommon.IfdExif)
+	err = im.Add(
+		[]uint16{exifcommon.IfdStandardIfdIdentity.TagId()},
+		exifcommon.IfdExifStandardIfdIdentity.TagId(), exifcommon.IfdExifStandardIfdIdentity.Name())
+
 	log.PanicIf(err)
 
-	err = im.Add([]uint16{exifcommon.IfdRootId, exifcommon.IfdExifId}, exifcommon.IfdIopId, exifcommon.IfdIop)
+	err = im.Add(
+		[]uint16{exifcommon.IfdStandardIfdIdentity.TagId(), exifcommon.IfdExifStandardIfdIdentity.TagId()},
+		exifcommon.IfdExifIopStandardIfdIdentity.TagId(), exifcommon.IfdExifIopStandardIfdIdentity.Name())
+
 	log.PanicIf(err)
 
-	err = im.Add([]uint16{exifcommon.IfdRootId}, exifcommon.IfdGpsId, exifcommon.IfdGps)
+	err = im.Add(
+		[]uint16{exifcommon.IfdStandardIfdIdentity.TagId()},
+		exifcommon.IfdGpsInfoStandardIfdIdentity.TagId(), exifcommon.IfdGpsInfoStandardIfdIdentity.Name())
+
 	log.PanicIf(err)
 
 	return nil

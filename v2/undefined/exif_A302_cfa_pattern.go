@@ -91,7 +91,7 @@ func init() {
 		CodecA302CfaPattern{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0xa302,
 		CodecA302CfaPattern{})
 }

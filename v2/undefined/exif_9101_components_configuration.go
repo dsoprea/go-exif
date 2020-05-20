@@ -118,7 +118,7 @@ func init() {
 		CodecExif9101ComponentsConfiguration{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0x9101,
 		CodecExif9101ComponentsConfiguration{})
 }

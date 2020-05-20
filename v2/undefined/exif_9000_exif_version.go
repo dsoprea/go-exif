@@ -63,7 +63,7 @@ func init() {
 		Codec9000ExifVersion{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0x9000,
 		Codec9000ExifVersion{})
 }

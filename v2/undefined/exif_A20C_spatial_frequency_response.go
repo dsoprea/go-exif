@@ -154,7 +154,7 @@ func init() {
 		CodecA20CSpatialFrequencyResponse{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0xa20c,
 		CodecA20CSpatialFrequencyResponse{})
 }

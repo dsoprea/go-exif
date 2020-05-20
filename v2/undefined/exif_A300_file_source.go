@@ -73,7 +73,7 @@ func init() {
 		CodecExifA300FileSource{})
 
 	registerDecoder(
-		exifcommon.IfdPathStandardExif,
+		exifcommon.IfdExifStandardIfdIdentity.UnindexedString(),
 		0xa300,
 		CodecExifA300FileSource{})
 }
