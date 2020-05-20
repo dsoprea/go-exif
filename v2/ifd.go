@@ -18,6 +18,7 @@ var (
 	ErrChildIfdNotMapped = errors.New("no child-IFD for that tag-ID under parent")
 )
 
+// MappedIfd is one node in the IFD-mapping.
 type MappedIfd struct {
 	ParentTagId uint16
 	Placement   []uint16
@@ -28,20 +29,25 @@ type MappedIfd struct {
 	Children map[uint16]*MappedIfd
 }
 
+// String returns a descriptive string.
 func (mi *MappedIfd) String() string {
 	pathPhrase := mi.PathPhrase()
 	return fmt.Sprintf("MappedIfd<(0x%04X) [%s] PATH=[%s]>", mi.TagId, mi.Name, pathPhrase)
 }
 
+// PathPhrase returns a non-fully-qualified IFD path.
 func (mi *MappedIfd) PathPhrase() string {
 	return strings.Join(mi.Path, "/")
 }
+
+// TODO(dustin): Refactor this to use IfdIdentity structs.
 
 // IfdMapping describes all of the IFDs that we currently recognize.
 type IfdMapping struct {
 	rootNode *MappedIfd
 }
 
+// NewIfdMapping returns a new IfdMapping struct.
 func NewIfdMapping() (ifdMapping *IfdMapping) {
 	rootNode := &MappedIfd{
 		Path:     make([]string, 0),
@@ -53,6 +59,8 @@ func NewIfdMapping() (ifdMapping *IfdMapping) {
 	}
 }
 
+// NewIfdMappingWithStandard retruns a new IfdMapping struct preloaded with the
+// standard IFDs.
 func NewIfdMappingWithStandard() (ifdMapping *IfdMapping) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -69,6 +77,7 @@ func NewIfdMappingWithStandard() (ifdMapping *IfdMapping) {
 	return im
 }
 
+// Get returns the node given the path slice.
 func (im *IfdMapping) Get(parentPlacement []uint16) (childIfd *MappedIfd, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -88,6 +97,7 @@ func (im *IfdMapping) Get(parentPlacement []uint16) (childIfd *MappedIfd, err er
 	return ptr, nil
 }
 
+// GetWithPath returns the node given the path string.
 func (im *IfdMapping) GetWithPath(pathPhrase string) (mi *MappedIfd, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -145,12 +155,16 @@ func (im *IfdMapping) GetChild(parentPathPhrase string, tagId uint16) (mi *Mappe
 	return nil, nil
 }
 
+// IfdTagIdAndIndex represents a specific part of the IFD path.
+//
+// This is a legacy type.
 type IfdTagIdAndIndex struct {
 	Name  string
 	TagId uint16
 	Index int
 }
 
+// String returns a descriptive string.
 func (itii IfdTagIdAndIndex) String() string {
 	return fmt.Sprintf("IfdTagIdAndIndex<NAME=[%s] ID=(%04x) INDEX=(%d)>", itii.Name, itii.TagId, itii.Index)
 }
@@ -336,6 +350,7 @@ func (im *IfdMapping) dumpLineages(stack []*MappedIfd, input []string) (output [
 	return output, nil
 }
 
+// DumpLineages returns a slice of strings representing all mappings.
 func (im *IfdMapping) DumpLineages() (output []string, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -352,6 +367,7 @@ func (im *IfdMapping) DumpLineages() (output []string, err error) {
 	return output, nil
 }
 
+// LoadStandardIfds loads the standard IFDs into the mapping.
 func LoadStandardIfds(im *IfdMapping) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
