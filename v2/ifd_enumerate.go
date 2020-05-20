@@ -484,12 +484,55 @@ func (ie *IfdEnumerate) scan(ifdName string, ifdIndex int, ifdOffset uint32, vis
 		log.Panic(err)
 	}
 
-	nextIfdOffset, _, _, err = ie.parseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
+	nextIfdOffset, entries, thumbnailData, err = ie.parseIfd(fqIfdPath, ifdIndex, bp, visitor, true)
 	log.PanicIf(err)
 
 	currentOffset := bp.CurrentOffset()
 	if currentOffset > ie.furthestOffset {
 		ie.furthestOffset = currentOffset
+	}
+
+	id := len(ifds)
+
+	entriesByTagId := make(map[uint16][]*IfdTagEntry)
+	for _, ite := range entries {
+		tagId := ite.TagId()
+
+		tags, found := entriesByTagId[tagId]
+		if found == false {
+			tags = make([]*IfdTagEntry, 0)
+		}
+
+		entriesByTagId[tagId] = append(tags, ite)
+	}
+
+	ifd := &Ifd{
+		ByteOrder: ie.byteOrder,
+
+		Name:      name,
+		IfdPath:   ifdPath,
+		FqIfdPath: fqIfdPath,
+
+		TagId: qi.TagId,
+
+		Id: id,
+
+		ParentIfd:      parentIfd,
+		ParentTagIndex: qi.ParentTagIndex,
+
+		Index:          currentIndex,
+		Offset:         offset,
+		Entries:        entries,
+		EntriesByTagId: entriesByTagId,
+
+		// This is populated as each child is processed.
+		Children: make([]*Ifd, 0),
+
+		NextIfdOffset: nextIfdOffset,
+		thumbnailData: thumbnailData,
+
+		ifdMapping: ie.ifdMapping,
+		tagIndex:   ie.tagIndex,
 	}
 
 	return nextIfdOffset, nil
