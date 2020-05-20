@@ -119,7 +119,7 @@ func (et ExifTag) String() string {
     return fmt.Sprintf("ExifTag<IFD-PATH=[%s] TAG-ID=(0x%02x) TAG-NAME=[%s] TAG-TYPE=[%s] VALUE=[%v] VALUE-BYTES=(%d) CHILD-IFD-PATH=[%s]", et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.FormattedFirst, len(et.ValueBytes), et.ChildIfdPath)
 }
 
-// TODO(dustin): In the next release, make this return a list of skipped tags, too.
+// RELEASE(dustin): In the next release, make this return a list of skipped tags, too.
 
 // GetFlatExifData returns a simple, flat representation of all tags.
 func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {

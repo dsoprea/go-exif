@@ -522,7 +522,7 @@ func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, v
 // Ifd represents a single, parsed IFD.
 type Ifd struct {
 
-	// TODO(dustin): !! Why are all of these exported? Stop doing this in the next release.
+	// RELEASE(dustin): !! Why are all of these exported? Stop doing this in the next release.
 	// TODO(dustin): Add NextIfd().
 
 	ifdIdentity *exifcommon.IfdIdentity
