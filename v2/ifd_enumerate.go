@@ -502,7 +502,7 @@ func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32
 
 // Scan enumerates the different EXIF blocks (called IFDs). `rootIfdName` will
 // be "IFD" in the TIFF standard.
-func (ie *IfdEnumerate) Scan(rootIi *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn) (err error) {
+func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -511,7 +511,7 @@ func (ie *IfdEnumerate) Scan(rootIi *exifcommon.IfdIdentity, ifdOffset uint32, v
 
 	// TODO(dustin): Add test
 
-	err = ie.scan(rootIi, ifdOffset, visitor)
+	err = ie.scan(iiRoot, ifdOffset, visitor)
 	log.PanicIf(err)
 
 	ifdEnumerateLogger.Debugf(nil, "Scan: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d) (Scan).", ie.FurthestOffset())
