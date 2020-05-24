@@ -111,6 +111,8 @@ func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 	return it.Id == id && it.IfdPath == ifdPath
 }
 
+// WidestSupportedType returns the largest type that this tag's value can
+// occupy
 func (it *IndexedTag) WidestSupportedType() exifcommon.TagTypePrimitive {
 	if len(it.SupportedTypes) == 0 {
 		log.Panicf("IndexedTag [%s] (%d) has no supported types.", it.IfdPath, it.Id)
@@ -208,7 +210,7 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 
 // Get returns information about the non-IFD tag given a tag ID. `ifdPath` must
 // not be fully-qualified.
-func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
+func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -219,6 +221,8 @@ func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
 		err := LoadStandardTags(ti)
 		log.PanicIf(err)
 	}
+
+	ifdPath := ii.UnindexedString()
 
 	family, found := ti.tagsByIfd[ifdPath]
 	if found == false {
@@ -234,7 +238,7 @@ func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
 }
 
 // GetWithName returns information about the non-IFD tag given a tag name.
-func (ti *TagIndex) GetWithName(ifdPath string, name string) (it *IndexedTag, err error) {
+func (ti *TagIndex) GetWithName(ii *exifcommon.IfdIdentity, name string) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -245,6 +249,8 @@ func (ti *TagIndex) GetWithName(ifdPath string, name string) (it *IndexedTag, er
 		err := LoadStandardTags(ti)
 		log.PanicIf(err)
 	}
+
+	ifdPath := ii.UnindexedString()
 
 	it, found := ti.tagsByIfdR[ifdPath][name]
 	if found != true {

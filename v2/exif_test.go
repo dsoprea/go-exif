@@ -63,6 +63,7 @@ func TestVisit(t *testing.T) {
 
 	tags := make([]string, 0)
 
+	// DEPRECATED(dustin): fqIfdPath and ifdIndex are now redundant. Remove in next module version.
 	visitor := func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
 		defer func() {
 			if state := recover(); state != nil {
@@ -73,14 +74,12 @@ func TestVisit(t *testing.T) {
 
 		tagId := ite.TagId()
 		tagType := ite.TagType()
+		ii := ite.ifdIdentity
 
-		ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
-		log.PanicIf(err)
-
-		it, err := ti.Get(ifdPath, tagId)
+		it, err := ti.Get(ii, tagId)
 		if err != nil {
 			if log.Is(err, ErrTagNotFound) {
-				fmt.Printf("Unknown tag: [%s] (%04x)\n", ifdPath, tagId)
+				fmt.Printf("Unknown tag: [%s] (%04x)\n", ii.String(), tagId)
 				return nil
 			} else {
 				log.Panic(err)
@@ -90,7 +89,7 @@ func TestVisit(t *testing.T) {
 		valueString, err := ite.FormatFirst()
 		log.PanicIf(err)
 
-		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ifdPath, tagId, it.Name, ite.UnitCount(), tagType.String(), valueString)
+		description := fmt.Sprintf("IFD-PATH=[%s] ID=(0x%04x) NAME=[%s] COUNT=(%d) TYPE=[%s] VALUE=[%s]", ii.String(), tagId, it.Name, ite.UnitCount(), tagType.String(), valueString)
 		tags = append(tags, description)
 
 		return nil
@@ -157,12 +156,12 @@ func TestVisit(t *testing.T) {
 		"IFD-PATH=[IFD/Exif] ID=(0xa435) NAME=[LensSerialNumber] COUNT=(11) TYPE=[ASCII] VALUE=[2400001068]",
 		"IFD-PATH=[IFD] ID=(0x8825) NAME=[GPSTag] COUNT=(1) TYPE=[LONG] VALUE=[9554]",
 		"IFD-PATH=[IFD/GPSInfo] ID=(0x0000) NAME=[GPSVersionID] COUNT=(4) TYPE=[BYTE] VALUE=[02 03 00 00]",
-		"IFD-PATH=[IFD] ID=(0x0103) NAME=[Compression] COUNT=(1) TYPE=[SHORT] VALUE=[6]",
-		"IFD-PATH=[IFD] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
-		"IFD-PATH=[IFD] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
-		"IFD-PATH=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
-		"IFD-PATH=[IFD] ID=(0x0201) NAME=[JPEGInterchangeFormat] COUNT=(1) TYPE=[LONG] VALUE=[11444]",
-		"IFD-PATH=[IFD] ID=(0x0202) NAME=[JPEGInterchangeFormatLength] COUNT=(1) TYPE=[LONG] VALUE=[21491]",
+		"IFD-PATH=[IFD1] ID=(0x0103) NAME=[Compression] COUNT=(1) TYPE=[SHORT] VALUE=[6]",
+		"IFD-PATH=[IFD1] ID=(0x011a) NAME=[XResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+		"IFD-PATH=[IFD1] ID=(0x011b) NAME=[YResolution] COUNT=(1) TYPE=[RATIONAL] VALUE=[72/1]",
+		"IFD-PATH=[IFD1] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
+		"IFD-PATH=[IFD1] ID=(0x0201) NAME=[JPEGInterchangeFormat] COUNT=(1) TYPE=[LONG] VALUE=[11444]",
+		"IFD-PATH=[IFD1] ID=(0x0202) NAME=[JPEGInterchangeFormatLength] COUNT=(1) TYPE=[LONG] VALUE=[21491]",
 	}
 
 	if reflect.DeepEqual(tags, expected) == false {

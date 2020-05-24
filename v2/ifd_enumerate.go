@@ -312,7 +312,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 		tagId := ite.TagId()
 		tagType := ite.TagType()
 
-		it, err := ie.tagIndex.Get(ii.UnindexedString(), tagId)
+		it, err := ie.tagIndex.Get(ii, tagId)
 		if err == nil {
 			// This is a known tag (from the standard, unless the user did
 			// something different).
@@ -609,7 +609,7 @@ func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err err
 		}
 	}()
 
-	it, err := ifd.tagIndex.GetWithName(ifd.ifdIdentity.UnindexedString(), tagName)
+	it, err := ifd.tagIndex.GetWithName(ifd.ifdIdentity, tagName)
 	if log.Is(err, ErrTagNotFound) == true {
 		log.Panic(ErrTagNotStandard)
 	} else if err != nil {
@@ -717,7 +717,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 				continue
 			}
 
-			it, err := ifd.tagIndex.Get(ifd.ifdIdentity.UnindexedString(), ite.TagId())
+			it, err := ifd.tagIndex.Get(ifd.ifdIdentity, ite.TagId())
 
 			tagName := ""
 			if err == nil {

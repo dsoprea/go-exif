@@ -141,12 +141,9 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 
     visitor := func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
         tagId := ite.TagId()
+        ii := ite.ifdIdentity
 
-        // TODO(dustin): This is inefficient. Our IFD paths should have their own type where we can render whatever path we need.
-        ifdPath, err := im.StripPathPhraseIndices(fqIfdPath)
-        log.PanicIf(err)
-
-        it, err := ti.Get(ifdPath, ite.tagId)
+        it, err := ti.Get(ii, ite.tagId)
         if err != nil {
             if log.Is(err, ErrTagNotFound) != true {
                 log.Panic(err)

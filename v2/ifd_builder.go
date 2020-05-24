@@ -516,7 +516,7 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 	err = ib.Set(offsetBt)
 	log.PanicIf(err)
 
-	thumbnailSizeIt, err := ib.tagIndex.Get(ib.IfdIdentity().UnindexedString(), ThumbnailSizeTagId)
+	thumbnailSizeIt, err := ib.tagIndex.Get(ib.IfdIdentity(), ThumbnailSizeTagId)
 	log.PanicIf(err)
 
 	sizeBt := NewStandardBuilderTag(ib.IfdIdentity().UnindexedString(), thumbnailSizeIt, ib.byteOrder, []uint32{uint32(len(ib.thumbnailData))})
@@ -565,7 +565,7 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 				if isChildIb == true {
 					tagName = "<Child IFD>"
 				} else {
-					it, err := ib.tagIndex.Get(tag.ifdPath, tag.tagId)
+					it, err := ib.tagIndex.Get(ib.ifdIdentity, tag.tagId)
 					if log.Is(err, ErrTagNotFound) == true {
 						tagName = "<UNKNOWN>"
 					} else if err != nil {
@@ -889,7 +889,7 @@ func (ib *IfdBuilder) FindTagWithName(tagName string) (bt *BuilderTag, err error
 		}
 	}()
 
-	it, err := ib.tagIndex.GetWithName(ib.IfdIdentity().UnindexedString(), tagName)
+	it, err := ib.tagIndex.GetWithName(ib.IfdIdentity(), tagName)
 	log.PanicIf(err)
 
 	found, err := ib.FindN(it.Id, 1)
@@ -1105,7 +1105,7 @@ func (ib *IfdBuilder) AddStandard(tagId uint16, value interface{}) (err error) {
 		}
 	}()
 
-	it, err := ib.tagIndex.Get(ib.IfdIdentity().UnindexedString(), tagId)
+	it, err := ib.tagIndex.Get(ib.IfdIdentity(), tagId)
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(ib.IfdIdentity().UnindexedString(), it, ib.byteOrder, value)
@@ -1126,7 +1126,7 @@ func (ib *IfdBuilder) AddStandardWithName(tagName string, value interface{}) (er
 		}
 	}()
 
-	it, err := ib.tagIndex.GetWithName(ib.IfdIdentity().UnindexedString(), tagName)
+	it, err := ib.tagIndex.GetWithName(ib.IfdIdentity(), tagName)
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(ib.IfdIdentity().UnindexedString(), it, ib.byteOrder, value)
@@ -1148,7 +1148,7 @@ func (ib *IfdBuilder) SetStandard(tagId uint16, value interface{}) (err error) {
 
 	// TODO(dustin): !! Add test for this function.
 
-	it, err := ib.tagIndex.Get(ib.IfdIdentity().UnindexedString(), tagId)
+	it, err := ib.tagIndex.Get(ib.IfdIdentity(), tagId)
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(ib.IfdIdentity().UnindexedString(), it, ib.byteOrder, value)
@@ -1179,7 +1179,7 @@ func (ib *IfdBuilder) SetStandardWithName(tagName string, value interface{}) (er
 
 	// TODO(dustin): !! Add test for this function.
 
-	it, err := ib.tagIndex.GetWithName(ib.IfdIdentity().UnindexedString(), tagName)
+	it, err := ib.tagIndex.GetWithName(ib.IfdIdentity(), tagName)
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(ib.IfdIdentity().UnindexedString(), it, ib.byteOrder, value)

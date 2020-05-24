@@ -2049,7 +2049,7 @@ func TestIfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 func TestNewStandardBuilderTag__OneUnit(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.Get(exifcommon.IfdExifStandardIfdIdentity.UnindexedString(), uint16(0x8833))
+	it, err := ti.Get(exifcommon.IfdExifStandardIfdIdentity, uint16(0x8833))
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(exifcommon.IfdExifStandardIfdIdentity.UnindexedString(), it, exifcommon.TestDefaultByteOrder, []uint32{uint32(0x1234)})
@@ -2066,7 +2066,7 @@ func TestNewStandardBuilderTag__OneUnit(t *testing.T) {
 func TestNewStandardBuilderTag__TwoUnits(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.Get(exifcommon.IfdExifStandardIfdIdentity.UnindexedString(), uint16(0x8833))
+	it, err := ti.Get(exifcommon.IfdExifStandardIfdIdentity, uint16(0x8833))
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(exifcommon.IfdExifStandardIfdIdentity.UnindexedString(), it, exifcommon.TestDefaultByteOrder, []uint32{uint32(0x1234), uint32(0x5678)})

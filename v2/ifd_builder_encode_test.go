@@ -198,7 +198,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 	ti := NewTagIndex()
 	ib := NewIfdBuilder(im, ti, exifcommon.IfdGpsInfoStandardIfdIdentity, exifcommon.TestDefaultByteOrder)
 
-	it, err := ti.Get(ib.IfdIdentity().UnindexedString(), uint16(0x0000))
+	it, err := ti.Get(ib.IfdIdentity(), uint16(0x0000))
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString(), it, exifcommon.TestDefaultByteOrder, []uint8{uint8(0x12)})
@@ -232,7 +232,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 	ti := NewTagIndex()
 	ib := NewIfdBuilder(im, ti, exifcommon.IfdGpsInfoStandardIfdIdentity, exifcommon.TestDefaultByteOrder)
 
-	it, err := ti.Get(ib.IfdIdentity().UnindexedString(), uint16(0x0000))
+	it, err := ti.Get(ib.IfdIdentity(), uint16(0x0000))
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString(), it, exifcommon.TestDefaultByteOrder, []uint8{uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78)})
@@ -272,7 +272,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 	addressableOffset := uint32(0x1234)
 	ida := newIfdDataAllocator(addressableOffset)
 
-	it, err := ti.Get(ib.IfdIdentity().UnindexedString(), uint16(0x0000))
+	it, err := ti.Get(ib.IfdIdentity(), uint16(0x0000))
 	log.PanicIf(err)
 
 	bt := NewStandardBuilderTag(exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString(), it, exifcommon.TestDefaultByteOrder, []uint8{uint8(0x12), uint8(0x34), uint8(0x56), uint8(0x78), uint8(0x9a)})
@@ -493,7 +493,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 	ti := NewTagIndex()
 	ib := NewIfdBuilder(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder)
 
-	it, err := ib.tagIndex.Get(ib.IfdIdentity().UnindexedString(), uint16(0x000b))
+	it, err := ib.tagIndex.Get(ib.IfdIdentity(), uint16(0x000b))
 	log.PanicIf(err)
 
 	valueString := "testvalue"

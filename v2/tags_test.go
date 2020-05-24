@@ -11,7 +11,7 @@ import (
 func TestGet(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.Get(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f)
+	it, err := ti.Get(exifcommon.IfdStandardIfdIdentity, 0x10f)
 	log.PanicIf(err)
 
 	if it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) == false || it.IsName(exifcommon.IfdStandardIfdIdentity.UnindexedString(), "Make") == false {
@@ -22,7 +22,7 @@ func TestGet(t *testing.T) {
 func TestGetWithName(t *testing.T) {
 	ti := NewTagIndex()
 
-	it, err := ti.GetWithName(exifcommon.IfdStandardIfdIdentity.UnindexedString(), "Make")
+	it, err := ti.GetWithName(exifcommon.IfdStandardIfdIdentity, "Make")
 	log.PanicIf(err)
 
 	if it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) == false {
