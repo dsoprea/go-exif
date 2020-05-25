@@ -188,7 +188,7 @@ func NewStandardBuilderTag(ifdPath string, it *IndexedTag, byteOrder binary.Byte
 	// If there is more than one supported type, we'll go with the larger to
 	// encode with. It'll use the same amount of fixed-space, and we'll
 	// eliminate unnecessary overflows/issues.
-	tagType := it.WidestSupportedType()
+	tagType := it.GetEncodingType(value)
 
 	var rawBytes []byte
 	if it.DoesSupportType(exifcommon.TypeUndefined) == true {

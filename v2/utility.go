@@ -159,6 +159,11 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
             // unknown tags.
             utilityLogger.Warningf(nil, "Tag with ID (0x%04x) in IFD [%s] is not recognized and will be ignored.", tagId, fqIfdPath)
 
+            it, err := ti.FindFirst(ite.tagId, nil)
+            if err == nil {
+                utilityLogger.Warningf(nil, "(cont'd) Tag [%s] with the same ID has been found in IFD [%s] and may be related. The tag you were looking for might have been written to the wrong IFD by a buggy implementation.", it.Name, it.IfdPath)
+            }
+
             return nil
         }
 
