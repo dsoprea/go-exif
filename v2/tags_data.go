@@ -484,12 +484,6 @@ IFD:
 - id: 0x0157
   name: ClipPath
   type_name: BYTE
-- id: 0x0158
-  name: XClipPathUnits
-  type_name: SSHORT
-- id: 0x0159
-  name: YClipPathUnits
-  type_name: SSHORT
 - id: 0x015a
   name: Indexed
   type_name: SHORT
@@ -600,9 +594,6 @@ IFD:
 - id: 0x8829
   name: Interlace
   type_name: SHORT
-- id: 0x882a
-  name: TimeZoneOffset
-  type_name: SSHORT
 - id: 0x882b
   name: SelfTimerMode
   type_name: SHORT
@@ -864,15 +855,6 @@ IFD:
 - id: 0xc6f9
   name: ProfileHueSatMapDims
   type_name: LONG
-- id: 0xc6fa
-  name: ProfileHueSatMapData1
-  type_name: FLOAT
-- id: 0xc6fb
-  name: ProfileHueSatMapData2
-  type_name: FLOAT
-- id: 0xc6fc
-  name: ProfileToneCurve
-  type_name: FLOAT
 - id: 0xc6fd
   name: ProfileEmbedPolicy
   type_name: LONG
@@ -918,9 +900,6 @@ IFD:
 - id: 0xc725
   name: ProfileLookTableDims
   type_name: LONG
-- id: 0xc726
-  name: ProfileLookTableData
-  type_name: FLOAT
 - id: 0xc740
   name: OpcodeList1
   type_name: UNDEFINED
@@ -930,9 +909,6 @@ IFD:
 - id: 0xc74e
   name: OpcodeList3
   type_name: UNDEFINED
-- id: 0xc761
-  name: NoiseProfile
-  type_name: DOUBLE
 IFD/Exif/Iop:
 - id: 0x0001
   name: InteroperabilityIndex
