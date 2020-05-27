@@ -238,11 +238,11 @@ type IfdBuilder struct {
 	// data. Otherwise, it's nil.
 	thumbnailData []byte
 
-	ifdMapping *IfdMapping
+	ifdMapping *exifcommon.IfdMapping
 	tagIndex   *TagIndex
 }
 
-func NewIfdBuilder(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
+func NewIfdBuilder(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder) (ib *IfdBuilder) {
 	ib = &IfdBuilder{
 		ifdIdentity: ii,
 
@@ -332,7 +332,7 @@ func (ib *IfdBuilder) ChildWithTagId(childIfdTagId uint16) (childIb *IfdBuilder,
 	return nil, nil
 }
 
-func getOrCreateIbFromRootIbInner(rootIb *IfdBuilder, parentIb *IfdBuilder, currentLineage []IfdTagIdAndIndex) (ib *IfdBuilder, err error) {
+func getOrCreateIbFromRootIbInner(rootIb *IfdBuilder, parentIb *IfdBuilder, currentLineage []exifcommon.IfdTagIdAndIndex) (ib *IfdBuilder, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -346,7 +346,7 @@ func getOrCreateIbFromRootIbInner(rootIb *IfdBuilder, parentIb *IfdBuilder, curr
 	// Since we're calling ourselves recursively with incrementally different
 	// paths, the FQ IFD-path of the parent that called us needs to be passed
 	// in, in order for us to know it.
-	var parentLineage []IfdTagIdAndIndex
+	var parentLineage []exifcommon.IfdTagIdAndIndex
 	if parentIb != nil {
 		var err error
 
@@ -555,7 +555,7 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 				_, err := ib.ifdMapping.GetChild(currentIb.IfdIdentity().UnindexedString(), tag.tagId)
 				if err == nil {
 					isChildIb = true
-				} else if log.Is(err, ErrChildIfdNotMapped) == false {
+				} else if log.Is(err, exifcommon.ErrChildIfdNotMapped) == false {
 					log.Panic(err)
 				}
 
@@ -624,7 +624,7 @@ func (ib *IfdBuilder) printIfdTree(levels int) {
 				_, err := ib.ifdMapping.GetChild(currentIb.IfdIdentity().UnindexedString(), tag.tagId)
 				if err == nil {
 					isChildIb = true
-				} else if log.Is(err, ErrChildIfdNotMapped) == false {
+				} else if log.Is(err, exifcommon.ErrChildIfdNotMapped) == false {
 					log.Panic(err)
 				}
 

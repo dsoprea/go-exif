@@ -171,12 +171,12 @@ type IfdEnumerate struct {
 	buffer         *bytes.Buffer
 	byteOrder      binary.ByteOrder
 	tagIndex       *TagIndex
-	ifdMapping     *IfdMapping
+	ifdMapping     *exifcommon.IfdMapping
 	furthestOffset uint32
 }
 
 // NewIfdEnumerate returns a new instance of IfdEnumerate.
-func NewIfdEnumerate(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
+func NewIfdEnumerate(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
 	return &IfdEnumerate{
 		exifData:   exifData,
 		buffer:     bytes.NewBuffer(exifData),
@@ -266,7 +266,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 
 		// We also need to set `tag.ChildFqIfdPath` but can't do it here
 		// because we don't have the IFD index.
-	} else if log.Is(err, ErrChildIfdNotMapped) == false {
+	} else if log.Is(err, exifcommon.ErrChildIfdNotMapped) == false {
 		log.Panic(err)
 	}
 
@@ -656,7 +656,7 @@ type Ifd struct {
 
 	thumbnailData []byte
 
-	ifdMapping *IfdMapping
+	ifdMapping *exifcommon.IfdMapping
 	tagIndex   *TagIndex
 }
 
@@ -1387,7 +1387,7 @@ func (ie *IfdEnumerate) FurthestOffset() uint32 {
 // in that the numeric index will always be zero (the zeroth child) rather than
 // the proper number (if its actually a sibling to the first child, for
 // instance).
-func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitorFn) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
+func ParseOneIfd(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitorFn) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -1412,7 +1412,7 @@ func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdI
 }
 
 // ParseOneTag is a hack to use an IE to parse a raw tag block.
-func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (ite *IfdTagEntry, err error) {
+func ParseOneTag(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (ite *IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

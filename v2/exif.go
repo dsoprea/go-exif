@@ -192,7 +192,7 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 }
 
 // Visit recursively invokes a callback for every tag.
-func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte, visitor TagVisitorFn) (eh ExifHeader, furthestOffset uint32, err error) {
+func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []byte, visitor TagVisitorFn) (eh ExifHeader, furthestOffset uint32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -213,7 +213,7 @@ func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *IfdMapping, tagI
 }
 
 // Collect recursively builds a static structure of all IFDs and tags.
-func Collect(ifdMapping *IfdMapping, tagIndex *TagIndex, exifData []byte) (eh ExifHeader, index IfdIndex, err error) {
+func Collect(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []byte) (eh ExifHeader, index IfdIndex, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

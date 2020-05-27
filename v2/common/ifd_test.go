@@ -1,4 +1,4 @@
-package exif
+package exifcommon
 
 import (
 	"fmt"
@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v2/common"
 )
 
 func TestIfdMapping_Add(t *testing.T) {
@@ -109,16 +107,16 @@ func TestIfdMapping_Get(t *testing.T) {
 	log.PanicIf(err)
 
 	mi, err := im.Get([]uint16{
-		exifcommon.IfdStandardIfdIdentity.TagId(),
-		exifcommon.IfdExifStandardIfdIdentity.TagId(),
-		exifcommon.IfdExifIopStandardIfdIdentity.TagId(),
+		IfdStandardIfdIdentity.TagId(),
+		IfdExifStandardIfdIdentity.TagId(),
+		IfdExifIopStandardIfdIdentity.TagId(),
 	})
 
 	log.PanicIf(err)
 
-	if mi.ParentTagId != exifcommon.IfdExifStandardIfdIdentity.TagId() {
+	if mi.ParentTagId != IfdExifStandardIfdIdentity.TagId() {
 		t.Fatalf("Parent tag-ID not correct")
-	} else if mi.TagId != exifcommon.IfdExifIopStandardIfdIdentity.TagId() {
+	} else if mi.TagId != IfdExifIopStandardIfdIdentity.TagId() {
 		t.Fatalf("Tag-ID not correct")
 	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")
@@ -136,9 +134,9 @@ func TestIfdMapping_GetWithPath(t *testing.T) {
 	mi, err := im.GetWithPath("IFD/Exif/Iop")
 	log.PanicIf(err)
 
-	if mi.ParentTagId != exifcommon.IfdExifStandardIfdIdentity.TagId() {
+	if mi.ParentTagId != IfdExifStandardIfdIdentity.TagId() {
 		t.Fatalf("Parent tag-ID not correct")
-	} else if mi.TagId != exifcommon.IfdExifIopStandardIfdIdentity.TagId() {
+	} else if mi.TagId != IfdExifIopStandardIfdIdentity.TagId() {
 		t.Fatalf("Tag-ID not correct")
 	} else if mi.Name != "Iop" {
 		t.Fatalf("name not correct")
@@ -267,5 +265,69 @@ func TestIfdMapping_NewIfdMappingWithStandard(t *testing.T) {
 		fmt.Printf("\n")
 
 		t.Fatalf("Standard IFDs not loaded correctly.")
+	}
+}
+
+func TestNewIfdIdentityFromString_Valid_WithoutIndexes(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	fqIfdPath := "IFD/Exif"
+
+	ii, err := NewIfdIdentityFromString(im, fqIfdPath)
+	log.PanicIf(err)
+
+	if ii.String() != fqIfdPath {
+		t.Fatalf("'%s' IFD-path was not parsed correctly: [%s]", fqIfdPath, ii.String())
+	}
+}
+
+func TestNewIfdIdentityFromString_Valid_WithIndexes(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	fqIfdPath := "IFD2/Exif4"
+
+	ii, err := NewIfdIdentityFromString(im, fqIfdPath)
+	log.PanicIf(err)
+
+	if ii.String() != fqIfdPath {
+		t.Fatalf("'%s' IFD-path was not parsed correctly: [%s]", fqIfdPath, ii.String())
+	}
+}
+
+func TestNewIfdIdentityFromString_Invalid_IfdPathJustRoot(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	fqIfdPath := "XYZ"
+
+	_, err = NewIfdIdentityFromString(im, fqIfdPath)
+	if err == nil {
+		t.Fatalf("Expected error from invalid path.")
+	} else if err.Error() != "ifd child with name [XYZ] not registered: [XYZ]" {
+		log.Panic(err)
+	}
+}
+
+func TestNewIfdIdentityFromString_Invalid_IfdPathWithSubdirectory(t *testing.T) {
+	im := NewIfdMapping()
+
+	err := LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	fqIfdPath := "IFD/XYZ"
+
+	_, err = NewIfdIdentityFromString(im, fqIfdPath)
+	if err == nil {
+		t.Fatalf("Expected error from invalid path.")
+	} else if err.Error() != "ifd child with name [XYZ] not registered: [IFD/XYZ]" {
+		log.Panic(err)
 	}
 }
