@@ -105,7 +105,7 @@ func main() {
 
 	// Run the parse.
 
-	entries, err := exif.GetFlatExifData(rawExif)
+	entries, _, err := exif.GetExifData(rawExif, true)
 	log.PanicIf(err)
 
 	// Write the thumbnail is requested and present.

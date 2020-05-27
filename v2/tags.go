@@ -272,7 +272,7 @@ var (
 // Things *can* end badly here, in that the same tag-ID in different IFDs might
 // describe different data and different ata-types, and our decode might then
 // produce binary and non-printable data.
-func (ti *TagIndex) FindFirst(id uint16, ifdIdentities []*exifcommon.IfdIdentity) (it *IndexedTag, err error) {
+func (ti *TagIndex) FindFirst(id uint16, typeId exifcommon.TagTypePrimitive, ifdIdentities []*exifcommon.IfdIdentity) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -293,7 +293,15 @@ func (ti *TagIndex) FindFirst(id uint16, ifdIdentities []*exifcommon.IfdIdentity
 			log.Panic(err)
 		}
 
-		return it, nil
+		// Even though the tag might be mislocated, the type should still be the
+		// same. Check this so we don't accidentally end-up on a complete
+		// irrelevant tag with a totally different data type. This attempts to
+		// mitigate producing garbage.
+		for _, supportedType := range it.SupportedTypes {
+			if supportedType == typeId {
+				return it, nil
+			}
+		}
 	}
 
 	return nil, ErrTagNotFound

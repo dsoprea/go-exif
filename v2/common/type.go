@@ -130,13 +130,21 @@ var (
     typeNamesR = map[string]TagTypePrimitive{}
 )
 
+// Rational describes an unsigned rational value.
 type Rational struct {
-    Numerator   uint32
+    // Numerator is the numerator of the rational value.
+    Numerator uint32
+
+    // Denominator is the numerator of the rational value.
     Denominator uint32
 }
 
+// SignedRational describes a signed rational value.
 type SignedRational struct {
-    Numerator   int32
+    // Numerator is the numerator of the rational value.
+    Numerator int32
+
+    // Denominator is the numerator of the rational value.
     Denominator int32
 }
 
@@ -423,6 +431,18 @@ func TranslateStringToType(tagType TagTypePrimitive, valueString string) (value 
 func GetTypeByName(typeName string) (tagType TagTypePrimitive, found bool) {
     tagType, found = typeNamesR[typeName]
     return tagType, found
+}
+
+// BasicTag describes a single tag for any purpose.
+type BasicTag struct {
+    // FqIfdPath is the fully-qualified IFD-path.
+    FqIfdPath string
+
+    // IfdPath is the unindexed IFD-path.
+    IfdPath string
+
+    // TagId is the tag-ID.
+    TagId uint16
 }
 
 func init() {

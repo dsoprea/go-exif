@@ -116,13 +116,50 @@ type ExifTag struct {
 
 // String returns a string representation.
 func (et ExifTag) String() string {
-    return fmt.Sprintf("ExifTag<IFD-PATH=[%s] TAG-ID=(0x%02x) TAG-NAME=[%s] TAG-TYPE=[%s] VALUE=[%v] VALUE-BYTES=(%d) CHILD-IFD-PATH=[%s]", et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.FormattedFirst, len(et.ValueBytes), et.ChildIfdPath)
+    return fmt.Sprintf(
+        "ExifTag<"+
+            "IFD-PATH=[%s] "+
+            "TAG-ID=(0x%02x) "+
+            "TAG-NAME=[%s] "+
+            "TAG-TYPE=[%s] "+
+            "VALUE=[%v] "+
+            "VALUE-BYTES=(%d) "+
+            "CHILD-IFD-PATH=[%s]",
+        et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.FormattedFirst,
+        len(et.ValueBytes), et.ChildIfdPath)
 }
 
-// RELEASE(dustin): In the next release, make this return a list of skipped tags, too.
+// RELEASE(dustin): In the next release, dump GetFlatExifData().
 
 // GetFlatExifData returns a simple, flat representation of all tags.
 func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    exifTags, _, err = GetExifData(exifData, false)
+    log.PanicIf(err)
+
+    return exifTags, nil
+}
+
+// MiscellaneousExifData is reports additional data collected during the parse.
+type MiscellaneousExifData struct {
+    // UnknownTags contains all tags that were invalid for their containing
+    // IFDs. The values represent alternative IFDs that were correctly matched
+    // to those tags and used instead.
+    UnknownTags map[exifcommon.BasicTag]exifcommon.BasicTag
+}
+
+// GetExifData returns a simple, flat representation of all tags along with
+// miscellaneous metadata..
+//
+// `doFindAlternativeIfds` indicates that we can attempt to find unknown tags in
+// other IFDs. This can help with malformed EXIF data, where tags might be in
+// IFDs other than specified by the EXIF specification.
+func GetExifData(exifData []byte, doFindAlternativeIfds bool) (exifTags []ExifTag, med MiscellaneousExifData, err error) {
     defer func() {
         if state := recover(); state != nil {
             err = log.Wrap(state.(error))
@@ -139,6 +176,8 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 
     exifTags = make([]ExifTag, 0)
 
+    med.UnknownTags = make(map[exifcommon.BasicTag]exifcommon.BasicTag)
+
     visitor := func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
         tagId := ite.TagId()
         ii := ite.ifdIdentity
@@ -151,20 +190,56 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 
             // This is an unknown tag.
 
-            // This is supposed to be a convenience function and if we were
-            // to keep the name empty or set it to some placeholder, it
-            // might be mismanaged by the package that is calling us. If
-            // they want to specifically manage these types of tags, they
-            // can use more advanced functionality to specifically -handle
-            // unknown tags.
-            utilityLogger.Warningf(nil, "Tag with ID (0x%04x) in IFD [%s] is not recognized and will be ignored.", tagId, fqIfdPath)
-
-            it, err := ti.FindFirst(ite.tagId, nil)
-            if err == nil {
-                utilityLogger.Warningf(nil, "(cont'd) Tag [%s] with the same ID has been found in IFD [%s] and may be related. The tag you were looking for might have been written to the wrong IFD by a buggy implementation.", it.Name, it.IfdPath)
+            originalBt := exifcommon.BasicTag{
+                FqIfdPath: ii.String(),
+                IfdPath:   ii.UnindexedString(),
+                TagId:     ite.tagId,
             }
 
-            return nil
+            med.UnknownTags[originalBt] = exifcommon.BasicTag{}
+
+            var err2 error
+
+            it, err2 = ti.FindFirst(ite.tagId, ite.tagType, nil)
+            if err2 == nil {
+                utilityLogger.Warningf(nil,
+                    "Tag with ID (0x%04x) is not valid for IFD [%s], but it "+
+                        "*is* valid as tag [%s] under IFD [%s] and has the same "+
+                        "type [%s]. This EXIF blob was probably written by a buggy "+
+                        "implementation.",
+                    ite.tagId, ii.UnindexedString(), it.Name, it.IfdPath,
+                    ite.tagType)
+
+                if doFindAlternativeIfds == false {
+                    utilityLogger.Warningf(nil,
+                        "We were told to not acknolwedge the alternative IFD "+
+                            "for the misplaced tag. Skipping.")
+
+                    return nil
+                }
+
+                med.UnknownTags[originalBt] = exifcommon.BasicTag{
+                    IfdPath: it.IfdPath,
+                    TagId:   ite.tagId,
+                }
+            } else if err2 == ErrTagNotFound {
+                // This is supposed to be a convenience function and if we were
+                // to keep the name empty or set it to some placeholder, it
+                // might be mismanaged by the package that is calling us. If
+                // they want to specifically manage these types of tags, they
+                // can use more advanced functionality to specifically -handle
+                // unknown tags.
+                utilityLogger.Warningf(nil,
+                    "Tag with ID (0x%04x) in IFD [%s] is not recognized and "+
+                        "will be ignored.", tagId, fqIfdPath)
+
+                return nil
+            } else {
+                log.Panic(err2)
+            }
+
+            // If we get here, we found the tag in a different place than
+            // prescribed in the standard.
         }
 
         tagName := it.Name
@@ -217,7 +292,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
     err = ie.Scan(exifcommon.IfdStandardIfdIdentity, eh.FirstIfdOffset, visitor)
     log.PanicIf(err)
 
-    return exifTags, nil
+    return exifTags, med, nil
 }
 
 func GpsDegreesEquals(gi1, gi2 GpsDegrees) bool {
