@@ -1433,6 +1433,15 @@ func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdI
 	ite, err = ie.parseTag(ii, 0, bp)
 	log.PanicIf(err)
 
+	err = ie.postparseTag(ite, nil)
+	if err != nil {
+		if err == ErrTagNotFound {
+			return nil, err
+		}
+
+		log.Panic(err)
+	}
+
 	return ite, nil
 }
 
