@@ -204,7 +204,7 @@ func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *IfdMapping, tagI
 
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, exifData, eh.ByteOrder)
 
-	err = ie.Scan(rootIfdIdentity, eh.FirstIfdOffset, visitor)
+	_, err = ie.Scan(rootIfdIdentity, eh.FirstIfdOffset, visitor)
 	log.PanicIf(err)
 
 	furthestOffset = ie.FurthestOffset()

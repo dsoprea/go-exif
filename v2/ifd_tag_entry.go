@@ -44,6 +44,8 @@ type IfdTagEntry struct {
 
 	addressableData []byte
 	byteOrder       binary.ByteOrder
+
+	tagName string
 }
 
 func newIfdTagEntry(ii *exifcommon.IfdIdentity, tagId uint16, tagIndex int, tagType exifcommon.TagTypePrimitive, unitCount uint32, valueOffset uint32, rawValueOffset []byte, addressableData []byte, byteOrder binary.ByteOrder) *IfdTagEntry {
@@ -63,6 +65,21 @@ func newIfdTagEntry(ii *exifcommon.IfdIdentity, tagId uint16, tagIndex int, tagT
 // String returns a stringified representation of the struct.
 func (ite *IfdTagEntry) String() string {
 	return fmt.Sprintf("IfdTagEntry<TAG-IFD-PATH=[%s] TAG-ID=(0x%04x) TAG-TYPE=[%s] UNIT-COUNT=(%d)>", ite.ifdIdentity.String(), ite.tagId, ite.tagType.String(), ite.unitCount)
+}
+
+// TagName returns the name of the tag. This is determined else and set after
+// the parse (since it's not actually stored in the stream). If it's empty, it
+// is because it is an unknown tag (nonstandard or otherwise unavailable in the
+// tag-index).
+func (ite *IfdTagEntry) TagName() string {
+	return ite.tagName
+}
+
+// setTagName sets the tag-name. This provides the name for convenience and
+// efficiency by determining it when most efficient while we're parsing rather
+// than delegating it to the caller (or, worse, the user).
+func (ite *IfdTagEntry) setTagName(tagName string) {
+	ite.tagName = tagName
 }
 
 // IfdPath returns the fully-qualified path of the IFD that owns this tag.
@@ -251,6 +268,11 @@ func (ite *IfdTagEntry) ChildIfdPath() string {
 // indices are omitted.
 func (ite *IfdTagEntry) ChildFqIfdPath() string {
 	return ite.childFqIfdPath
+}
+
+// IfdIdentity returns the IfdIdentity associated with this tag.
+func (ite *IfdTagEntry) IfdIdentity() *exifcommon.IfdIdentity {
+	return ite.ifdIdentity
 }
 
 func (ite *IfdTagEntry) getValueContext() *exifcommon.ValueContext {

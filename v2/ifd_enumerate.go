@@ -273,12 +273,116 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	return ite, nil
 }
 
+// RELEASE(dustin): Drop fqIfdPath and ifdIndex arguments to visitor callback. They're both accessible on the IfdTagEntry struct.
+
 // TagVisitorFn is called for each tag when enumerating through the EXIF.
 type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
 
+// postparseTag do some tag-level processing here following the parse of each.
+func (ie *IfdEnumerate) postparseTag(ite *IfdTagEntry, med *MiscellaneousExifData) (err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	// TODO(dustin): Add test
+
+	ii := ite.IfdIdentity()
+
+	tagId := ite.TagId()
+	tagType := ite.TagType()
+
+	it, err := ie.tagIndex.Get(ii, tagId)
+	if err == nil {
+		ite.setTagName(it.Name)
+	} else {
+		if err != ErrTagNotFound {
+			log.Panic(err)
+		}
+
+		// This is an unknown tag.
+
+		originalBt := exifcommon.BasicTag{
+			FqIfdPath: ii.String(),
+			IfdPath:   ii.UnindexedString(),
+			TagId:     tagId,
+		}
+
+		if med != nil {
+			med.unknownTags[originalBt] = exifcommon.BasicTag{}
+		}
+
+		utilityLogger.Debugf(nil,
+			"Tag (0x%04x) is not valid for IFD [%s]. Attempting secondary "+
+				"lookup.", tagId, ii.String())
+
+		// This will overwrite the existing `it` and `err`. Since `FindFirst()`
+		// might generate different Errors than `Get()`, the log message above
+		// is import to try and mitigate confusion in that case.
+		it, err = ie.tagIndex.FindFirst(tagId, tagType, nil)
+		if err != nil {
+			if err != ErrTagNotFound {
+				log.Panic(err)
+			}
+
+			// This is supposed to be a convenience function and if we were
+			// to keep the name empty or set it to some placeholder, it
+			// might be mismanaged by the package that is calling us. If
+			// they want to specifically manage these types of tags, they
+			// can use more advanced functionality to specifically -handle
+			// unknown tags.
+			utilityLogger.Warningf(nil,
+				"Tag with ID (0x%04x) in IFD [%s] is not recognized and "+
+					"will be ignored.", tagId, ii.String())
+
+			return ErrTagNotFound
+		}
+
+		ite.setTagName(it.Name)
+
+		utilityLogger.Warningf(nil,
+			"Tag with ID (0x%04x) is not valid for IFD [%s], but it *is* "+
+				"valid as tag [%s] under IFD [%s] and has the same type "+
+				"[%s], so we will use that. This EXIF blob was probably "+
+				"written by a buggy implementation.",
+			tagId, ii.UnindexedString(), it.Name, it.IfdPath,
+			tagType)
+
+		if med != nil {
+			med.unknownTags[originalBt] = exifcommon.BasicTag{
+				IfdPath: it.IfdPath,
+				TagId:   tagId,
+			}
+		}
+	}
+
+	// This is a known tag (from the standard, unless the user did
+	// something different).
+
+	// Skip any tags that have a type that doesn't match the type in the
+	// index (which is loaded with the standard and accept tag
+	// information unless configured otherwise).
+	//
+	// We've run into multiple instances of the same tag, where a) no
+	// tag should ever be repeated, and b) all but one had an incorrect
+	// type and caused parsing/conversion woes. So, this is a quick fix
+	// for those scenarios.
+	if it.DoesSupportType(tagType) == false {
+		ifdEnumerateLogger.Warningf(nil,
+			"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
+			ii.UnindexedString(), tagId, it.Name,
+			tagType, it.SupportedTypes)
+
+		return ErrTagNotFound
+	}
+
+	return nil
+}
+
 // parseIfd decodes the IFD block that we're currently sitting on the first
 // byte of.
-func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, visitor TagVisitorFn, doDescend bool) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
+func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, visitor TagVisitorFn, doDescend bool, med *MiscellaneousExifData) (nextIfdOffset uint32, entries []*IfdTagEntry, thumbnailData []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -309,33 +413,16 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 			log.Panic(err)
 		}
 
-		tagId := ite.TagId()
-		tagType := ite.TagType()
-
-		it, err := ie.tagIndex.Get(ii, tagId)
+		err = ie.postparseTag(ite, med)
 		if err == nil {
-			// This is a known tag (from the standard, unless the user did
-			// something different).
-
-			// Skip any tags that have a type that doesn't match the type in the
-			// index (which is loaded with the standard and accept tag
-			// information unless configured otherwise).
-			//
-			// We've run into multiple instances of the same tag, where a) no
-			// tag should ever be repeated, and b) all but one had an incorrect
-			// type and caused parsing/conversion woes. So, this is a quick fix
-			// for those scenarios.
-			if it.DoesSupportType(tagType) == false {
-				ifdEnumerateLogger.Warningf(nil,
-					"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
-					ii.UnindexedString(), tagId, it.Name,
-					tagType, it.SupportedTypes)
-
+			if err == ErrTagNotFound {
 				continue
 			}
-		} else if err != ErrTagNotFound {
-			log.Panic(err)
+
+			log.PanicIf(err)
 		}
+
+		tagId := ite.TagId()
 
 		if visitor != nil {
 			err := visitor(ii.String(), ii.Index(), ite)
@@ -392,7 +479,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 
 				iiChild := ii.NewChild(childIfdTag, 0)
 
-				err := ie.scan(iiChild, ite.getValueOffset(), visitor)
+				err := ie.scan(iiChild, ite.getValueOffset(), visitor, med)
 				log.PanicIf(err)
 
 				ifdEnumerateLogger.Debugf(nil, "Ascending from IFD [%s] to IFD [%s].", ite.ChildIfdPath(), ii)
@@ -458,7 +545,7 @@ func (ie *IfdEnumerate) parseThumbnail(offsetIte, lengthIte *IfdTagEntry) (thumb
 
 // scan parses and enumerates the different IFD blocks and invokes a visitor
 // callback for each tag. No information is kept or returned.
-func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn) (err error) {
+func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn, med *MiscellaneousExifData) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -482,7 +569,7 @@ func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32
 			log.Panic(err)
 		}
 
-		nextIfdOffset, _, _, err := ie.parseIfd(iiSibling, bp, visitor, true)
+		nextIfdOffset, _, _, err := ie.parseIfd(iiSibling, bp, visitor, true, med)
 		log.PanicIf(err)
 
 		currentOffset := bp.CurrentOffset()
@@ -500,9 +587,22 @@ func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32
 	return nil
 }
 
+// MiscellaneousExifData is reports additional data collected during the parse.
+type MiscellaneousExifData struct {
+	// UnknownTags contains all tags that were invalid for their containing
+	// IFDs. The values represent alternative IFDs that were correctly matched
+	// to those tags and used instead.
+	unknownTags map[exifcommon.BasicTag]exifcommon.BasicTag
+}
+
+// UnknownTags returns the unknown tags encountered during the scan.
+func (med *MiscellaneousExifData) UnknownTags() map[exifcommon.BasicTag]exifcommon.BasicTag {
+	return med.unknownTags
+}
+
 // Scan enumerates the different EXIF blocks (called IFDs). `rootIfdName` will
 // be "IFD" in the TIFF standard.
-func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn) (err error) {
+func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn) (med *MiscellaneousExifData, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -511,12 +611,16 @@ func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, v
 
 	// TODO(dustin): Add test
 
-	err = ie.scan(iiRoot, ifdOffset, visitor)
+	med = &MiscellaneousExifData{
+		unknownTags: make(map[exifcommon.BasicTag]exifcommon.BasicTag),
+	}
+
+	err = ie.scan(iiRoot, ifdOffset, visitor, med)
 	log.PanicIf(err)
 
 	ifdEnumerateLogger.Debugf(nil, "Scan: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d) (Scan).", ie.FurthestOffset())
 
-	return nil
+	return med, nil
 }
 
 // Ifd represents a single, parsed IFD.
@@ -1075,6 +1179,8 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		}
 	}()
 
+	// TODO(dustin): Add MiscellaneousExifData to IfdIndex
+
 	tree := make(map[int]*Ifd)
 	ifds := make([]*Ifd, 0)
 	lookup := make(map[string]*Ifd)
@@ -1114,7 +1220,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 		// TODO(dustin): We don't need to pass the index in as a separate argument. Get from the II.
 
-		nextIfdOffset, entries, thumbnailData, err := ie.parseIfd(ii, bp, nil, false)
+		nextIfdOffset, entries, thumbnailData, err := ie.parseIfd(ii, bp, nil, false, nil)
 		log.PanicIf(err)
 
 		currentOffset := bp.CurrentOffset()
@@ -1299,14 +1405,14 @@ func ParseOneIfd(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdI
 		log.Panic(err)
 	}
 
-	nextIfdOffset, entries, _, err = ie.parseIfd(ii, bp, visitor, true)
+	nextIfdOffset, entries, _, err = ie.parseIfd(ii, bp, visitor, true, nil)
 	log.PanicIf(err)
 
 	return nextIfdOffset, entries, nil
 }
 
 // ParseOneTag is a hack to use an IE to parse a raw tag block.
-func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (tag *IfdTagEntry, err error) {
+func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (ite *IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -1324,10 +1430,10 @@ func ParseOneTag(ifdMapping *IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdI
 		log.Panic(err)
 	}
 
-	tag, err = ie.parseTag(ii, 0, bp)
+	ite, err = ie.parseTag(ii, 0, bp)
 	log.PanicIf(err)
 
-	return tag, nil
+	return ite, nil
 }
 
 // FindIfdFromRootIfd returns the given `Ifd` given the root-IFD and path of the
