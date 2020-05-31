@@ -134,6 +134,12 @@ func (ite *IfdTagEntry) getValueOffset() uint32 {
 
 // RawBytes renders a specific list of bytes from the value in this tag.
 func (ite *IfdTagEntry) GetRawBytes() (rawBytes []byte, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
 	valueContext := ite.getValueContext()
 
 	if ite.tagType == exifcommon.TypeUndefined {
@@ -141,6 +147,7 @@ func (ite *IfdTagEntry) GetRawBytes() (rawBytes []byte, err error) {
 		if err != nil {
 			if err == exifcommon.ErrUnhandledUndefinedTypedTag {
 				ite.setIsUnhandledUnknown(true)
+				return nil, exifundefined.ErrUnparseableValue
 			} else if err == exifundefined.ErrUnparseableValue {
 				return nil, err
 			} else {
