@@ -7,12 +7,16 @@ go:
   - "1.11"
   - "1.10"
 install:
+  - cd v2
   - go get -t ./...
   - go get github.com/mattn/goveralls
 script:
 # Don't test recursively, so we stay within v1/legacy.
-  - go test -v github.com/dsoprea/go-exif
-  - go test -v github.com/dsoprea/go-exif/exif-read-tool
+#
+# Currently disabled because some of the dependencies is broken at tip.
+#
+#  - go test -v github.com/dsoprea/go-exif
+#  - go test -v github.com/dsoprea/go-exif/exif-read-tool
 # Coverage is based on v2.
   - cd v2
   - EXIF_MODULE_ROOT_PATH="$(pwd)" goveralls -v -service=travis-ci
