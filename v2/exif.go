@@ -173,7 +173,7 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	//      CIPA DC-008-2016; JEITA CP-3451D
 	//      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
-	if len(data) < 8 {
+	if len(data) < ExifSignatureLength {
 		exifLogger.Warningf(nil, "Not enough data for EXIF header: (%d)", len(data))
 		return eh, ErrNoExif
 	}

@@ -1,8 +1,9 @@
 package exifcommon
 
 import (
-	"os"
 	"path"
+
+	"go/build"
 
 	"encoding/binary"
 	"io/ioutil"
@@ -23,63 +24,32 @@ var (
 	TestDefaultByteOrder = binary.BigEndian
 )
 
+// GetModuleRootPath returns our source-path when running from source during
+// tests.
 func GetModuleRootPath() string {
-	if moduleRootPath != "" {
-		return moduleRootPath
-	}
+	p, err := build.Default.Import(
+		"github.com/dsoprea/go-exif/v2",
+		build.Default.GOPATH,
+		build.FindOnly)
 
-	moduleRootPath := os.Getenv("EXIF_MODULE_ROOT_PATH")
-	if moduleRootPath != "" {
-		return moduleRootPath
-	}
-
-	currentWd, err := os.Getwd()
 	log.PanicIf(err)
 
-	currentPath := currentWd
-	visited := make([]string, 0)
-
-	for {
-		tryStampFilepath := path.Join(currentPath, ".MODULE_ROOT")
-
-		_, err := os.Stat(tryStampFilepath)
-		if err != nil && os.IsNotExist(err) != true {
-			log.Panic(err)
-		} else if err == nil {
-			break
-		}
-
-		visited = append(visited, tryStampFilepath)
-
-		currentPath = path.Dir(currentPath)
-		if currentPath == "/" {
-			log.Panicf("could not find module-root: %v", visited)
-		}
-	}
-
-	return currentPath
+	packagePath := p.Dir
+	return packagePath
 }
 
 func getTestAssetsPath() string {
-	if assetsPath == "" {
-		moduleRootPath := GetModuleRootPath()
-		assetsPath = path.Join(moduleRootPath, "assets")
-	}
+	moduleRootPath := GetModuleRootPath()
+	assetsPath := path.Join(moduleRootPath, "assets")
 
 	return assetsPath
 }
 
 func getTestImageFilepath() string {
-	if testImageFilepath == "" {
-		assetsPath := getTestAssetsPath()
-		testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
-	}
-
-	return testImageFilepath
+	return path.Join(assetsPath, "NDM_8901.jpg")
 }
 
 func getTestExifData() []byte {
-	assetsPath := getTestAssetsPath()
 	filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
 
 	var err error
@@ -88,4 +58,8 @@ func getTestExifData() []byte {
 	log.PanicIf(err)
 
 	return testExifData
+}
+
+func init() {
+	assetsPath = getTestAssetsPath()
 }
