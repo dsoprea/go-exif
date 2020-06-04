@@ -28,14 +28,14 @@ var (
 // tests.
 func GetModuleRootPath() string {
 	p, err := build.Default.Import(
-		"github.com/dsoprea/go-exif",
+		"github.com/dsoprea/go-exif/v2",
 		build.Default.GOPATH,
 		build.FindOnly)
 
 	log.PanicIf(err)
 
 	packagePath := p.Dir
-	return path.Join(packagePath, "v2")
+	return packagePath
 }
 
 func getTestAssetsPath() string {
