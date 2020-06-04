@@ -13,7 +13,10 @@ import (
 )
 
 var (
-	assetsPath   = ""
+	assetsPath           = ""
+	testImageFilepath    = ""
+	testGpsImageFilepath = ""
+
 	testExifData = make([]byte, 0)
 )
 
@@ -157,18 +160,25 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 }
 
 func getTestAssetsPath() string {
-	moduleRootPath := exifcommon.GetModuleRootPath()
-	assetsPath := path.Join(moduleRootPath, "assets")
+	if assetsPath == "" {
+		moduleRootPath := exifcommon.GetModuleRootPath()
+		assetsPath = path.Join(moduleRootPath, "assets")
+	}
 
 	return assetsPath
 }
 
 func getTestImageFilepath() string {
-	testImageFilepath := path.Join(assetsPath, "NDM_8901.jpg")
+	if testImageFilepath == "" {
+		assetsPath := getTestAssetsPath()
+		testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
+	}
+
 	return testImageFilepath
 }
 
 func getTestExifData() []byte {
+	assetsPath := getTestAssetsPath()
 	filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
 
 	var err error
@@ -180,10 +190,10 @@ func getTestExifData() []byte {
 }
 
 func getTestGpsImageFilepath() string {
-	testGpsImageFilepath := path.Join(assetsPath, "gps.jpg")
-	return testGpsImageFilepath
-}
+	if testGpsImageFilepath == "" {
+		assetsPath := getTestAssetsPath()
+		testGpsImageFilepath = path.Join(assetsPath, "gps.jpg")
+	}
 
-func init() {
-	assetsPath = getTestAssetsPath()
+	return testGpsImageFilepath
 }
