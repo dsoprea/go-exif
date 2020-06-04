@@ -217,6 +217,7 @@ func TestIfd_Thumbnail(t *testing.T) {
 	actual, err := ifd.NextIfd.Thumbnail()
 	log.PanicIf(err)
 
+	assetsPath := exifcommon.GetTestAssetsPath()
 	expectedFilepath := path.Join(assetsPath, "NDM_8901.jpg.thumbnail")
 
 	expected, err := ioutil.ReadFile(expectedFilepath)
@@ -277,7 +278,7 @@ func TestIfd_GpsInfo__2_0_0_0(t *testing.T) {
 		}
 	}()
 
-	assetsPath := getTestAssetsPath()
+	assetsPath := exifcommon.GetTestAssetsPath()
 	filepath := path.Join(assetsPath, "gps-2000-scaled.jpg")
 
 	rawExif, err := SearchFileAndExtractExif(filepath)

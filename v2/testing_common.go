@@ -13,11 +13,7 @@ import (
 )
 
 var (
-	assetsPath           = ""
-	testImageFilepath    = ""
-	testGpsImageFilepath = ""
-
-	testExifData = make([]byte, 0)
+	testExifData []byte = nil
 )
 
 func getExifSimpleTestIb() *IfdBuilder {
@@ -159,41 +155,28 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 	}
 }
 
-func getTestAssetsPath() string {
-	if assetsPath == "" {
-		moduleRootPath := exifcommon.GetModuleRootPath()
-		assetsPath = path.Join(moduleRootPath, "assets")
-	}
-
-	return assetsPath
-}
-
 func getTestImageFilepath() string {
-	if testImageFilepath == "" {
-		assetsPath := getTestAssetsPath()
-		testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
-	}
-
+	assetsPath := exifcommon.GetTestAssetsPath()
+	testImageFilepath := path.Join(assetsPath, "NDM_8901.jpg")
 	return testImageFilepath
 }
 
 func getTestExifData() []byte {
-	assetsPath := getTestAssetsPath()
-	filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
+	if testExifData == nil {
+		assetsPath := exifcommon.GetTestAssetsPath()
+		filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
 
-	var err error
+		var err error
 
-	testExifData, err = ioutil.ReadFile(filepath)
-	log.PanicIf(err)
+		testExifData, err = ioutil.ReadFile(filepath)
+		log.PanicIf(err)
+	}
 
 	return testExifData
 }
 
 func getTestGpsImageFilepath() string {
-	if testGpsImageFilepath == "" {
-		assetsPath := getTestAssetsPath()
-		testGpsImageFilepath = path.Join(assetsPath, "gps.jpg")
-	}
-
+	assetsPath := exifcommon.GetTestAssetsPath()
+	testGpsImageFilepath := path.Join(assetsPath, "gps.jpg")
 	return testGpsImageFilepath
 }
