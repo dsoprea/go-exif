@@ -16,13 +16,10 @@ import (
 	"github.com/dsoprea/go-exif/v2/common"
 )
 
-var (
-	assetsPath        = ""
-	appFilepath       = ""
-	testImageFilepath = ""
-)
-
 func TestMain(t *testing.T) {
+	appFilepath := getAppFilepath()
+	testImageFilepath := getTestImageFilepath()
+
 	cmd := exec.Command(
 		"go", "run", appFilepath,
 		"--filepath", testImageFilepath)
@@ -107,6 +104,9 @@ IFD-PATH=[IFD1] ID=(0x0202) NAME=[JPEGInterchangeFormatLength] COUNT=(1) TYPE=[L
 }
 
 func TestMainJson(t *testing.T) {
+	appFilepath := getAppFilepath()
+	testImageFilepath := getTestImageFilepath()
+
 	cmd := exec.Command(
 		"go", "run", appFilepath,
 		"--filepath", testImageFilepath,
@@ -133,6 +133,7 @@ func TestMainJson(t *testing.T) {
 
 	// Read and parse expected data.
 
+	assetsPath := exifcommon.GetTestAssetsPath()
 	jsonFilepath := path.Join(assetsPath, "main_test_exif.json")
 
 	expectedRaw, err := ioutil.ReadFile(jsonFilepath)
@@ -164,11 +165,16 @@ func TestMainJson(t *testing.T) {
 	}
 }
 
-func init() {
+func getAppFilepath() string {
 	moduleRootPath := exifcommon.GetModuleRootPath()
-	assetsPath = path.Join(moduleRootPath, "assets")
+	appFilepath := path.Join(moduleRootPath, "exif-read-tool", "main.go")
 
-	appFilepath = path.Join(moduleRootPath, "exif-read-tool", "main.go")
+	return appFilepath
+}
 
-	testImageFilepath = path.Join(assetsPath, "NDM_8901.jpg")
+func getTestImageFilepath() string {
+	assetsPath := exifcommon.GetTestAssetsPath()
+	testImageFilepath := path.Join(assetsPath, "NDM_8901.jpg")
+
+	return testImageFilepath
 }
