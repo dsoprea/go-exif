@@ -3,6 +3,7 @@ package exifcommon
 import (
     "bytes"
     "reflect"
+    "time"
 
     "encoding/binary"
 
@@ -208,6 +209,15 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
         log.PanicIf(err)
     case []SignedRational:
         ed, err = ve.encodeSignedRationals(value.([]SignedRational))
+        log.PanicIf(err)
+    case time.Time:
+        // For convenience, if the user doesn't want to deal with translation
+        // semantics with timestamps.
+
+        t := value.(time.Time)
+        s := ExifFullTimestampString(t)
+
+        ed, err = ve.encodeAscii(s)
         log.PanicIf(err)
     default:
         log.Panicf("value not encodable: [%s] [%v]", reflect.TypeOf(value), value)

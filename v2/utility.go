@@ -3,6 +3,7 @@ package exif
 import (
     "fmt"
     "math"
+    "reflect"
     "strconv"
     "strings"
     "time"
@@ -15,6 +16,10 @@ import (
 
 var (
     utilityLogger = log.NewLogger("exif.utility")
+)
+
+var (
+    timeType = reflect.TypeOf(time.Time{})
 )
 
 // ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49" into a UTC
@@ -70,9 +75,10 @@ func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, er
 // ExifFullTimestampString produces a string like "2018:11:30 13:01:49" from a
 // `time.Time` struct. It will attempt to convert to UTC first.
 func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
-    t = t.UTC()
 
-    return fmt.Sprintf("%04d:%02d:%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+    // RELEASE(dustin): Dump this for the next release. It duplicates the same function now in exifcommon.
+
+    return exifcommon.ExifFullTimestampString(t)
 }
 
 // ExifTag is one simple representation of a tag in a flat list of all of them.
@@ -201,6 +207,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
     return exifTags, nil
 }
 
+// GpsDegreesEquals returns true if the two `GpsDegrees` are identical.
 func GpsDegreesEquals(gi1, gi2 GpsDegrees) bool {
     if gi2.Orientation != gi1.Orientation {
         return false
@@ -219,4 +226,9 @@ func GpsDegreesEquals(gi1, gi2 GpsDegrees) bool {
     }
 
     return true
+}
+
+// IsTime returns true if the value is a `time.Time`.
+func IsTime(v interface{}) bool {
+    return reflect.TypeOf(v) == timeType
 }

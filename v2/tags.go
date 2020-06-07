@@ -114,6 +114,12 @@ func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 // WidestSupportedType returns the largest type that this tag's value can
 // occupy
 func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimitive {
+	// For convenience, we handle encoding a `time.Time` directly.
+	if IsTime(value) == true {
+		// Timestamps are encoded as ASCII.
+		value = ""
+	}
+
 	if len(it.SupportedTypes) == 0 {
 		log.Panicf("IndexedTag [%s] (%d) has no supported types.", it.IfdPath, it.Id)
 	} else if len(it.SupportedTypes) == 1 {

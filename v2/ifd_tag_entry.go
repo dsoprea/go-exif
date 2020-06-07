@@ -234,6 +234,8 @@ func (ite *IfdTagEntry) FormatFirst() (phrase string, err error) {
 		}
 	}()
 
+	// TODO(dustin): We should add a convenience type "timestamp", to simplify translating to and from the physical ASCII and provide validation.
+
 	value, err := ite.Value()
 	if err != nil {
 		if err == exifcommon.ErrUnhandledUndefinedTypedTag {

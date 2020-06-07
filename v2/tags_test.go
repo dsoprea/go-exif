@@ -3,6 +3,7 @@ package exif
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/dsoprea/go-logging"
 
@@ -178,6 +179,20 @@ func TestIndexedTag_GetEncodingType_BothRationalTypes(t *testing.T) {
 
 	if it.GetEncodingType(v2) != exifcommon.TypeSignedRational {
 		t.Fatalf("Expected the second (SIGNED RATIONAL) type to be returned.")
+	}
+}
+
+func TestIndexedTag_GetEncodingType_Timestamp(t *testing.T) {
+	it := &IndexedTag{
+		SupportedTypes: []exifcommon.TagTypePrimitive{
+			exifcommon.TypeAscii,
+		},
+	}
+
+	zeroTime := time.Time{}
+
+	if it.GetEncodingType(zeroTime) != exifcommon.TypeAscii {
+		t.Fatalf("Expected the timestamp to to be encoded as ASCII.")
 	}
 }
 

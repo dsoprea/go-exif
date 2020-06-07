@@ -1,8 +1,10 @@
 package exifcommon
 
 import (
+    "bytes"
     "reflect"
     "testing"
+    "time"
 
     "github.com/dsoprea/go-logging"
 )
@@ -562,5 +564,29 @@ func TestValueEncoder_Encode__SignedRational(t *testing.T) {
         t.Fatalf("Data not encoded correctly.")
     } else if ed.UnitCount != 5 {
         t.Fatalf("Unit-count not correct.")
+    }
+}
+
+func TestValueEncoder_Encode__Timestamp(t *testing.T) {
+    byteOrder := TestDefaultByteOrder
+    ve := NewValueEncoder(byteOrder)
+
+    now := time.Now()
+
+    ed, err := ve.Encode(now)
+    log.PanicIf(err)
+
+    if ed.Type != TypeAscii {
+        t.Fatalf("Timestamp not encoded as ASCII.")
+    }
+
+    expectedTimestampBytes := ExifFullTimestampString(now)
+
+    // Leave an extra byte for the NUL.
+    expected := make([]byte, len(expectedTimestampBytes)+1)
+    copy(expected, expectedTimestampBytes)
+
+    if bytes.Equal(ed.Encoded, expected) != true {
+        t.Fatalf("Timestamp not encoded correctly: [%s] != [%s]", string(ed.Encoded), string(expected))
     }
 }
