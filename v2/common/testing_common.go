@@ -24,7 +24,7 @@ var (
 
 func GetModuleRootPath() string {
 	if moduleRootPath == "" {
-		moduleRootPath := os.Getenv("EXIF_MODULE_ROOT_PATH")
+		moduleRootPath = os.Getenv("EXIF_MODULE_ROOT_PATH")
 		if moduleRootPath != "" {
 			return moduleRootPath
 		}
@@ -33,6 +33,7 @@ func GetModuleRootPath() string {
 		log.PanicIf(err)
 
 		currentPath := currentWd
+
 		visited := make([]string, 0)
 
 		for {
