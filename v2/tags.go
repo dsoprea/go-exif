@@ -60,7 +60,7 @@ var (
 	tagsWithoutAlignment = map[uint16]struct{}{
 		// The thumbnail offset is stored as a long, but its data is a binary
 		// blob (not a slice of longs).
-		ThumbnailOffsetTagId: struct{}{},
+		ThumbnailOffsetTagId: {},
 	}
 )
 
@@ -111,8 +111,7 @@ func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 	return it.Id == id && it.IfdPath == ifdPath
 }
 
-// WidestSupportedType returns the largest type that this tag's value can
-// occupy
+// GetEncodingType returns the largest type that this tag's value can occupy.
 func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimitive {
 	// For convenience, we handle encoding a `time.Time` directly.
 	if IsTime(value) == true {
@@ -153,9 +152,9 @@ func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimi
 
 		if _, ok := value.(exifcommon.SignedRational); ok == true {
 			return exifcommon.TypeSignedRational
-		} else {
-			return exifcommon.TypeRational
 		}
+
+		return exifcommon.TypeRational
 	}
 
 	log.Panicf("WidestSupportedType() case is not handled for tag [%s] (0x%04x): %v", it.IfdPath, it.Id, it.SupportedTypes)

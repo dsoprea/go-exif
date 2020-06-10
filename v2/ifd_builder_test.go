@@ -1932,10 +1932,11 @@ func ExampleIfd_Thumbnail() {
 	_, index, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	thumbnailData, err := index.RootIfd.NextIfd.Thumbnail()
+	// This returns the raw bytes that you will be looking for, but there's no
+	// use for them at this point in the example.
+	_, err = index.RootIfd.NextIfd.Thumbnail()
 	log.PanicIf(err)
 
-	thumbnailData = thumbnailData
 	// Output:
 }
 
@@ -1982,10 +1983,12 @@ func ExampleBuilderTag_SetValue() {
 	// Encode.
 
 	ibe := NewIfdByteEncoder()
-	updatedExif, err := ibe.EncodeToExif(rootIb)
+
+	// This returns the raw bytes that you will be looking for, but there's no
+	// use for them at this point in the example.
+	_, err = ibe.EncodeToExif(rootIb)
 	log.PanicIf(err)
 
-	updatedExif = updatedExif
 	// Output:
 }
 

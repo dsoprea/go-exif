@@ -8,6 +8,7 @@ import (
 	"github.com/dsoprea/go-exif/v2/common"
 )
 
+// Encode encodes the given encodeable undefined value to bytes.
 func Encode(value EncodeableValue, byteOrder binary.ByteOrder) (encoded []byte, unitCount uint32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -28,7 +29,7 @@ func Encode(value EncodeableValue, byteOrder binary.ByteOrder) (encoded []byte, 
 	return encoded, unitCount, nil
 }
 
-// UndefinedValue knows how to resolve the value for most unknown-type tags.
+// Decode constructs a value from raw encoded bytes
 func Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error) {
 	defer func() {
 		if state := recover(); state != nil {

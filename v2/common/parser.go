@@ -16,6 +16,7 @@ var (
 type Parser struct {
 }
 
+// ParseBytesknows how to parse a byte-type value.
 func (p *Parser) ParseBytes(data []byte, unitCount uint32) (value []uint8, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -58,12 +59,12 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 		parserLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
 
 		return s, nil
-	} else {
-		// Auto-strip the NUL from the end. It serves no purpose outside of
-		// encoding semantics.
-
-		return string(data[:count-1]), nil
 	}
+
+	// Auto-strip the NUL from the end. It serves no purpose outside of
+	// encoding semantics.
+
+	return string(data[:count-1]), nil
 }
 
 // ParseAsciiNoNul returns a string without any consideration for a trailing NUL

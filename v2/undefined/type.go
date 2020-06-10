@@ -37,7 +37,7 @@ type EncodeableValue interface {
 	String() string
 }
 
-// UndefinedValueEncoder knows how to decode an undefined-type tag's value from
+// UndefinedValueDecoder knows how to decode an undefined-type tag's value from
 // bytes.
 type UndefinedValueDecoder interface {
 	Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err error)

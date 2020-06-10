@@ -28,7 +28,7 @@ func TestCodec8828Oecf_Encode(t *testing.T) {
 		Columns:     2,
 		Rows:        22,
 		ColumnNames: []string{"aa", "bb"},
-		Values:      []exifcommon.SignedRational{exifcommon.SignedRational{11, 22}},
+		Values:      []exifcommon.SignedRational{{11, 22}},
 	}
 
 	codec := Codec8828Oecf{}
@@ -79,7 +79,7 @@ func TestCodec8828Oecf_Decode(t *testing.T) {
 		Columns:     2,
 		Rows:        22,
 		ColumnNames: []string{"aa", "bb"},
-		Values:      []exifcommon.SignedRational{exifcommon.SignedRational{11, 22}},
+		Values:      []exifcommon.SignedRational{{11, 22}},
 	}
 
 	if reflect.DeepEqual(value, expectedValue) != true {

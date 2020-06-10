@@ -34,14 +34,14 @@ var (
 	}
 
 	TagUndefinedType_9101_ComponentsConfiguration_Configurations = map[int][]byte{
-		TagUndefinedType_9101_ComponentsConfiguration_RGB: []byte{
+		TagUndefinedType_9101_ComponentsConfiguration_RGB: {
 			TagUndefinedType_9101_ComponentsConfiguration_Channel_R,
 			TagUndefinedType_9101_ComponentsConfiguration_Channel_G,
 			TagUndefinedType_9101_ComponentsConfiguration_Channel_B,
 			0,
 		},
 
-		TagUndefinedType_9101_ComponentsConfiguration_YCBCR: []byte{
+		TagUndefinedType_9101_ComponentsConfiguration_YCBCR: {
 			TagUndefinedType_9101_ComponentsConfiguration_Channel_Y,
 			TagUndefinedType_9101_ComponentsConfiguration_Channel_Cb,
 			TagUndefinedType_9101_ComponentsConfiguration_Channel_Cr,
