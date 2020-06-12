@@ -121,7 +121,7 @@ $ go test github.com/dsoprea/go-exif/v2/...
 
 EXIF has an excellently-documented structure but there are a lot of devices and manufacturers out there. There are only so many files that we can personally find to test against, and most of these are images that have been generated only in the past few years. JPEG, being the largest implementor of EXIF, has been around for even longer (but not much). Therefore, there is a lot of compatibility to test for.
 
-**If you are able to help by running the included reader-tool against all of the EXIF-compatible files you have, it would be deeply appreciated. This is mostly going to be JPEG files (but not all variations). If you are able to test a large number of files (thousands or millions), please post an issue mentioning how many files you tried, whether there were any failures, and, if you would be willing, give us access to the failed files.**
+**If you are able to help by running the included reader-tool against all of the EXIF-compatible files you have, it would be deeply appreciated. This is mostly going to be JPEG files (but not all variations). If you are able to test a large number of files (thousands or millions) then please post an issue mentioning how many files you have processed. If you had failures, then please share them and try to support efforts to understand them.**
 
 If you are able to test 100K+ files, I will give you credit on the project. The further back in time your images reach, the higher in the list your name/company will go.
 
