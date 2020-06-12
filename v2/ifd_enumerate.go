@@ -1499,7 +1499,7 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdPath string) (ifd *Ifd, err error) {
 		thisIfd = hit
 
 		// If we didn't find the sibling, add it.
-		for i = 0; i < itii.Index; i++ {
+		for i := 0; i < itii.Index; i++ {
 			if thisIfd.NextIfd == nil {
 				log.Panicf("IFD [%s] does not have (%d) occurrences/siblings", thisIfd.ifdIdentity.UnindexedString(), itii.Index)
 			}

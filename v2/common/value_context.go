@@ -398,12 +398,13 @@ func (vc *ValueContext) Values() (values interface{}, err error) {
 
 		// Never called.
 		return nil, nil
+	} else {
+		log.Panicf("value of type [%s] is unparseable", vc.tagType)
+		// Never called.
+		return nil, nil
 	}
 
-	log.Panicf("value of type [%s] is unparseable", vc.tagType)
-
-	// Never called.
-	return nil, nil
+	return values, nil
 }
 
 func init() {
