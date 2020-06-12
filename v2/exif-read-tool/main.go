@@ -35,7 +35,6 @@ var (
 	mainLogger = log.NewLogger("main.main")
 )
 
-// IfdEntry is a JSON model for representing a single tag.
 type IfdEntry struct {
 	IfdPath     string                      `json:"ifd_path"`
 	FqIfdPath   string                      `json:"fq_ifd_path"`

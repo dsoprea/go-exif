@@ -182,7 +182,7 @@ func TestParser_ParseRationals__Single(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []Rational{
-		{Numerator: 1, Denominator: 2},
+		Rational{Numerator: 1, Denominator: 2},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -198,7 +198,7 @@ func TestParser_ParseRationals__Single(t *testing.T) {
 	log.PanicIf(err)
 
 	expected = []Rational{
-		{Numerator: 1, Denominator: 2},
+		Rational{Numerator: 1, Denominator: 2},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -218,8 +218,8 @@ func TestParser_ParseRationals__Multiple(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []Rational{
-		{Numerator: 1, Denominator: 2},
-		{Numerator: 3, Denominator: 4},
+		Rational{Numerator: 1, Denominator: 2},
+		Rational{Numerator: 3, Denominator: 4},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -274,7 +274,7 @@ func TestParser_ParseSignedRationals__Single(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []SignedRational{
-		{Numerator: 1, Denominator: 2},
+		SignedRational{Numerator: 1, Denominator: 2},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -290,7 +290,7 @@ func TestParser_ParseSignedRationals__Single(t *testing.T) {
 	log.PanicIf(err)
 
 	expected = []SignedRational{
-		{Numerator: 1, Denominator: 2},
+		SignedRational{Numerator: 1, Denominator: 2},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -310,8 +310,8 @@ func TestParser_ParseSignedRationals__Multiple(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []SignedRational{
-		{Numerator: 1, Denominator: 2},
-		{Numerator: 3, Denominator: 4},
+		SignedRational{Numerator: 1, Denominator: 2},
+		SignedRational{Numerator: 3, Denominator: 4},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {

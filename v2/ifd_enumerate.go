@@ -715,7 +715,7 @@ func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err err
 
 	it, err := ifd.tagIndex.GetWithName(ifd.ifdIdentity, tagName)
 	if log.Is(err, ErrTagNotFound) == true {
-		log.Panic(ErrTagNotKnown)
+		log.Panic(ErrTagNotStandard)
 	} else if err != nil {
 		log.Panic(err)
 	}
@@ -1482,7 +1482,7 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdPath string) (ifd *Ifd, err error) {
 		thisIfd = thisIfd.NextIfd
 	}
 
-	for _, itii := range lineage {
+	for i, itii := range lineage {
 		var hit *Ifd
 		for _, childIfd := range thisIfd.Children {
 			if childIfd.ifdIdentity.TagId() == itii.TagId {

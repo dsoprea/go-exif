@@ -13,8 +13,6 @@ var (
 )
 
 var (
-	// ErrNotFarValue indicates that an offset-based lookup was attempted for a
-	// non-offset-based (embedded) value.
 	ErrNotFarValue = errors.New("not a far value")
 )
 
@@ -39,7 +37,7 @@ type ValueContext struct {
 
 // TODO(dustin): We can update newValueContext() to derive `valueOffset` itself (from `rawValueOffset`).
 
-// NewValueContext returns a new ValueContext struct.
+// newValueContext returns a new ValueContext struct.
 func NewValueContext(ifdPath string, tagId uint16, unitCount, valueOffset uint32, rawValueOffset, addressableData []byte, tagType TagTypePrimitive, byteOrder binary.ByteOrder) *ValueContext {
 	return &ValueContext{
 		unitCount:       unitCount,
@@ -150,9 +148,9 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 	if vc.isEmbedded() == true {
 		byteLength := unitSizeRaw * vc.unitCount
 		return vc.rawValueOffset[:byteLength], nil
+	} else {
+		return vc.addressableData[vc.valueOffset : vc.valueOffset+vc.unitCount*unitSizeRaw], nil
 	}
-
-	return vc.addressableData[vc.valueOffset : vc.valueOffset+vc.unitCount*unitSizeRaw], nil
 }
 
 // GetFarOffset returns the offset if the value is not embedded [within the
@@ -398,12 +396,14 @@ func (vc *ValueContext) Values() (values interface{}, err error) {
 
 		// Never called.
 		return nil, nil
+	} else {
+		log.Panicf("value of type [%s] is unparseable", vc.tagType)
+
+		// Never called.
+		return nil, nil
 	}
 
-	log.Panicf("value of type [%s] is unparseable", vc.tagType)
-
-	// Never called.
-	return nil, nil
+	return values, nil
 }
 
 func init() {

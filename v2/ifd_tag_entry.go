@@ -36,7 +36,7 @@ type IfdTagEntry struct {
 	// child IFD. Includes indices.
 	childFqIfdPath string
 
-	// TODO(dustin): !! IB's host the child-IBs directly in the tag, but that's not the case here. Refactor to accommodate it for a consistent experience.
+	// TODO(dustin): !! IB's host the child-IBs directly in the tag, but that's not the case here. Refactor to accomodate it for a consistent experience.
 
 	ifdIdentity *exifcommon.IfdIdentity
 
@@ -132,7 +132,7 @@ func (ite *IfdTagEntry) getValueOffset() uint32 {
 	return ite.valueOffset
 }
 
-// GetRawBytes renders a specific list of bytes from the value in this tag.
+// RawBytes renders a specific list of bytes from the value in this tag.
 func (ite *IfdTagEntry) GetRawBytes() (rawBytes []byte, err error) {
 	defer func() {
 		if state := recover(); state != nil {

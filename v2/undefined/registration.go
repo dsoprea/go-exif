@@ -4,8 +4,6 @@ import (
 	"github.com/dsoprea/go-logging"
 )
 
-// UndefinedTagHandle defines one undefined-type tag with a corresponding
-// decoder.
 type UndefinedTagHandle struct {
 	IfdPath string
 	TagId   uint16
