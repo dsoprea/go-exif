@@ -954,7 +954,7 @@ func (ib *IfdBuilder) AddChildIb(childIb *IfdBuilder) (err error) {
 		log.Panicf("Child IFD does not have the same byte-order: [%s] != [%s]", childIb.byteOrder, ib.byteOrder)
 	}
 
-	// Since no standard IFDs supports occuring more than once, check that a
+	// Since no standard IFDs supports occur`ring more than once, check that a
 	// tag of this type has not been previously added. Note that we just search
 	// the current IFD and *not every* IFD.
 	for _, bt := range childIb.tags {

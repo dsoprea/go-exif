@@ -621,8 +621,8 @@ func TestValueContext_ReadRationals(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []Rational{
-		Rational{Numerator: 1, Denominator: 2},
-		Rational{Numerator: 3, Denominator: 4},
+		{Numerator: 1, Denominator: 2},
+		{Numerator: 3, Denominator: 4},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -670,8 +670,8 @@ func TestValueContext_ReadSignedRationals(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []SignedRational{
-		SignedRational{Numerator: 1, Denominator: 2},
-		SignedRational{Numerator: 3, Denominator: 4},
+		{Numerator: 1, Denominator: 2},
+		{Numerator: 3, Denominator: 4},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -799,8 +799,8 @@ func TestValueContext_Values__Rational(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []Rational{
-		Rational{Numerator: 1, Denominator: 2},
-		Rational{Numerator: 3, Denominator: 4},
+		{Numerator: 1, Denominator: 2},
+		{Numerator: 3, Denominator: 4},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {
@@ -848,8 +848,8 @@ func TestValueContext_Values__SignedRational(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []SignedRational{
-		SignedRational{Numerator: 1, Denominator: 2},
-		SignedRational{Numerator: 3, Denominator: 4},
+		{Numerator: 1, Denominator: 2},
+		{Numerator: 3, Denominator: 4},
 	}
 
 	if reflect.DeepEqual(value, expected) != true {

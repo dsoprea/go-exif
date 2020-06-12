@@ -72,9 +72,9 @@ func (d GpsDegrees) Decimal() float64 {
 
 	if d.Orientation == 'S' || d.Orientation == 'W' {
 		return -decimal
-	} else {
-		return decimal
 	}
+
+	return decimal
 }
 
 // Raw returns a Rational struct that can be used to *write* coordinates. In

@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	testExifData []byte = nil
+	testExifData []byte
 )
 
 func getExifSimpleTestIb() *IfdBuilder {
@@ -129,7 +129,7 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 		t.Fatalf("Next-IFD pointer is non-nil.")
 	}
 
-	// Verify the values by using the actual, orginal types (this is awesome).
+	// Verify the values by using the actual, original types (this is awesome).
 
 	expected := []struct {
 		tagId uint16

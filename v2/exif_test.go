@@ -81,9 +81,9 @@ func TestVisit(t *testing.T) {
 			if log.Is(err, ErrTagNotFound) {
 				fmt.Printf("Unknown tag: [%s] (%04x)\n", ii.String(), tagId)
 				return nil
-			} else {
-				log.Panic(err)
 			}
+
+			log.Panic(err)
 		}
 
 		valueString, err := ite.FormatFirst()
@@ -280,7 +280,7 @@ func TestCollect(t *testing.T) {
 
 	actualIfdPaths := make([]string, len(lookup))
 	i := 0
-	for ifdPath, _ := range lookup {
+	for ifdPath := range lookup {
 		actualIfdPaths[i] = ifdPath
 		i++
 	}
