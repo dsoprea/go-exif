@@ -35,7 +35,7 @@ var (
 	tagsWithoutAlignment = map[uint16]struct{}{
 		// The thumbnail offset is stored as a long, but its data is a binary
 		// blob (not a slice of longs).
-		ThumbnailOffsetTagId: struct{}{},
+		ThumbnailOffsetTagId: {},
 	}
 )
 

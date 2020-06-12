@@ -50,10 +50,10 @@ var (
 	}
 
 	TagUnknownType_9298_UserComment_Encodings = map[int][]byte{
-		TagUnknownType_9298_UserComment_Encoding_ASCII:     []byte{'A', 'S', 'C', 'I', 'I', 0, 0, 0},
-		TagUnknownType_9298_UserComment_Encoding_JIS:       []byte{'J', 'I', 'S', 0, 0, 0, 0, 0},
-		TagUnknownType_9298_UserComment_Encoding_UNICODE:   []byte{'U', 'n', 'i', 'c', 'o', 'd', 'e', 0},
-		TagUnknownType_9298_UserComment_Encoding_UNDEFINED: []byte{0, 0, 0, 0, 0, 0, 0, 0},
+		TagUnknownType_9298_UserComment_Encoding_ASCII:     {'A', 'S', 'C', 'I', 'I', 0, 0, 0},
+		TagUnknownType_9298_UserComment_Encoding_JIS:       {'J', 'I', 'S', 0, 0, 0, 0, 0},
+		TagUnknownType_9298_UserComment_Encoding_UNICODE:   {'U', 'n', 'i', 'c', 'o', 'd', 'e', 0},
+		TagUnknownType_9298_UserComment_Encoding_UNDEFINED: {0, 0, 0, 0, 0, 0, 0, 0},
 	}
 
 	TagUnknownType_9101_ComponentsConfiguration_Names = map[int]string{
@@ -63,14 +63,14 @@ var (
 	}
 
 	TagUnknownType_9101_ComponentsConfiguration_Configurations = map[int][]byte{
-		TagUnknownType_9101_ComponentsConfiguration_RGB: []byte{
+		TagUnknownType_9101_ComponentsConfiguration_RGB: {
 			TagUnknownType_9101_ComponentsConfiguration_Channel_R,
 			TagUnknownType_9101_ComponentsConfiguration_Channel_G,
 			TagUnknownType_9101_ComponentsConfiguration_Channel_B,
 			0,
 		},
 
-		TagUnknownType_9101_ComponentsConfiguration_YCBCR: []byte{
+		TagUnknownType_9101_ComponentsConfiguration_YCBCR: {
 			TagUnknownType_9101_ComponentsConfiguration_Channel_Y,
 			TagUnknownType_9101_ComponentsConfiguration_Channel_Cb,
 			TagUnknownType_9101_ComponentsConfiguration_Channel_Cr,

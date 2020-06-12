@@ -150,9 +150,9 @@ func TestIfdMapping_ResolvePath__Regular(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []IfdTagIdAndIndex{
-		IfdTagIdAndIndex{Name: "IFD", TagId: 0, Index: 0},
-		IfdTagIdAndIndex{Name: "Exif", TagId: 0x8769, Index: 0},
-		IfdTagIdAndIndex{Name: "Iop", TagId: 0xa005, Index: 0},
+		{Name: "IFD", TagId: 0, Index: 0},
+		{Name: "Exif", TagId: 0x8769, Index: 0},
+		{Name: "Iop", TagId: 0xa005, Index: 0},
 	}
 
 	if reflect.DeepEqual(lineage, expected) != true {
@@ -170,9 +170,9 @@ func TestIfdMapping_ResolvePath__WithIndices(t *testing.T) {
 	log.PanicIf(err)
 
 	expected := []IfdTagIdAndIndex{
-		IfdTagIdAndIndex{Name: "IFD", TagId: 0, Index: 0},
-		IfdTagIdAndIndex{Name: "Exif", TagId: 0x8769, Index: 1},
-		IfdTagIdAndIndex{Name: "Iop", TagId: 0xa005, Index: 0},
+		{Name: "IFD", TagId: 0, Index: 0},
+		{Name: "Exif", TagId: 0x8769, Index: 1},
+		{Name: "Iop", TagId: 0xa005, Index: 0},
 	}
 
 	if reflect.DeepEqual(lineage, expected) != true {
@@ -196,9 +196,9 @@ func TestIfdMapping_ResolvePath__Miss(t *testing.T) {
 
 func TestIfdMapping_FqPathPhraseFromLineage(t *testing.T) {
 	lineage := []IfdTagIdAndIndex{
-		IfdTagIdAndIndex{Name: "IFD", Index: 0},
-		IfdTagIdAndIndex{Name: "Exif", Index: 1},
-		IfdTagIdAndIndex{Name: "Iop", Index: 0},
+		{Name: "IFD", Index: 0},
+		{Name: "Exif", Index: 1},
+		{Name: "Iop", Index: 0},
 	}
 
 	im := NewIfdMapping()
@@ -211,9 +211,9 @@ func TestIfdMapping_FqPathPhraseFromLineage(t *testing.T) {
 
 func TestIfdMapping_PathPhraseFromLineage(t *testing.T) {
 	lineage := []IfdTagIdAndIndex{
-		IfdTagIdAndIndex{Name: "IFD", Index: 0},
-		IfdTagIdAndIndex{Name: "Exif", Index: 1},
-		IfdTagIdAndIndex{Name: "Iop", Index: 0},
+		{Name: "IFD", Index: 0},
+		{Name: "Exif", Index: 1},
+		{Name: "Iop", Index: 0},
 	}
 
 	im := NewIfdMapping()

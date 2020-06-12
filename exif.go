@@ -49,8 +49,8 @@ var (
 	}
 
 	ExifFixedBytesLookup = map[binary.ByteOrder][2]byte{
-		binary.LittleEndian: [2]byte{0x2a, 0x00},
-		binary.BigEndian:    [2]byte{0x00, 0x2a},
+		binary.LittleEndian: {0x2a, 0x00},
+		binary.BigEndian:    {0x00, 0x2a},
 	}
 )
 
