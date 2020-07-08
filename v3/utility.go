@@ -2,6 +2,7 @@ package exif
 
 import (
 	"fmt"
+	"io"
 	"math"
 	"reflect"
 	"strconv"
@@ -151,7 +152,8 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 	im := NewIfdMappingWithStandard()
 	ti := NewTagIndex()
 
-	ie := NewIfdEnumerate(im, ti, exifData, eh.ByteOrder)
+	ebs := NewExifReadSeekerWithBytes(exifData)
+	ie := NewIfdEnumerate(im, ti, ebs, eh.ByteOrder)
 
 	exifTags = make([]ExifTag, 0)
 
@@ -231,4 +233,12 @@ func GpsDegreesEquals(gi1, gi2 GpsDegrees) bool {
 // IsTime returns true if the value is a `time.Time`.
 func IsTime(v interface{}) bool {
 	return reflect.TypeOf(v) == timeType
+}
+
+// TODO(dustin): !! For debugging
+func mustGetCurrentOffset(s io.Seeker) int64 {
+	offset, err := s.Seek(0, io.SeekCurrent)
+	log.PanicIf(err)
+
+	return offset
 }

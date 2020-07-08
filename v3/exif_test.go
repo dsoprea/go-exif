@@ -43,6 +43,8 @@ func TestVisit(t *testing.T) {
 	// Search for the beginning of the EXIF information. The EXIF is near the
 	// very beginning of our/most JPEGs, so this has a very low cost.
 
+	// TODO(dustin): Just use SearchAndExtractExifWithReader() here.
+
 	foundAt := -1
 	for i := 0; i < len(data); i++ {
 		if _, err := ParseExifHeader(data[i:]); err == nil {
@@ -416,5 +418,6 @@ func ExampleBuildExifHeader() {
 	log.PanicIf(err)
 
 	fmt.Printf("%v\n", eh)
+
 	// Output: ExifHeader<BYTE-ORDER=[BigEndian] FIRST-IFD-OFFSET=(0x11223344)>
 }

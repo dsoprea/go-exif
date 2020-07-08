@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/dsoprea/go-logging"
+	"github.com/dsoprea/go-utility/filesystem"
 
 	"github.com/dsoprea/go-exif/v2/common"
 )
@@ -48,6 +49,7 @@ func TestCodecA000FlashpixVersion_Decode(t *testing.T) {
 	encoded := []byte(versionPhrase)
 
 	addressableBytes := encoded
+	sb := rifs.NewSeekableBufferWithBytes(addressableBytes)
 
 	valueContext := exifcommon.NewValueContext(
 		"",
@@ -55,7 +57,7 @@ func TestCodecA000FlashpixVersion_Decode(t *testing.T) {
 		uint32(len(encoded)),
 		0,
 		nil,
-		addressableBytes,
+		sb,
 		exifcommon.TypeUndefined,
 		exifcommon.TestDefaultByteOrder)
 

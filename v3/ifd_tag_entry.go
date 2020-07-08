@@ -2,6 +2,7 @@ package exif
 
 import (
 	"fmt"
+	"io"
 
 	"encoding/binary"
 
@@ -42,23 +43,23 @@ type IfdTagEntry struct {
 
 	isUnhandledUnknown bool
 
-	addressableData []byte
-	byteOrder       binary.ByteOrder
+	rs        io.ReadSeeker
+	byteOrder binary.ByteOrder
 
 	tagName string
 }
 
-func newIfdTagEntry(ii *exifcommon.IfdIdentity, tagId uint16, tagIndex int, tagType exifcommon.TagTypePrimitive, unitCount uint32, valueOffset uint32, rawValueOffset []byte, addressableData []byte, byteOrder binary.ByteOrder) *IfdTagEntry {
+func newIfdTagEntry(ii *exifcommon.IfdIdentity, tagId uint16, tagIndex int, tagType exifcommon.TagTypePrimitive, unitCount uint32, valueOffset uint32, rawValueOffset []byte, rs io.ReadSeeker, byteOrder binary.ByteOrder) *IfdTagEntry {
 	return &IfdTagEntry{
-		ifdIdentity:     ii,
-		tagId:           tagId,
-		tagIndex:        tagIndex,
-		tagType:         tagType,
-		unitCount:       unitCount,
-		valueOffset:     valueOffset,
-		rawValueOffset:  rawValueOffset,
-		addressableData: addressableData,
-		byteOrder:       byteOrder,
+		ifdIdentity:    ii,
+		tagId:          tagId,
+		tagIndex:       tagIndex,
+		tagType:        tagType,
+		unitCount:      unitCount,
+		valueOffset:    valueOffset,
+		rawValueOffset: rawValueOffset,
+		rs:             rs,
+		byteOrder:      byteOrder,
 	}
 }
 
@@ -291,7 +292,7 @@ func (ite *IfdTagEntry) getValueContext() *exifcommon.ValueContext {
 		ite.unitCount,
 		ite.valueOffset,
 		ite.rawValueOffset,
-		ite.addressableData,
+		ite.rs,
 		ite.tagType,
 		ite.byteOrder)
 }

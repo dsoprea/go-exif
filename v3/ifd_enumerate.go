@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -74,23 +75,23 @@ var (
 // statically-sized records. So, the tags (though notnecessarily their values)
 // are fairly simple to enumerate.
 type byteParser struct {
-	byteOrder       binary.ByteOrder
-	addressableData []byte
-	ifdOffset       uint32
-	currentOffset   uint32
+	byteOrder     binary.ByteOrder
+	rs            io.ReadSeeker
+	ifdOffset     uint32
+	currentOffset uint32
 }
 
-func newByteParser(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset uint32) (bp *byteParser, err error) {
-	if ifdOffset >= uint32(len(addressableData)) {
-		return nil, ErrOffsetInvalid
-	}
-
+// newByteParser returns a new byteParser struct.
+//
+// initialOffset is for arithmetic-based tracking of where we should be at in
+// the stream.
+func newByteParser(rs io.ReadSeeker, byteOrder binary.ByteOrder, initialOffset uint32) (bp *byteParser, err error) {
 	// TODO(dustin): Add test
 
 	bp = &byteParser{
-		addressableData: addressableData,
-		byteOrder:       byteOrder,
-		currentOffset:   ifdOffset,
+		rs:            rs,
+		byteOrder:     byteOrder,
+		currentOffset: initialOffset,
 	}
 
 	return bp, nil
@@ -110,11 +111,11 @@ func (bp *byteParser) getUint16() (value uint16, raw []byte, err error) {
 
 	needBytes := 2
 
-	if bp.currentOffset+needBytes >= len(bp.addressableData) {
-		return 0, nil, io.EOF
-	}
+	raw = make([]byte, needBytes)
 
-	raw = addressableData[bp.currentOffset : bp.currentOffset+needBytes]
+	_, err = io.ReadFull(bp.rs, raw)
+	log.PanicIf(err)
+
 	value = bp.byteOrder.Uint16(raw)
 
 	bp.currentOffset += uint32(needBytes)
@@ -136,12 +137,12 @@ func (bp *byteParser) getUint32() (value uint32, raw []byte, err error) {
 
 	needBytes := 4
 
-	if bp.currentOffset+needBytes >= len(bp.addressableData) {
-		return 0, nil, io.EOF
-	}
+	raw = make([]byte, needBytes)
 
-	raw = addressableData[bp.currentOffset : bp.currentOffset+needBytes]
-	value = bp.byteOrder.Uint16(raw)
+	_, err = io.ReadFull(bp.rs, raw)
+	log.PanicIf(err)
+
+	value = bp.byteOrder.Uint32(raw)
 
 	bp.currentOffset += uint32(needBytes)
 
@@ -157,7 +158,7 @@ func (bp *byteParser) CurrentOffset() uint32 {
 // IfdEnumerate is the main enumeration type. It knows how to parse the IFD
 // containers in the EXIF blob.
 type IfdEnumerate struct {
-	exifData       []byte
+	ebs            ExifBlobSeeker
 	byteOrder      binary.ByteOrder
 	tagIndex       *TagIndex
 	ifdMapping     *exifcommon.IfdMapping
@@ -165,9 +166,9 @@ type IfdEnumerate struct {
 }
 
 // NewIfdEnumerate returns a new instance of IfdEnumerate.
-func NewIfdEnumerate(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
+func NewIfdEnumerate(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ebs ExifBlobSeeker, byteOrder binary.ByteOrder) *IfdEnumerate {
 	return &IfdEnumerate{
-		exifData:   exifData,
+		ebs:        ebs,
 		byteOrder:  byteOrder,
 		ifdMapping: ifdMapping,
 		tagIndex:   tagIndex,
@@ -181,11 +182,16 @@ func (ie *IfdEnumerate) getByteParser(ifdOffset uint32) (bp *byteParser, err err
 		}
 	}()
 
+	initialOffset := ExifAddressableAreaStart + ifdOffset
+
+	rs, err := ie.ebs.GetReadSeeker(int64(initialOffset))
+	log.PanicIf(err)
+
 	bp, err =
 		newByteParser(
-			ie.exifData[ExifAddressableAreaStart:],
+			rs,
 			ie.byteOrder,
-			ifdOffset)
+			initialOffset)
 
 	if err != nil {
 		if err == ErrOffsetInvalid {
@@ -228,6 +234,9 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		log.Panic(ErrTagTypeNotValid)
 	}
 
+	rs, err := ie.ebs.GetReadSeeker(0)
+	log.PanicIf(err)
+
 	ite = newIfdTagEntry(
 		ii,
 		tagId,
@@ -236,7 +245,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		unitCount,
 		valueOffset,
 		rawValueOffset,
-		ie.exifData[ExifAddressableAreaStart:],
+		rs,
 		ie.byteOrder)
 
 	ifdPath := ii.UnindexedString()
@@ -266,8 +275,8 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 // TagVisitorFn is called for each tag when enumerating through the EXIF.
 type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
 
-// postparseTag do some tag-level processing here following the parse of each.
-func (ie *IfdEnumerate) postparseTag(ite *IfdTagEntry, med *MiscellaneousExifData) (err error) {
+// tagPostParse do some tag-level processing here following the parse of each.
+func (ie *IfdEnumerate) tagPostParse(ite *IfdTagEntry, med *MiscellaneousExifData) (err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -401,7 +410,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 			log.Panic(err)
 		}
 
-		err = ie.postparseTag(ite, med)
+		err = ie.tagPostParse(ite, med)
 		if err == nil {
 			if err == ErrTagNotFound {
 				continue
@@ -1382,9 +1391,16 @@ func ParseOneIfd(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exif
 		}
 	}()
 
-	ie := NewIfdEnumerate(ifdMapping, tagIndex, make([]byte, 0), byteOrder)
+	// TODO(dustin): Add test
 
-	bp, err := newByteParser(ifdBlock, byteOrder, 0)
+	// RELEASE(dustin): Stop exporting this. Just supports tests.
+
+	ebs := NewExifReadSeekerWithBytes(ifdBlock)
+
+	rs, err := ebs.GetReadSeeker(0)
+	log.PanicIf(err)
+
+	bp, err := newByteParser(rs, byteOrder, 0)
 	if err != nil {
 		if err == ErrOffsetInvalid {
 			return 0, nil, err
@@ -1392,6 +1408,9 @@ func ParseOneIfd(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exif
 
 		log.Panic(err)
 	}
+
+	dummyEbs := NewExifReadSeekerWithBytes([]byte{})
+	ie := NewIfdEnumerate(ifdMapping, tagIndex, dummyEbs, byteOrder)
 
 	nextIfdOffset, entries, _, err = ie.parseIfd(ii, bp, visitor, true, nil)
 	log.PanicIf(err)
@@ -1407,9 +1426,16 @@ func ParseOneTag(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exif
 		}
 	}()
 
-	ie := NewIfdEnumerate(ifdMapping, tagIndex, make([]byte, 0), byteOrder)
+	// TODO(dustin): Add test
 
-	bp, err := newByteParser(tagBlock, byteOrder, 0)
+	// RELEASE(dustin): Stop exporting this. Just supports tests.
+
+	ebs := NewExifReadSeekerWithBytes(tagBlock)
+
+	rs, err := ebs.GetReadSeeker(0)
+	log.PanicIf(err)
+
+	bp, err := newByteParser(rs, byteOrder, 0)
 	if err != nil {
 		if err == ErrOffsetInvalid {
 			return nil, err
@@ -1418,10 +1444,13 @@ func ParseOneTag(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exif
 		log.Panic(err)
 	}
 
+	dummyEbs := NewExifReadSeekerWithBytes([]byte{})
+	ie := NewIfdEnumerate(ifdMapping, tagIndex, dummyEbs, byteOrder)
+
 	ite, err = ie.parseTag(ii, 0, bp)
 	log.PanicIf(err)
 
-	err = ie.postparseTag(ite, nil)
+	err = ie.tagPostParse(ite, nil)
 	if err != nil {
 		if err == ErrTagNotFound {
 			return nil, err

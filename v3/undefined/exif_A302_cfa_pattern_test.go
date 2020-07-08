@@ -5,8 +5,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dsoprea/go-exif/v2/common"
 	"github.com/dsoprea/go-logging"
+	"github.com/dsoprea/go-utility/filesystem"
+
+	"github.com/dsoprea/go-exif/v2/common"
 )
 
 func TestTagA302CfaPattern_String(t *testing.T) {
@@ -63,7 +65,8 @@ func TestCodecA302CfaPattern_Decode(t *testing.T) {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
 	}
 
-	addressableData := encoded
+	addressableBytes := encoded
+	sb := rifs.NewSeekableBufferWithBytes(addressableBytes)
 
 	valueContext := exifcommon.NewValueContext(
 		"",
@@ -71,7 +74,7 @@ func TestCodecA302CfaPattern_Decode(t *testing.T) {
 		uint32(len(encoded)),
 		0,
 		nil,
-		addressableData,
+		sb,
 		exifcommon.TypeUndefined,
 		exifcommon.TestDefaultByteOrder)
 

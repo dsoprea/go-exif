@@ -202,7 +202,8 @@ func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *exifcommon.IfdMa
 	eh, err = ParseExifHeader(exifData)
 	log.PanicIf(err)
 
-	ie := NewIfdEnumerate(ifdMapping, tagIndex, exifData, eh.ByteOrder)
+	ebs := NewExifReadSeekerWithBytes(exifData)
+	ie := NewIfdEnumerate(ifdMapping, tagIndex, ebs, eh.ByteOrder)
 
 	_, err = ie.Scan(rootIfdIdentity, eh.FirstIfdOffset, visitor)
 	log.PanicIf(err)
@@ -223,7 +224,8 @@ func Collect(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []b
 	eh, err = ParseExifHeader(exifData)
 	log.PanicIf(err)
 
-	ie := NewIfdEnumerate(ifdMapping, tagIndex, exifData, eh.ByteOrder)
+	ebs := NewExifReadSeekerWithBytes(exifData)
+	ie := NewIfdEnumerate(ifdMapping, tagIndex, ebs, eh.ByteOrder)
 
 	index, err = ie.Collect(eh.FirstIfdOffset)
 	log.PanicIf(err)

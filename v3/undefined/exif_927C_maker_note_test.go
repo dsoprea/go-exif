@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/dsoprea/go-logging"
+	"github.com/dsoprea/go-utility/filesystem"
 
 	"github.com/dsoprea/go-exif/v2/common"
 )
@@ -51,13 +52,15 @@ func TestCodec927CMakerNote_Decode(t *testing.T) {
 		MakerNoteBytes: b,
 	}
 
+	sb := rifs.NewSeekableBufferWithBytes(b)
+
 	valueContext := exifcommon.NewValueContext(
 		"",
 		0,
 		uint32(len(b)),
 		0,
 		nil,
-		b,
+		sb,
 		exifcommon.TypeUndefined,
 		exifcommon.TestDefaultByteOrder)
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/dsoprea/go-logging"
+	"github.com/dsoprea/go-utility/filesystem"
 
 	"github.com/dsoprea/go-exif/v2/common"
 )
@@ -59,6 +60,7 @@ func TestCodec8828Oecf_Decode(t *testing.T) {
 		0x00, 0x00, 0x00, 0x0b, 0x00, 0x00, 0x00, 0x16}
 
 	addressableData := encoded
+	sb := rifs.NewSeekableBufferWithBytes(addressableData)
 
 	valueContext := exifcommon.NewValueContext(
 		"",
@@ -66,7 +68,7 @@ func TestCodec8828Oecf_Decode(t *testing.T) {
 		uint32(len(encoded)),
 		0,
 		nil,
-		addressableData,
+		sb,
 		exifcommon.TypeUndefined,
 		exifcommon.TestDefaultByteOrder)
 

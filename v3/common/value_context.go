@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"errors"
+	"io"
 
 	"encoding/binary"
 
@@ -21,10 +22,10 @@ var (
 // ValueContext embeds all of the parameters required to find and extract the
 // actual tag value.
 type ValueContext struct {
-	unitCount       uint32
-	valueOffset     uint32
-	rawValueOffset  []byte
-	addressableData []byte
+	unitCount      uint32
+	valueOffset    uint32
+	rawValueOffset []byte
+	rs             io.ReadSeeker
 
 	tagType   TagTypePrimitive
 	byteOrder binary.ByteOrder
@@ -40,12 +41,12 @@ type ValueContext struct {
 // TODO(dustin): We can update newValueContext() to derive `valueOffset` itself (from `rawValueOffset`).
 
 // NewValueContext returns a new ValueContext struct.
-func NewValueContext(ifdPath string, tagId uint16, unitCount, valueOffset uint32, rawValueOffset, addressableData []byte, tagType TagTypePrimitive, byteOrder binary.ByteOrder) *ValueContext {
+func NewValueContext(ifdPath string, tagId uint16, unitCount, valueOffset uint32, rawValueOffset []byte, rs io.ReadSeeker, tagType TagTypePrimitive, byteOrder binary.ByteOrder) *ValueContext {
 	return &ValueContext{
-		unitCount:       unitCount,
-		valueOffset:     valueOffset,
-		rawValueOffset:  rawValueOffset,
-		addressableData: addressableData,
+		unitCount:      unitCount,
+		valueOffset:    valueOffset,
+		rawValueOffset: rawValueOffset,
+		rs:             rs,
 
 		tagType:   tagType,
 		byteOrder: byteOrder,
@@ -82,8 +83,11 @@ func (vc *ValueContext) RawValueOffset() []byte {
 }
 
 // AddressableData returns the block of data that we can dereference into.
-func (vc *ValueContext) AddressableData() []byte {
-	return vc.addressableData
+func (vc *ValueContext) AddressableData() io.ReadSeeker {
+
+	// RELEASE)dustin): Rename from AddressableData() to ReadSeeker()
+
+	return vc.rs
 }
 
 // ByteOrder returns the byte-order of numbers.
@@ -152,7 +156,15 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 		return vc.rawValueOffset[:byteLength], nil
 	}
 
-	return vc.addressableData[vc.valueOffset : vc.valueOffset+vc.unitCount*unitSizeRaw], nil
+	_, err = vc.rs.Seek(int64(vc.valueOffset), io.SeekStart)
+	log.PanicIf(err)
+
+	rawBytes = make([]byte, vc.unitCount*unitSizeRaw)
+
+	_, err = io.ReadFull(vc.rs, rawBytes)
+	log.PanicIf(err)
+
+	return rawBytes, nil
 }
 
 // GetFarOffset returns the offset if the value is not embedded [within the

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/dsoprea/go-logging"
+	"github.com/dsoprea/go-utility/filesystem"
 
 	"github.com/dsoprea/go-exif/v2/common"
 )
@@ -13,6 +14,7 @@ func TestIfdTagEntry_RawBytes_Allocated(t *testing.T) {
 	data := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
 
 	addressableBytes := data
+	sb := rifs.NewSeekableBufferWithBytes(addressableBytes)
 
 	ite := newIfdTagEntry(
 		exifcommon.IfdStandardIfdIdentity,
@@ -22,7 +24,7 @@ func TestIfdTagEntry_RawBytes_Allocated(t *testing.T) {
 		6,
 		0,
 		nil,
-		addressableBytes,
+		sb,
 		exifcommon.TestDefaultByteOrder)
 
 	value, err := ite.GetRawBytes()
