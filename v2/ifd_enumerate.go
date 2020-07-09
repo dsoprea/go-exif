@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -77,7 +78,6 @@ type byteParser struct {
 	byteOrder       binary.ByteOrder
 	addressableData []byte
 	ifdOffset       uint32
-	buffer          *bytes.Buffer
 	currentOffset   uint32
 }
 
@@ -91,7 +91,6 @@ func newByteParser(addressableData []byte, byteOrder binary.ByteOrder, ifdOffset
 	bp = &byteParser{
 		addressableData: addressableData,
 		byteOrder:       byteOrder,
-		buffer:          bytes.NewBuffer(addressableData[ifdOffset:]),
 		currentOffset:   ifdOffset,
 	}
 
@@ -110,17 +109,13 @@ func (bp *byteParser) getUint16() (value uint16, raw []byte, err error) {
 
 	// TODO(dustin): Add test
 
-	needBytes := 2
-	offset := 0
-	raw = make([]byte, needBytes)
+	needBytes := uint32(2)
 
-	for offset < needBytes {
-		n, err := bp.buffer.Read(raw[offset:])
-		log.PanicIf(err)
-
-		offset += n
+	if bp.currentOffset+needBytes > uint32(len(bp.addressableData)) {
+		return 0, nil, io.EOF
 	}
 
+	raw = bp.addressableData[bp.currentOffset : bp.currentOffset+needBytes]
 	value = bp.byteOrder.Uint16(raw)
 
 	bp.currentOffset += uint32(needBytes)
@@ -140,17 +135,13 @@ func (bp *byteParser) getUint32() (value uint32, raw []byte, err error) {
 
 	// TODO(dustin): Add test
 
-	needBytes := 4
-	offset := 0
-	raw = make([]byte, needBytes)
+	needBytes := uint32(4)
 
-	for offset < needBytes {
-		n, err := bp.buffer.Read(raw[offset:])
-		log.PanicIf(err)
-
-		offset += n
+	if bp.currentOffset+needBytes > uint32(len(bp.addressableData)) {
+		return 0, nil, io.EOF
 	}
 
+	raw = bp.addressableData[bp.currentOffset : bp.currentOffset+needBytes]
 	value = bp.byteOrder.Uint32(raw)
 
 	bp.currentOffset += uint32(needBytes)
@@ -168,7 +159,6 @@ func (bp *byteParser) CurrentOffset() uint32 {
 // containers in the EXIF blob.
 type IfdEnumerate struct {
 	exifData       []byte
-	buffer         *bytes.Buffer
 	byteOrder      binary.ByteOrder
 	tagIndex       *TagIndex
 	ifdMapping     *exifcommon.IfdMapping
@@ -179,7 +169,6 @@ type IfdEnumerate struct {
 func NewIfdEnumerate(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []byte, byteOrder binary.ByteOrder) *IfdEnumerate {
 	return &IfdEnumerate{
 		exifData:   exifData,
-		buffer:     bytes.NewBuffer(exifData),
 		byteOrder:  byteOrder,
 		ifdMapping: ifdMapping,
 		tagIndex:   tagIndex,

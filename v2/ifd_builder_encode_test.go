@@ -183,8 +183,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -352,8 +352,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -473,8 +473,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -617,8 +617,8 @@ func Test_IfdByteEncoder_encodeIfdToBytes_fullExif(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -667,8 +667,8 @@ func Test_IfdByteEncoder_EncodeToExifPayload(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -718,8 +718,8 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
