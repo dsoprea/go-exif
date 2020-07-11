@@ -114,7 +114,7 @@ func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 // GetEncodingType returns the largest type that this tag's value can occupy.
 func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimitive {
 	// For convenience, we handle encoding a `time.Time` directly.
-	if IsTime(value) == true {
+	if exifcommon.IsTime(value) == true {
 		// Timestamps are encoded as ASCII.
 		value = ""
 	}

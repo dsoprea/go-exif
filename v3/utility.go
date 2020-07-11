@@ -2,12 +2,7 @@ package exif
 
 import (
 	"fmt"
-	"io"
 	"math"
-	"reflect"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/dsoprea/go-logging"
 
@@ -18,69 +13,6 @@ import (
 var (
 	utilityLogger = log.NewLogger("exif.utility")
 )
-
-var (
-	timeType = reflect.TypeOf(time.Time{})
-)
-
-// ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49" into a UTC
-// `time.Time` struct.
-func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
-
-	parts := strings.Split(fullTimestampPhrase, " ")
-	datestampValue, timestampValue := parts[0], parts[1]
-
-	dateParts := strings.Split(datestampValue, ":")
-
-	year, err := strconv.ParseUint(dateParts[0], 10, 16)
-	if err != nil {
-		log.Panicf("could not parse year")
-	}
-
-	month, err := strconv.ParseUint(dateParts[1], 10, 8)
-	if err != nil {
-		log.Panicf("could not parse month")
-	}
-
-	day, err := strconv.ParseUint(dateParts[2], 10, 8)
-	if err != nil {
-		log.Panicf("could not parse day")
-	}
-
-	timeParts := strings.Split(timestampValue, ":")
-
-	hour, err := strconv.ParseUint(timeParts[0], 10, 8)
-	if err != nil {
-		log.Panicf("could not parse hour")
-	}
-
-	minute, err := strconv.ParseUint(timeParts[1], 10, 8)
-	if err != nil {
-		log.Panicf("could not parse minute")
-	}
-
-	second, err := strconv.ParseUint(timeParts[2], 10, 8)
-	if err != nil {
-		log.Panicf("could not parse second")
-	}
-
-	timestamp = time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
-	return timestamp, nil
-}
-
-// ExifFullTimestampString produces a string like "2018:11:30 13:01:49" from a
-// `time.Time` struct. It will attempt to convert to UTC first.
-func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
-
-	// RELEASE(dustin): Dump this for the next release. It duplicates the same function now in exifcommon.
-
-	return exifcommon.ExifFullTimestampString(t)
-}
 
 // ExifTag is one simple representation of a tag in a flat list of all of them.
 type ExifTag struct {
@@ -230,17 +162,4 @@ func GpsDegreesEquals(gi1, gi2 GpsDegrees) bool {
 	}
 
 	return true
-}
-
-// IsTime returns true if the value is a `time.Time`.
-func IsTime(v interface{}) bool {
-	return reflect.TypeOf(v) == timeType
-}
-
-// TODO(dustin): !! For debugging
-func mustGetCurrentOffset(s io.Seeker) int64 {
-	offset, err := s.Seek(0, io.SeekCurrent)
-	log.PanicIf(err)
-
-	return offset
 }

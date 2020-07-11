@@ -3,9 +3,16 @@ package exifcommon
 import (
 	"bytes"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dsoprea/go-logging"
+)
+
+var (
+	timeType = reflect.TypeOf(time.Time{})
 )
 
 // DumpBytes prints a list of hex-encoded bytes.
@@ -76,4 +83,62 @@ func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
 	t = t.UTC()
 
 	return fmt.Sprintf("%04d:%02d:%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+}
+
+// ParseExifFullTimestamp parses dates like "2018:11:30 13:01:49" into a UTC
+// `time.Time` struct.
+func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	parts := strings.Split(fullTimestampPhrase, " ")
+	datestampValue, timestampValue := parts[0], parts[1]
+
+	dateParts := strings.Split(datestampValue, ":")
+
+	year, err := strconv.ParseUint(dateParts[0], 10, 16)
+	if err != nil {
+		log.Panicf("could not parse year")
+	}
+
+	month, err := strconv.ParseUint(dateParts[1], 10, 8)
+	if err != nil {
+		log.Panicf("could not parse month")
+	}
+
+	day, err := strconv.ParseUint(dateParts[2], 10, 8)
+	if err != nil {
+		log.Panicf("could not parse day")
+	}
+
+	timeParts := strings.Split(timestampValue, ":")
+
+	hour, err := strconv.ParseUint(timeParts[0], 10, 8)
+	if err != nil {
+		log.Panicf("could not parse hour")
+	}
+
+	minute, err := strconv.ParseUint(timeParts[1], 10, 8)
+	if err != nil {
+		log.Panicf("could not parse minute")
+	}
+
+	second, err := strconv.ParseUint(timeParts[2], 10, 8)
+	if err != nil {
+		log.Panicf("could not parse second")
+	}
+
+	timestamp = time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
+	return timestamp, nil
+}
+
+// IsTime returns true if the value is a `time.Time`.
+func IsTime(v interface{}) bool {
+
+	// TODO(dustin): Add test
+
+	return reflect.TypeOf(v) == timeType
 }
