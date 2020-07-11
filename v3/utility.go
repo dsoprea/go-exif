@@ -89,7 +89,7 @@ func GetFlatExifData(exifData []byte, so *ScanOptions) (exifTags []ExifTag, med 
 
 	exifTags = make([]ExifTag, 0)
 
-	visitor := func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
+	visitor := func(ite *IfdTagEntry) (err error) {
 		// This encodes down to base64. Since this an example tool and we do not
 		// expect to ever decode the output, we are not worried about
 		// specifically base64-encoding it in order to have a measure of
@@ -113,7 +113,7 @@ func GetFlatExifData(exifData []byte, so *ScanOptions) (exifTags []ExifTag, med 
 		}
 
 		et := ExifTag{
-			IfdPath:      fqIfdPath,
+			IfdPath:      ite.IfdPath(),
 			TagId:        ite.TagId(),
 			TagName:      ite.TagName(),
 			UnitCount:    ite.UnitCount(),

@@ -67,7 +67,7 @@ func TestVisit(t *testing.T) {
 	tags := make([]string, 0)
 
 	// DEPRECATED(dustin): fqIfdPath and ifdIndex are now redundant. Remove in next module version.
-	visitor := func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error) {
+	visitor := func(ite *IfdTagEntry) (err error) {
 		defer func() {
 			if state := recover(); state != nil {
 				err = log.Wrap(state.(error))

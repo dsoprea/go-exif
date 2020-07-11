@@ -270,10 +270,8 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	return ite, nil
 }
 
-// RELEASE(dustin): Drop fqIfdPath and ifdIndex arguments to visitor callback. They're both accessible on the IfdTagEntry struct.
-
 // TagVisitorFn is called for each tag when enumerating through the EXIF.
-type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
+type TagVisitorFn func(ite *IfdTagEntry) (err error)
 
 // tagPostParse do some tag-level processing here following the parse of each.
 func (ie *IfdEnumerate) tagPostParse(ite *IfdTagEntry, med *MiscellaneousExifData) (err error) {
@@ -422,7 +420,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 		tagId := ite.TagId()
 
 		if visitor != nil {
-			err := visitor(ii.String(), ii.Index(), ite)
+			err := visitor(ite)
 			log.PanicIf(err)
 		}
 
