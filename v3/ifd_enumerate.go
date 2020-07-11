@@ -1379,12 +1379,12 @@ func (ie *IfdEnumerate) FurthestOffset() uint32 {
 	return ie.furthestOffset
 }
 
-// ParseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
+// parseOneIfd is a hack to use an IE to parse a raw IFD block. Can be used for
 // testing. The fqIfdPath ("fully-qualified IFD path") will be less qualified
 // in that the numeric index will always be zero (the zeroth child) rather than
 // the proper number (if its actually a sibling to the first child, for
 // instance).
-func ParseOneIfd(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitorFn) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
+func parseOneIfd(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, ifdBlock []byte, visitor TagVisitorFn) (nextIfdOffset uint32, entries []*IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -1392,8 +1392,6 @@ func ParseOneIfd(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exif
 	}()
 
 	// TODO(dustin): Add test
-
-	// RELEASE(dustin): Stop exporting this. Just supports tests.
 
 	ebs := NewExifReadSeekerWithBytes(ifdBlock)
 
@@ -1418,8 +1416,8 @@ func ParseOneIfd(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exif
 	return nextIfdOffset, entries, nil
 }
 
-// ParseOneTag is a hack to use an IE to parse a raw tag block.
-func ParseOneTag(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (ite *IfdTagEntry, err error) {
+// parseOneTag is a hack to use an IE to parse a raw tag block.
+func parseOneTag(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exifcommon.IfdIdentity, byteOrder binary.ByteOrder, tagBlock []byte) (ite *IfdTagEntry, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -1427,8 +1425,6 @@ func ParseOneTag(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ii *exif
 	}()
 
 	// TODO(dustin): Add test
-
-	// RELEASE(dustin): Stop exporting this. Just supports tests.
 
 	ebs := NewExifReadSeekerWithBytes(tagBlock)
 

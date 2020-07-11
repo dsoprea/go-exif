@@ -412,7 +412,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("Child IFD is not the right size: (%d)", len(childIfdBlock))
 	}
 
-	iteV, err := ParseOneTag(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder, tagBytes)
+	iteV, err := parseOneTag(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder, tagBytes)
 	log.PanicIf(err)
 
 	if iteV.TagId() != exifcommon.IfdExifStandardIfdIdentity.TagId() {
@@ -433,7 +433,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 
 	// Validate the child's raw IFD bytes.
 
-	childNextIfdOffset, childEntries, err := ParseOneIfd(im, ti, exifcommon.IfdExifStandardIfdIdentity, exifcommon.TestDefaultByteOrder, childIfdBlock, nil)
+	childNextIfdOffset, childEntries, err := parseOneIfd(im, ti, exifcommon.IfdExifStandardIfdIdentity, exifcommon.TestDefaultByteOrder, childIfdBlock, nil)
 	log.PanicIf(err)
 
 	if childNextIfdOffset != uint32(0) {
@@ -513,7 +513,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 		t.Fatalf("Child IFD not have been allocated.")
 	}
 
-	ite, err := ParseOneTag(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder, tagBytes)
+	ite, err := parseOneTag(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder, tagBytes)
 	log.PanicIf(err)
 
 	if ite.TagId() != 0x000b {
