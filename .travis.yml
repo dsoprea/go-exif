@@ -9,7 +9,6 @@ env:
   - GO111MODULE=on
 install:
   - go get -t ./...
-  - go get github.com/mattn/goveralls
 script:
 # v1
   - go test -v .
@@ -17,6 +16,9 @@ script:
 # v2
   - cd v2
   - go test -v ./...
+  - cd ..
 # v3. Coverage reports comes from this.
-  - cd ../v3
-  - EXIF_MODULE_ROOT_PATH="$(pwd)" goveralls -v -service=travis-ci
+  - cd v3
+  - go test -v ./... -coverprofile=coverage.txt -covermode=atomic
+after_success:
+  - curl -s https://codecov.io/bash | bash
