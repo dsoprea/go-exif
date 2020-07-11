@@ -167,7 +167,7 @@ func TestMainJson(t *testing.T) {
 
 func getAppFilepath() string {
 	moduleRootPath := exifcommon.GetModuleRootPath()
-	appFilepath := path.Join(moduleRootPath, "exif-read-tool", "main.go")
+	appFilepath := path.Join(moduleRootPath, "command", "exif-read-tool", "main.go")
 
 	return appFilepath
 }
