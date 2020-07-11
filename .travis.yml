@@ -11,9 +11,11 @@ install:
   - go get -t ./...
   - go get github.com/mattn/goveralls
 script:
-# Don't test recursively, so we stay within v1/legacy.
-  - go test -v github.com/dsoprea/go-exif
-  - go test -v github.com/dsoprea/go-exif/exif-read-tool
-# Coverage is based on v2.
-  - cd v2
+# v1
+  - go test -v .
+  - go test -v ./exif-read-tool
+# v2
+  - go test -v ./v2/...
+# v3. Coverage reports comes from this.
+  - cd v3
   - EXIF_MODULE_ROOT_PATH="$(pwd)" goveralls -v -service=travis-ci
