@@ -15,7 +15,8 @@ script:
   - go test -v .
   - go test -v ./exif-read-tool
 # v2
-  - go test -v ./v2/...
+  - cd v2
+  - go test -v ./...
 # v3. Coverage reports comes from this.
-  - cd v3
+  - cd ../v3
   - EXIF_MODULE_ROOT_PATH="$(pwd)" goveralls -v -service=travis-ci
