@@ -73,9 +73,6 @@ func DumpBytesClauseToString(data []byte) string {
 // ExifFullTimestampString produces a string like "2018:11:30 13:01:49" from a
 // `time.Time` struct. It will attempt to convert to UTC first.
 func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
-
-	// RELEASE(dustin): Dump this for the next release. It duplicates the same function now in exifcommon.
-
 	t = t.UTC()
 
 	return fmt.Sprintf("%04d:%02d:%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())

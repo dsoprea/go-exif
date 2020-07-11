@@ -75,9 +75,6 @@ func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, er
 // ExifFullTimestampString produces a string like "2018:11:30 13:01:49" from a
 // `time.Time` struct. It will attempt to convert to UTC first.
 func ExifFullTimestampString(t time.Time) (fullTimestampPhrase string) {
-
-	// RELEASE(dustin): Dump this for the next release. It duplicates the same function now in exifcommon.
-
 	return exifcommon.ExifFullTimestampString(t)
 }
 
@@ -134,8 +131,6 @@ func (et ExifTag) String() string {
 		et.IfdPath, et.TagId, et.TagName, et.TagTypeName, et.FormattedFirst,
 		len(et.ValueBytes), et.ChildIfdPath)
 }
-
-// RELEASE(dustin): In the next release, add an options struct to Scan() and GetFlatExifData(), and put the MiscellaneousExifData in the return.
 
 // GetFlatExifData returns a simple, flat representation of all tags.
 func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {

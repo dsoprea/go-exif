@@ -67,8 +67,6 @@ func NewIfdMappingWithStandard() (ifdMapping *IfdMapping) {
 		}
 	}()
 
-	// RELEASE(dustin): Add error return on next release
-
 	im := NewIfdMapping()
 
 	err := LoadStandardIfds(im)
@@ -654,8 +652,6 @@ var (
 )
 
 var (
-	// RELEASE(dustin): These are for backwards-compatibility. These used to be strings but are now IfdIdentity structs and the newer "StandardIfdIdentity" symbols above should be used instead. These will be removed in the next release.
-
 	IfdPathStandard        = IfdStandardIfdIdentity
 	IfdPathStandardExif    = IfdExifStandardIfdIdentity
 	IfdPathStandardExifIop = IfdExifIopStandardIfdIdentity

@@ -262,8 +262,6 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	return ite, nil
 }
 
-// RELEASE(dustin): Drop fqIfdPath and ifdIndex arguments to visitor callback. They're both accessible on the IfdTagEntry struct.
-
 // TagVisitorFn is called for each tag when enumerating through the EXIF.
 type TagVisitorFn func(fqIfdPath string, ifdIndex int, ite *IfdTagEntry) (err error)
 
@@ -615,7 +613,6 @@ func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, v
 // Ifd represents a single, parsed IFD.
 type Ifd struct {
 
-	// RELEASE(dustin): !! Why are all of these exported? Stop doing this in the next release.
 	// TODO(dustin): Add NextIfd().
 
 	ifdIdentity *exifcommon.IfdIdentity
