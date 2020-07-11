@@ -68,10 +68,8 @@ func (et ExifTag) String() string {
 		len(et.ValueBytes), et.ChildIfdPath)
 }
 
-// RELEASE(dustin): In the next release, add an options struct to Scan() and GetFlatExifData(), and put the MiscellaneousExifData in the return.
-
 // GetFlatExifData returns a simple, flat representation of all tags.
-func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
+func GetFlatExifData(exifData []byte, so *ScanOptions) (exifTags []ExifTag, med *MiscellaneousExifData, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -137,10 +135,10 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 		return nil
 	}
 
-	_, err = ie.Scan(exifcommon.IfdStandardIfdIdentity, eh.FirstIfdOffset, visitor)
+	med, err = ie.Scan(exifcommon.IfdStandardIfdIdentity, eh.FirstIfdOffset, visitor, nil)
 	log.PanicIf(err)
 
-	return exifTags, nil
+	return exifTags, med, nil
 }
 
 // GpsDegreesEquals returns true if the two `GpsDegrees` are identical.

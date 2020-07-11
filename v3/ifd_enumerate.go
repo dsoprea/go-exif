@@ -597,9 +597,14 @@ func (med *MiscellaneousExifData) UnknownTags() map[exifcommon.BasicTag]exifcomm
 	return med.unknownTags
 }
 
+// ScanOptions tweaks parser behavior/choices.
+type ScanOptions struct {
+	// NOTE(dustin): Reserved for future usage.
+}
+
 // Scan enumerates the different EXIF blocks (called IFDs). `rootIfdName` will
 // be "IFD" in the TIFF standard.
-func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn) (med *MiscellaneousExifData, err error) {
+func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, visitor TagVisitorFn, so *ScanOptions) (med *MiscellaneousExifData, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))

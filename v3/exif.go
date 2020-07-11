@@ -192,7 +192,7 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 }
 
 // Visit recursively invokes a callback for every tag.
-func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []byte, visitor TagVisitorFn) (eh ExifHeader, furthestOffset uint32, err error) {
+func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, exifData []byte, visitor TagVisitorFn, so *ScanOptions) (eh ExifHeader, furthestOffset uint32, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -205,7 +205,7 @@ func Visit(rootIfdIdentity *exifcommon.IfdIdentity, ifdMapping *exifcommon.IfdMa
 	ebs := NewExifReadSeekerWithBytes(exifData)
 	ie := NewIfdEnumerate(ifdMapping, tagIndex, ebs, eh.ByteOrder)
 
-	_, err = ie.Scan(rootIfdIdentity, eh.FirstIfdOffset, visitor)
+	_, err = ie.Scan(rootIfdIdentity, eh.FirstIfdOffset, visitor, so)
 	log.PanicIf(err)
 
 	furthestOffset = ie.FurthestOffset()

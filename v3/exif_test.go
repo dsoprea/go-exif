@@ -98,7 +98,7 @@ func TestVisit(t *testing.T) {
 		return nil
 	}
 
-	_, furthestOffset, err := Visit(exifcommon.IfdStandardIfdIdentity, im, ti, data[foundAt:], visitor)
+	_, furthestOffset, err := Visit(exifcommon.IfdStandardIfdIdentity, im, ti, data[foundAt:], visitor, nil)
 	log.PanicIf(err)
 
 	if furthestOffset != 32935 {
