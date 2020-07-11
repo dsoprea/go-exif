@@ -262,8 +262,8 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 	ib = &IfdBuilder{
 		ifdIdentity: ifd.IfdIdentity(),
 
-		byteOrder:      ifd.ByteOrder,
-		existingOffset: ifd.Offset,
+		byteOrder:      ifd.ByteOrder(),
+		existingOffset: ifd.Offset(),
 		ifdMapping:     ifd.ifdMapping,
 		tagIndex:       ifd.tagIndex,
 	}
@@ -276,12 +276,12 @@ func NewIfdBuilderWithExistingIfd(ifd *Ifd) (ib *IfdBuilder) {
 func NewIfdBuilderFromExistingChain(rootIfd *Ifd) (firstIb *IfdBuilder) {
 	var lastIb *IfdBuilder
 	i := 0
-	for thisExistingIfd := rootIfd; thisExistingIfd != nil; thisExistingIfd = thisExistingIfd.NextIfd {
+	for thisExistingIfd := rootIfd; thisExistingIfd != nil; thisExistingIfd = thisExistingIfd.nextIfd {
 		newIb := NewIfdBuilder(
 			rootIfd.ifdMapping,
 			rootIfd.tagIndex,
 			rootIfd.ifdIdentity,
-			thisExistingIfd.ByteOrder)
+			thisExistingIfd.ByteOrder())
 
 		if firstIb == nil {
 			firstIb = newIb
@@ -1005,7 +1005,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 		log.Panic(err)
 	}
 
-	for i, ite := range ifd.Entries {
+	for i, ite := range ifd.Entries() {
 		if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() {
 			// These will be added on-the-fly when we encode.
 			continue
@@ -1051,11 +1051,11 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 			// this IFD represents this specific child IFD.
 
 			var childIfd *Ifd
-			for _, thisChildIfd := range ifd.Children {
-				if thisChildIfd.ParentTagIndex != i {
+			for _, thisChildIfd := range ifd.Children() {
+				if thisChildIfd.ParentTagIndex() != i {
 					continue
 				} else if thisChildIfd.ifdIdentity.TagId() != 0xffff && thisChildIfd.ifdIdentity.TagId() != ite.TagId() {
-					log.Panicf("child-IFD tag is not correct: TAG-POSITION=(%d) ITE=%s CHILD-IFD=%s", thisChildIfd.ParentTagIndex, ite, thisChildIfd)
+					log.Panicf("child-IFD tag is not correct: TAG-POSITION=(%d) ITE=%s CHILD-IFD=%s", thisChildIfd.ParentTagIndex(), ite, thisChildIfd)
 				}
 
 				childIfd = thisChildIfd
@@ -1063,9 +1063,9 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 			}
 
 			if childIfd == nil {
-				childTagIds := make([]string, len(ifd.Children))
-				for j, childIfd := range ifd.Children {
-					childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.ifdIdentity.TagId(), childIfd.ParentTagIndex)
+				childTagIds := make([]string, len(ifd.Children()))
+				for j, childIfd := range ifd.Children() {
+					childTagIds[j] = fmt.Sprintf("0x%04x (parent tag-position %d)", childIfd.ifdIdentity.TagId(), childIfd.ParentTagIndex())
 				}
 
 				log.Panicf("could not find child IFD for child ITE: IFD-PATH=[%s] TAG-ID=(0x%04x) CURRENT-TAG-POSITION=(%d) CHILDREN=%v", ite.IfdPath(), ite.TagId(), i, childTagIds)

@@ -113,19 +113,19 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 
 	ifd := index.RootIfd
 
-	if ifd.ByteOrder != exifcommon.TestDefaultByteOrder {
+	if ifd.ByteOrder() != exifcommon.TestDefaultByteOrder {
 		t.Fatalf("IFD byte-order not correct.")
 	} else if ifd.ifdIdentity.UnindexedString() != exifcommon.IfdStandardIfdIdentity.UnindexedString() {
 		t.Fatalf("IFD name not correct.")
 	} else if ifd.ifdIdentity.Index() != 0 {
 		t.Fatalf("IFD index not zero: (%d)", ifd.ifdIdentity.Index())
-	} else if ifd.Offset != uint32(0x0008) {
+	} else if ifd.Offset() != uint32(0x0008) {
 		t.Fatalf("IFD offset not correct.")
-	} else if len(ifd.Entries) != 4 {
-		t.Fatalf("IFD number of entries not correct: (%d)", len(ifd.Entries))
-	} else if ifd.NextIfdOffset != uint32(0) {
+	} else if len(ifd.Entries()) != 4 {
+		t.Fatalf("IFD number of entries not correct: (%d)", len(ifd.Entries()))
+	} else if ifd.nextIfdOffset != uint32(0) {
 		t.Fatalf("Next-IFD offset is non-zero.")
-	} else if ifd.NextIfd != nil {
+	} else if ifd.nextIfd != nil {
 		t.Fatalf("Next-IFD pointer is non-nil.")
 	}
 
@@ -141,7 +141,7 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 		{tagId: 0x013e, value: []exifcommon.Rational{{Numerator: 0x11112222, Denominator: 0x33334444}}},
 	}
 
-	for i, ite := range ifd.Entries {
+	for i, ite := range ifd.Entries() {
 		if ite.TagId() != expected[i].tagId {
 			t.Fatalf("Tag-ID for entry (%d) not correct: (0x%02x) != (0x%02x)", i, ite.TagId(), expected[i].tagId)
 		}

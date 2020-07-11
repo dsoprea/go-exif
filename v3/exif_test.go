@@ -267,10 +267,10 @@ func TestCollect(t *testing.T) {
 	tree := index.Tree
 	lookup := index.Lookup
 
-	if rootIfd.Offset != uint32(0x0008) {
-		t.Fatalf("Root-IFD not correct: (0x%04d).", rootIfd.Offset)
-	} else if rootIfd.Id != 0 {
-		t.Fatalf("Root-IFD does not have the right ID: (%d)", rootIfd.Id)
+	if rootIfd.Offset() != uint32(0x0008) {
+		t.Fatalf("Root-IFD not correct: (0x%04d).", rootIfd.Offset())
+	} else if rootIfd.id != 0 {
+		t.Fatalf("Root-IFD does not have the right ID: (%d)", rootIfd.id)
 	} else if tree[0] != rootIfd {
 		t.Fatalf("Root-IFD is not indexed properly.")
 	} else if len(ifds) != 5 {
@@ -300,26 +300,26 @@ func TestCollect(t *testing.T) {
 		t.Fatalf("The IFD lookup is not the right size: %v", actualIfdPaths)
 	}
 
-	if rootIfd.NextIfdOffset != 0x2c54 {
-		t.Fatalf("Root IFD does not continue correctly: (0x%04x)", rootIfd.NextIfdOffset)
-	} else if rootIfd.NextIfd.Offset != rootIfd.NextIfdOffset {
-		t.Fatalf("Root IFD neighbor object does not have the right offset: (0x%04x != 0x%04x)", rootIfd.NextIfd.Offset, rootIfd.NextIfdOffset)
-	} else if rootIfd.NextIfd.NextIfdOffset != 0 {
+	if rootIfd.nextIfdOffset != 0x2c54 {
+		t.Fatalf("Root IFD does not continue correctly: (0x%04x)", rootIfd.nextIfdOffset)
+	} else if rootIfd.nextIfd.Offset() != rootIfd.nextIfdOffset {
+		t.Fatalf("Root IFD neighbor object does not have the right offset: (0x%04x != 0x%04x)", rootIfd.nextIfd.Offset(), rootIfd.nextIfdOffset)
+	} else if rootIfd.nextIfd.nextIfdOffset != 0 {
 		t.Fatalf("Root IFD chain not terminated correctly (1).")
-	} else if rootIfd.NextIfd.NextIfd != nil {
+	} else if rootIfd.nextIfd.nextIfd != nil {
 		t.Fatalf("Root IFD chain not terminated correctly (2).")
 	}
 
 	if rootIfd.ifdIdentity.UnindexedString() != exifcommon.IfdStandardIfdIdentity.UnindexedString() {
 		t.Fatalf("Root IFD is not labeled correctly: [%s]", rootIfd.ifdIdentity.UnindexedString())
-	} else if rootIfd.NextIfd.ifdIdentity.UnindexedString() != exifcommon.IfdStandardIfdIdentity.UnindexedString() {
+	} else if rootIfd.nextIfd.ifdIdentity.UnindexedString() != exifcommon.IfdStandardIfdIdentity.UnindexedString() {
 		t.Fatalf("Root IFD sibling is not labeled correctly: [%s]", rootIfd.ifdIdentity.UnindexedString())
-	} else if rootIfd.Children[0].ifdIdentity.UnindexedString() != exifcommon.IfdExifStandardIfdIdentity.UnindexedString() {
-		t.Fatalf("Root IFD child (0) is not labeled correctly: [%s]", rootIfd.Children[0].ifdIdentity.UnindexedString())
-	} else if rootIfd.Children[1].ifdIdentity.UnindexedString() != exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString() {
-		t.Fatalf("Root IFD child (1) is not labeled correctly: [%s]", rootIfd.Children[1].ifdIdentity.UnindexedString())
-	} else if rootIfd.Children[0].Children[0].ifdIdentity.UnindexedString() != exifcommon.IfdExifIopStandardIfdIdentity.UnindexedString() {
-		t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children[0].Children[0].ifdIdentity.UnindexedString())
+	} else if rootIfd.Children()[0].ifdIdentity.UnindexedString() != exifcommon.IfdExifStandardIfdIdentity.UnindexedString() {
+		t.Fatalf("Root IFD child (0) is not labeled correctly: [%s]", rootIfd.Children()[0].ifdIdentity.UnindexedString())
+	} else if rootIfd.Children()[1].ifdIdentity.UnindexedString() != exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString() {
+		t.Fatalf("Root IFD child (1) is not labeled correctly: [%s]", rootIfd.Children()[1].ifdIdentity.UnindexedString())
+	} else if rootIfd.Children()[0].children[0].ifdIdentity.UnindexedString() != exifcommon.IfdExifIopStandardIfdIdentity.UnindexedString() {
+		t.Fatalf("Exif IFD child is not an IOP IFD: [%s]", rootIfd.Children()[0].children[0].ifdIdentity.UnindexedString())
 	}
 
 	if lookup[exifcommon.IfdStandardIfdIdentity.UnindexedString()].ifdIdentity.UnindexedString() != exifcommon.IfdStandardIfdIdentity.UnindexedString() {
@@ -342,7 +342,7 @@ func TestCollect(t *testing.T) {
 
 	foundExif := 0
 	foundGps := 0
-	for _, ite := range lookup[exifcommon.IfdStandardIfdIdentity.UnindexedString()].Entries {
+	for _, ite := range lookup[exifcommon.IfdStandardIfdIdentity.UnindexedString()].entries {
 		if ite.ChildIfdPath() == exifcommon.IfdExifStandardIfdIdentity.UnindexedString() {
 			foundExif++
 
@@ -367,7 +367,7 @@ func TestCollect(t *testing.T) {
 	}
 
 	foundIop := 0
-	for _, ite := range lookup[exifcommon.IfdExifStandardIfdIdentity.UnindexedString()].Entries {
+	for _, ite := range lookup[exifcommon.IfdExifStandardIfdIdentity.UnindexedString()].entries {
 		if ite.ChildIfdPath() == exifcommon.IfdExifIopStandardIfdIdentity.UnindexedString() {
 			foundIop++
 

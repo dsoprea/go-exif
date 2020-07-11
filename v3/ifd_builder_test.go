@@ -1584,7 +1584,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	_, originalIndex, err := Collect(im, ti, rawExif)
 	log.PanicIf(err)
 
-	originalThumbnailData, err := originalIndex.RootIfd.NextIfd.Thumbnail()
+	originalThumbnailData, err := originalIndex.RootIfd.nextIfd.Thumbnail()
 	log.PanicIf(err)
 
 	originalTags := originalIndex.RootIfd.DumpTags()
@@ -1605,7 +1605,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	recoveredTags := recoveredIndex.RootIfd.DumpTags()
 
-	recoveredThumbnailData, err := recoveredIndex.RootIfd.NextIfd.Thumbnail()
+	recoveredThumbnailData, err := recoveredIndex.RootIfd.nextIfd.Thumbnail()
 	log.PanicIf(err)
 
 	// Check the thumbnail.
@@ -1740,7 +1740,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 // 	_, originalIndex, err := Collect(im, ti, rawExif)
 // 	log.PanicIf(err)
 
-// 	originalThumbnailData, err := originalIndex.RootIfd.NextIfd.Thumbnail()
+// 	originalThumbnailData, err := originalIndex.RootIfd.nextIfd.Thumbnail()
 // 	log.PanicIf(err)
 
 // 	originalTags := originalIndex.RootIfd.DumpTags()
@@ -1779,7 +1779,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 // 	recoveredTags := recoveredIndex.RootIfd.DumpTags()
 
-// 	recoveredThumbnailData, err := recoveredIndex.RootIfd.NextIfd.Thumbnail()
+// 	recoveredThumbnailData, err := recoveredIndex.RootIfd.nextIfd.Thumbnail()
 // 	log.PanicIf(err)
 
 // 	// Check the thumbnail.
@@ -1845,10 +1845,10 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 // 			t.Fatalf("Tag-type not as expected: %d != %d  ITE=%s", recoveredIte.TagType(), originalIte.TagType(), recoveredIte)
 // 		}
 
-// 		originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder)
+// 		originalValueBytes, err := originalIte.ValueBytes(originalIndex.RootIfd.addressableData, originalIndex.RootIfd.ByteOrder())
 // 		log.PanicIf(err)
 
-// 		recoveredValueBytes, err := recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder)
+// 		recoveredValueBytes, err := recoveredIte.ValueBytes(recoveredIndex.RootIfd.addressableData, recoveredIndex.RootIfd.ByteOrder())
 // 		log.PanicIf(err)
 
 // 		if recoveredIte.TagId() == 0x9286 {
@@ -1882,7 +1882,7 @@ func ExampleIfd_Thumbnail() {
 
 	// This returns the raw bytes that you will be looking for, but there's no
 	// use for them at this point in the example.
-	_, err = index.RootIfd.NextIfd.Thumbnail()
+	_, err = index.RootIfd.nextIfd.Thumbnail()
 	log.PanicIf(err)
 
 	// Output:
@@ -2036,9 +2036,9 @@ func TestIfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 
 	ifd := &Ifd{
 		ifdIdentity: exifcommon.IfdGpsInfoStandardIfdIdentity,
-		ByteOrder:   exifcommon.TestDefaultByteOrder,
-		Offset:      0x123,
-		ParentIfd:   parentIfd,
+		byteOrder:   exifcommon.TestDefaultByteOrder,
+		offset:      0x123,
+		parentIfd:   parentIfd,
 
 		ifdMapping: im,
 		tagIndex:   ti,
@@ -2050,9 +2050,9 @@ func TestIfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 		t.Fatalf("IFD-name not correct.")
 	} else if ib.IfdIdentity().TagId() != tagId {
 		t.Fatalf("IFD tag-ID not correct.")
-	} else if ib.byteOrder != ifd.ByteOrder {
+	} else if ib.byteOrder != ifd.ByteOrder() {
 		t.Fatalf("IFD byte-order not correct.")
-	} else if ib.existingOffset != ifd.Offset {
+	} else if ib.existingOffset != ifd.Offset() {
 		t.Fatalf("IFD offset not correct.")
 	}
 }

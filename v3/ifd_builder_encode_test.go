@@ -860,7 +860,7 @@ func ExampleIfdByteEncoder_EncodeToExif() {
 	_, index, err := Collect(im, ti, exifData)
 	log.PanicIf(err)
 
-	for i, ite := range index.RootIfd.Entries {
+	for i, ite := range index.RootIfd.Entries() {
 		value, err := ite.Value()
 		log.PanicIf(err)
 

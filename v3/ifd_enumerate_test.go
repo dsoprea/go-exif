@@ -36,7 +36,7 @@ func TestIfdTagEntry_RawBytes_RealData(t *testing.T) {
 	log.PanicIf(err)
 
 	var ite *IfdTagEntry
-	for _, thisIte := range index.RootIfd.Entries {
+	for _, thisIte := range index.RootIfd.entries {
 		if thisIte.TagId() == 0x0110 {
 			ite = thisIte
 			break
@@ -198,12 +198,12 @@ func TestIfd_Thumbnail(t *testing.T) {
 
 	ifd := index.RootIfd
 
-	if ifd.NextIfd == nil {
+	if ifd.nextIfd == nil {
 		t.Fatalf("There is no IFD1.")
 	}
 
 	// The thumbnail is in IFD1 (The second root IFD).
-	actual, err := ifd.NextIfd.Thumbnail()
+	actual, err := ifd.nextIfd.Thumbnail()
 	log.PanicIf(err)
 
 	assetsPath := exifcommon.GetTestAssetsPath()

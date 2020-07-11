@@ -627,44 +627,94 @@ func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, v
 
 // Ifd represents a single, parsed IFD.
 type Ifd struct {
-
-	// RELEASE(dustin): !! Why are all of these exported? Stop doing this in the next release.
-	// TODO(dustin): Add NextIfd().
-
 	ifdIdentity *exifcommon.IfdIdentity
 
-	ByteOrder binary.ByteOrder
+	ifdMapping *exifcommon.IfdMapping
+	tagIndex   *TagIndex
 
-	Id int
+	offset    uint32
+	byteOrder binary.ByteOrder
+	id        int
 
-	ParentIfd *Ifd
+	parentIfd *Ifd
 
 	// ParentTagIndex is our tag position in the parent IFD, if we had a parent
 	// (if `ParentIfd` is not nil and we weren't an IFD referenced as a sibling
 	// instead of as a child).
-	ParentTagIndex int
+	parentTagIndex int
 
-	Offset uint32
+	entries        []*IfdTagEntry
+	entriesByTagId map[uint16][]*IfdTagEntry
 
-	Entries        []*IfdTagEntry
-	EntriesByTagId map[uint16][]*IfdTagEntry
-
-	Children []*Ifd
-
-	ChildIfdIndex map[string]*Ifd
-
-	NextIfdOffset uint32
-	NextIfd       *Ifd
+	children      []*Ifd
+	childIfdIndex map[string]*Ifd
 
 	thumbnailData []byte
 
-	ifdMapping *exifcommon.IfdMapping
-	tagIndex   *TagIndex
+	nextIfdOffset uint32
+	nextIfd       *Ifd
 }
 
 // IfdIdentity returns IFD identity that this struct represents.
 func (ifd *Ifd) IfdIdentity() *exifcommon.IfdIdentity {
 	return ifd.ifdIdentity
+}
+
+// Entries returns a flat list of all tags for this IFD.
+func (ifd *Ifd) Entries() []*IfdTagEntry {
+
+	// TODO(dustin): Add test
+
+	return ifd.entries
+}
+
+// EntriesByTagId returns a map of all tags for this IFD.
+func (ifd *Ifd) EntriesByTagId() map[uint16][]*IfdTagEntry {
+
+	// TODO(dustin): Add test
+
+	return ifd.entriesByTagId
+}
+
+// Children returns a flat list of all child IFDs of this IFD.
+func (ifd *Ifd) Children() []*Ifd {
+
+	// TODO(dustin): Add test
+
+	return ifd.children
+}
+
+// ChildWithIfdPath returns a map of all child IFDs of this IFD.
+func (ifd *Ifd) ChildIfdIndex() map[string]*Ifd {
+
+	// TODO(dustin): Add test
+
+	return ifd.childIfdIndex
+}
+
+// ParentTagIndex returns the position of this IFD's tag in its parent IFD (*if*
+// there is a parent).
+func (ifd *Ifd) ParentTagIndex() int {
+
+	// TODO(dustin): Add test
+
+	return ifd.parentTagIndex
+}
+
+// Offset returns the offset of the IFD in the stream.
+func (ifd *Ifd) Offset() uint32 {
+
+	// TODO(dustin): Add test
+
+	return ifd.offset
+}
+
+// Offset returns the offset of the IFD in the stream.
+func (ifd *Ifd) ByteOrder() binary.ByteOrder {
+
+	// TODO(dustin): Add test
+
+	return ifd.byteOrder
 }
 
 // ChildWithIfdPath returns an `Ifd` struct for the given child of the current
@@ -679,7 +729,7 @@ func (ifd *Ifd) ChildWithIfdPath(iiChild *exifcommon.IfdIdentity) (childIfd *Ifd
 	// TODO(dustin): This is a bridge while we're introducing the IFD type-system. We should be able to use the (IfdIdentity).Equals() method for this.
 	ifdPath := iiChild.UnindexedString()
 
-	for _, childIfd := range ifd.Children {
+	for _, childIfd := range ifd.children {
 		if childIfd.ifdIdentity.UnindexedString() == ifdPath {
 			return childIfd, nil
 		}
@@ -698,7 +748,7 @@ func (ifd *Ifd) FindTagWithId(tagId uint16) (results []*IfdTagEntry, err error) 
 		}
 	}()
 
-	results, found := ifd.EntriesByTagId[tagId]
+	results, found := ifd.entriesByTagId[tagId]
 	if found != true {
 		log.Panic(ErrTagNotFound)
 	}
@@ -723,7 +773,7 @@ func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err err
 	}
 
 	results = make([]*IfdTagEntry, 0)
-	for _, ite := range ifd.Entries {
+	for _, ite := range ifd.entries {
 		if ite.TagId() == it.Id {
 			results = append(results, ite)
 		}
@@ -739,11 +789,11 @@ func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err err
 // String returns a description string.
 func (ifd *Ifd) String() string {
 	parentOffset := uint32(0)
-	if ifd.ParentIfd != nil {
-		parentOffset = ifd.ParentIfd.Offset
+	if ifd.parentIfd != nil {
+		parentOffset = ifd.parentIfd.offset
 	}
 
-	return fmt.Sprintf("Ifd<ID=(%d) IFD-PATH=[%s] INDEX=(%d) COUNT=(%d) OFF=(0x%04x) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)>", ifd.Id, ifd.ifdIdentity.UnindexedString(), ifd.ifdIdentity.Index(), len(ifd.Entries), ifd.Offset, len(ifd.Children), parentOffset, ifd.NextIfdOffset)
+	return fmt.Sprintf("Ifd<ID=(%d) IFD-PATH=[%s] INDEX=(%d) COUNT=(%d) OFF=(0x%04x) CHILDREN=(%d) PARENT=(0x%04x) NEXT-IFD=(0x%04x)>", ifd.id, ifd.ifdIdentity.UnindexedString(), ifd.ifdIdentity.Index(), len(ifd.entries), ifd.offset, len(ifd.children), parentOffset, ifd.nextIfdOffset)
 }
 
 // Thumbnail returns the raw thumbnail bytes. This is typically directly
@@ -767,14 +817,14 @@ func (ifd *Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
 
 	ifdsFoundCount := 0
 
-	for _, ite := range ifd.Entries {
+	for _, ite := range ifd.entries {
 		tags = append(tags, ite)
 
 		childIfdPath := ite.ChildIfdPath()
 		if childIfdPath != "" {
 			ifdsFoundCount++
 
-			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
+			childIfd, found := ifd.childIfdIndex[childIfdPath]
 			if found != true {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
@@ -783,12 +833,12 @@ func (ifd *Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
 		}
 	}
 
-	if len(ifd.Children) != ifdsFoundCount {
-		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.Children), ifdsFoundCount)
+	if len(ifd.children) != ifdsFoundCount {
+		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.children), ifdsFoundCount)
 	}
 
-	if ifd.NextIfd != nil {
-		tags = ifd.NextIfd.dumpTags(tags)
+	if ifd.nextIfd != nil {
+		tags = ifd.nextIfd.dumpTags(tags)
 	}
 
 	return tags
@@ -813,7 +863,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 
 	ifdsFoundCount := 0
 
-	for _, ite := range ifd.Entries {
+	for _, ite := range ifd.entries {
 		if ite.ChildIfdPath() != "" {
 			fmt.Printf("%s - TAG: %s\n", indent, ite)
 		} else {
@@ -857,7 +907,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 		if childIfdPath != "" {
 			ifdsFoundCount++
 
-			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
+			childIfd, found := ifd.childIfdIndex[childIfdPath]
 			if found != true {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
@@ -866,12 +916,12 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 		}
 	}
 
-	if len(ifd.Children) != ifdsFoundCount {
-		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.Children), ifdsFoundCount)
+	if len(ifd.children) != ifdsFoundCount {
+		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.children), ifdsFoundCount)
 	}
 
-	if ifd.NextIfd != nil {
-		ifd.NextIfd.printTagTree(populateValues, index+1, level, true)
+	if ifd.nextIfd != nil {
+		ifd.nextIfd.printTagTree(populateValues, index+1, level, true)
 	}
 }
 
@@ -894,12 +944,12 @@ func (ifd *Ifd) printIfdTree(level int, nextLink bool) {
 
 	ifdsFoundCount := 0
 
-	for _, ite := range ifd.Entries {
+	for _, ite := range ifd.entries {
 		childIfdPath := ite.ChildIfdPath()
 		if childIfdPath != "" {
 			ifdsFoundCount++
 
-			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
+			childIfd, found := ifd.childIfdIndex[childIfdPath]
 			if found != true {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
@@ -908,12 +958,12 @@ func (ifd *Ifd) printIfdTree(level int, nextLink bool) {
 		}
 	}
 
-	if len(ifd.Children) != ifdsFoundCount {
-		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.Children), ifdsFoundCount)
+	if len(ifd.children) != ifdsFoundCount {
+		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.children), ifdsFoundCount)
 	}
 
-	if ifd.NextIfd != nil {
-		ifd.NextIfd.printIfdTree(level, true)
+	if ifd.nextIfd != nil {
+		ifd.nextIfd.printIfdTree(level, true)
 	}
 }
 
@@ -930,8 +980,8 @@ func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
 	indent := strings.Repeat(" ", level*2)
 
 	var ifdPhrase string
-	if ifd.ParentIfd != nil {
-		ifdPhrase = fmt.Sprintf("[%s]->[%s]:(%d)", ifd.ParentIfd.ifdIdentity.UnindexedString(), ifd.ifdIdentity.UnindexedString(), ifd.ifdIdentity.Index())
+	if ifd.parentIfd != nil {
+		ifdPhrase = fmt.Sprintf("[%s]->[%s]:(%d)", ifd.parentIfd.ifdIdentity.UnindexedString(), ifd.ifdIdentity.UnindexedString(), ifd.ifdIdentity.Index())
 	} else {
 		ifdPhrase = fmt.Sprintf("[ROOT]->[%s]:(%d)", ifd.ifdIdentity.UnindexedString(), ifd.ifdIdentity.Index())
 	}
@@ -940,14 +990,14 @@ func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
 	tagsDump = append(tagsDump, startBlurb)
 
 	ifdsFoundCount := 0
-	for _, ite := range ifd.Entries {
+	for _, ite := range ifd.entries {
 		tagsDump = append(tagsDump, fmt.Sprintf("%s  - (0x%04x)", indent, ite.TagId()))
 
 		childIfdPath := ite.ChildIfdPath()
 		if childIfdPath != "" {
 			ifdsFoundCount++
 
-			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
+			childIfd, found := ifd.childIfdIndex[childIfdPath]
 			if found != true {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
@@ -956,18 +1006,18 @@ func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
 		}
 	}
 
-	if len(ifd.Children) != ifdsFoundCount {
-		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.Children), ifdsFoundCount)
+	if len(ifd.children) != ifdsFoundCount {
+		log.Panicf("have one or more dangling child IFDs: (%d) != (%d)", len(ifd.children), ifdsFoundCount)
 	}
 
 	finishBlurb := fmt.Sprintf("%s< IFD %s BOTTOM", indent, ifdPhrase)
 	tagsDump = append(tagsDump, finishBlurb)
 
-	if ifd.NextIfd != nil {
-		siblingBlurb := fmt.Sprintf("%s* LINKING TO SIBLING IFD [%s]:(%d)", indent, ifd.NextIfd.ifdIdentity.UnindexedString(), ifd.NextIfd.ifdIdentity.Index())
+	if ifd.nextIfd != nil {
+		siblingBlurb := fmt.Sprintf("%s* LINKING TO SIBLING IFD [%s]:(%d)", indent, ifd.nextIfd.ifdIdentity.UnindexedString(), ifd.nextIfd.ifdIdentity.Index())
 		tagsDump = append(tagsDump, siblingBlurb)
 
-		tagsDump = ifd.NextIfd.dumpTree(tagsDump, level)
+		tagsDump = ifd.nextIfd.dumpTree(tagsDump, level)
 	}
 
 	return tagsDump
@@ -993,7 +1043,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panicf("GPS can only be read on GPS IFD: [%s] != [%s]", ifd.ifdIdentity.UnindexedString(), exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString())
 	}
 
-	if tags, found := ifd.EntriesByTagId[TagGpsVersionId]; found == false {
+	if tags, found := ifd.entriesByTagId[TagGpsVersionId]; found == false {
 		// We've seen this. We'll just have to default to assuming we're in a
 		// 2.2.0.0 format.
 		ifdEnumerateLogger.Warningf(nil, "No GPS version tag (0x%04x) found.", TagGpsVersionId)
@@ -1015,7 +1065,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		}
 	}
 
-	tags, found := ifd.EntriesByTagId[TagLatitudeId]
+	tags, found := ifd.entriesByTagId[TagLatitudeId]
 	if found == false {
 		ifdEnumerateLogger.Warningf(nil, "latitude not found")
 		log.Panic(ErrNoGpsTags)
@@ -1025,7 +1075,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	log.PanicIf(err)
 
 	// Look for whether North or South.
-	tags, found = ifd.EntriesByTagId[TagLatitudeRefId]
+	tags, found = ifd.entriesByTagId[TagLatitudeRefId]
 	if found == false {
 		ifdEnumerateLogger.Warningf(nil, "latitude-ref not found")
 		log.Panic(ErrNoGpsTags)
@@ -1034,7 +1084,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	latitudeRefValue, err := tags[0].Value()
 	log.PanicIf(err)
 
-	tags, found = ifd.EntriesByTagId[TagLongitudeId]
+	tags, found = ifd.entriesByTagId[TagLongitudeId]
 	if found == false {
 		ifdEnumerateLogger.Warningf(nil, "longitude not found")
 		log.Panic(ErrNoGpsTags)
@@ -1044,7 +1094,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	log.PanicIf(err)
 
 	// Look for whether West or East.
-	tags, found = ifd.EntriesByTagId[TagLongitudeRefId]
+	tags, found = ifd.entriesByTagId[TagLongitudeRefId]
 	if found == false {
 		ifdEnumerateLogger.Warningf(nil, "longitude-ref not found")
 		log.Panic(ErrNoGpsTags)
@@ -1067,8 +1117,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	// Parse altitude.
 
-	altitudeTags, foundAltitude := ifd.EntriesByTagId[TagAltitudeId]
-	altitudeRefTags, foundAltitudeRef := ifd.EntriesByTagId[TagAltitudeRefId]
+	altitudeTags, foundAltitude := ifd.entriesByTagId[TagAltitudeId]
+	altitudeRefTags, foundAltitudeRef := ifd.entriesByTagId[TagAltitudeRefId]
 
 	if foundAltitude == true && foundAltitudeRef == true {
 		altitudeValue, err := altitudeTags[0].Value()
@@ -1089,8 +1139,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	// Parse time.
 
-	timestampTags, foundTimestamp := ifd.EntriesByTagId[TagTimestampId]
-	datestampTags, foundDatestamp := ifd.EntriesByTagId[TagDatestampId]
+	timestampTags, foundTimestamp := ifd.entriesByTagId[TagTimestampId]
+	datestampTags, foundDatestamp := ifd.entriesByTagId[TagDatestampId]
 
 	if foundTimestamp == true && foundDatestamp == true {
 		datestampValue, err := datestampTags[0].Value()
@@ -1132,11 +1182,11 @@ func (ifd *Ifd) EnumerateTagsRecursively(visitor ParsedTagVisitor) (err error) {
 		}
 	}()
 
-	for ptr := ifd; ptr != nil; ptr = ptr.NextIfd {
-		for _, ite := range ifd.Entries {
+	for ptr := ifd; ptr != nil; ptr = ptr.nextIfd {
+		for _, ite := range ifd.entries {
 			childIfdPath := ite.ChildIfdPath()
 			if childIfdPath != "" {
-				childIfd := ifd.ChildIfdIndex[childIfdPath]
+				childIfd := ifd.childIfdIndex[childIfdPath]
 
 				err := childIfd.EnumerateTagsRecursively(visitor)
 				log.PanicIf(err)
@@ -1247,21 +1297,21 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		ifd := &Ifd{
 			ifdIdentity: ii,
 
-			ByteOrder: ie.byteOrder,
+			byteOrder: ie.byteOrder,
 
-			Id: id,
+			id: id,
 
-			ParentIfd:      parentIfd,
-			ParentTagIndex: qi.ParentTagIndex,
+			parentIfd:      parentIfd,
+			parentTagIndex: qi.ParentTagIndex,
 
-			Offset:         offset,
-			Entries:        entries,
-			EntriesByTagId: entriesByTagId,
+			offset:         offset,
+			entries:        entries,
+			entriesByTagId: entriesByTagId,
 
 			// This is populated as each child is processed.
-			Children: make([]*Ifd, 0),
+			children: make([]*Ifd, 0),
 
-			NextIfdOffset: nextIfdOffset,
+			nextIfdOffset: nextIfdOffset,
 			thumbnailData: thumbnailData,
 
 			ifdMapping: ie.ifdMapping,
@@ -1279,13 +1329,13 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 		// Add a link from the previous IFD in the chain to us.
 		if previousIfd, found := edges[offset]; found == true {
-			previousIfd.NextIfd = ifd
+			previousIfd.nextIfd = ifd
 		}
 
 		// Attach as a child to our parent (where we appeared as a tag in
 		// that IFD).
 		if parentIfd != nil {
-			parentIfd.Children = append(parentIfd.Children, ifd)
+			parentIfd.children = append(parentIfd.children, ifd)
 		}
 
 		// Determine if any of our entries is a child IFD and queue it.
@@ -1355,13 +1405,13 @@ func (ie *IfdEnumerate) setChildrenIndex(ifd *Ifd) (err error) {
 	}()
 
 	childIfdIndex := make(map[string]*Ifd)
-	for _, childIfd := range ifd.Children {
+	for _, childIfd := range ifd.children {
 		childIfdIndex[childIfd.ifdIdentity.UnindexedString()] = childIfd
 	}
 
-	ifd.ChildIfdIndex = childIfdIndex
+	ifd.childIfdIndex = childIfdIndex
 
-	for _, childIfd := range ifd.Children {
+	for _, childIfd := range ifd.children {
 		err := ie.setChildrenIndex(childIfd)
 		log.PanicIf(err)
 	}
@@ -1493,16 +1543,16 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdPath string) (ifd *Ifd, err error) {
 	// TODO(dustin): !! <-- However, we're not sure whether we shouldn't store a secondary IFD-path with the indices. Some IFDs may not necessarily restrict which IFD indices they can be a child of (only the IFD itself matters). Validation should be delegated to the caller.
 	thisIfd := rootIfd
 	for currentRootIndex := 0; currentRootIndex < desiredRootIndex; currentRootIndex++ {
-		if thisIfd.NextIfd == nil {
+		if thisIfd.nextIfd == nil {
 			log.Panicf("Root-IFD index (%d) does not exist in the data.", currentRootIndex)
 		}
 
-		thisIfd = thisIfd.NextIfd
+		thisIfd = thisIfd.nextIfd
 	}
 
 	for _, itii := range lineage {
 		var hit *Ifd
-		for _, childIfd := range thisIfd.Children {
+		for _, childIfd := range thisIfd.children {
 			if childIfd.ifdIdentity.TagId() == itii.TagId {
 				hit = childIfd
 				break
@@ -1511,18 +1561,18 @@ func FindIfdFromRootIfd(rootIfd *Ifd, ifdPath string) (ifd *Ifd, err error) {
 
 		// If we didn't find the child, add it.
 		if hit == nil {
-			log.Panicf("IFD [%s] in [%s] not found: %s", itii.Name, ifdPath, thisIfd.Children)
+			log.Panicf("IFD [%s] in [%s] not found: %s", itii.Name, ifdPath, thisIfd.children)
 		}
 
 		thisIfd = hit
 
 		// If we didn't find the sibling, add it.
 		for i := 0; i < itii.Index; i++ {
-			if thisIfd.NextIfd == nil {
+			if thisIfd.nextIfd == nil {
 				log.Panicf("IFD [%s] does not have (%d) occurrences/siblings", thisIfd.ifdIdentity.UnindexedString(), itii.Index)
 			}
 
-			thisIfd = thisIfd.NextIfd
+			thisIfd = thisIfd.nextIfd
 		}
 	}
 
