@@ -230,10 +230,12 @@ func TestIfdMapping_PathPhraseFromLineage(t *testing.T) {
 }
 
 func TestIfdMapping_NewIfdMappingWithStandard(t *testing.T) {
-	imWith := NewIfdMappingWithStandard()
+	imWith, err := NewIfdMappingWithStandard()
+	log.PanicIf(err)
+
 	imWithout := NewIfdMapping()
 
-	err := LoadStandardIfds(imWithout)
+	err = LoadStandardIfds(imWithout)
 	log.PanicIf(err)
 
 	outputWith, err := imWith.DumpLineages()

@@ -59,11 +59,10 @@ func NewIfdMapping() (ifdMapping *IfdMapping) {
 
 // NewIfdMappingWithStandard retruns a new IfdMapping struct preloaded with the
 // standard IFDs.
-func NewIfdMappingWithStandard() (ifdMapping *IfdMapping) {
+func NewIfdMappingWithStandard() (ifdMapping *IfdMapping, err error) {
 	defer func() {
 		if state := recover(); state != nil {
-			err := log.Wrap(state.(error))
-			log.Panic(err)
+			err = log.Wrap(state.(error))
 		}
 	}()
 
@@ -71,10 +70,10 @@ func NewIfdMappingWithStandard() (ifdMapping *IfdMapping) {
 
 	im := NewIfdMapping()
 
-	err := LoadStandardIfds(im)
+	err = LoadStandardIfds(im)
 	log.PanicIf(err)
 
-	return im
+	return im, nil
 }
 
 // Get returns the node given the path slice.

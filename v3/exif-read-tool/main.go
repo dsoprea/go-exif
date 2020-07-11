@@ -113,7 +113,9 @@ func main() {
 
 	thumbnailOutputFilepath := arguments.ThumbnailOutputFilepath
 	if thumbnailOutputFilepath != "" {
-		im := exif.NewIfdMappingWithStandard()
+		im, err := exifcommon.NewIfdMappingWithStandard()
+		log.PanicIf(err)
+
 		ti := exif.NewTagIndex()
 
 		_, index, err := exif.Collect(im, ti, rawExif)

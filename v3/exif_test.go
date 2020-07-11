@@ -61,7 +61,8 @@ func TestVisit(t *testing.T) {
 
 	// Run the parse.
 
-	im := NewIfdMappingWithStandard()
+	im, err := exifcommon.NewIfdMappingWithStandard()
+	log.PanicIf(err)
 
 	tags := make([]string, 0)
 
@@ -253,9 +254,7 @@ func TestCollect(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()

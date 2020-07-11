@@ -24,9 +24,9 @@ func getExifSimpleTestIb() *IfdBuilder {
 		}
 	}()
 
-	im := NewIfdMapping()
+	im := exifcommon.NewIfdMapping()
 
-	err := LoadStandardIfds(im)
+	err := exifcommon.LoadStandardIfds(im)
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -55,9 +55,9 @@ func getExifSimpleTestIbBytes() []byte {
 		}
 	}()
 
-	im := NewIfdMapping()
+	im := exifcommon.NewIfdMapping()
 
-	err := LoadStandardIfds(im)
+	err := exifcommon.LoadStandardIfds(im)
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -91,9 +91,9 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 		}
 	}()
 
-	im := NewIfdMapping()
+	im := exifcommon.NewIfdMapping()
 
-	err := LoadStandardIfds(im)
+	err := exifcommon.LoadStandardIfds(im)
 	log.PanicIf(err)
 
 	ti := NewTagIndex()

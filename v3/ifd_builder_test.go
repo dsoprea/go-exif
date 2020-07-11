@@ -15,9 +15,7 @@ import (
 )
 
 func TestIfdBuilder_Add(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -107,9 +105,7 @@ func TestIfdBuilder_Add(t *testing.T) {
 }
 
 func TestIfdBuilder_SetNextIb(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -132,9 +128,7 @@ func TestIfdBuilder_SetNextIb(t *testing.T) {
 }
 
 func TestIfdBuilder_AddChildIb(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -187,9 +181,7 @@ func TestIfdBuilder_AddTagsFromExisting(t *testing.T) {
 
 	exifData := getExifSimpleTestIbBytes()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -223,9 +215,7 @@ func TestIfdBuilder_AddTagsFromExisting(t *testing.T) {
 func TestIfdBuilder_AddTagsFromExisting__Includes(t *testing.T) {
 	exifData := getExifSimpleTestIbBytes()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -256,9 +246,7 @@ func TestIfdBuilder_AddTagsFromExisting__Includes(t *testing.T) {
 func TestIfdBuilder_AddTagsFromExisting__Excludes(t *testing.T) {
 	exifData := getExifSimpleTestIbBytes()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -289,9 +277,7 @@ func TestIfdBuilder_AddTagsFromExisting__Excludes(t *testing.T) {
 }
 
 func TestIfdBuilder_FindN__First_1(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -345,9 +331,7 @@ func TestIfdBuilder_FindN__First_1(t *testing.T) {
 }
 
 func TestIfdBuilder_FindN__First_2_1Returned(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -401,9 +385,7 @@ func TestIfdBuilder_FindN__First_2_1Returned(t *testing.T) {
 }
 
 func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -484,9 +466,7 @@ func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 }
 
 func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -570,9 +550,7 @@ func TestIfdBuilder_FindN__Middle_WithDuplicates(t *testing.T) {
 }
 
 func TestIfdBuilder_FindN__Middle_NoDuplicates(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -636,9 +614,7 @@ func TestIfdBuilder_FindN__Middle_NoDuplicates(t *testing.T) {
 }
 
 func TestIfdBuilder_FindN__Miss(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -653,9 +629,7 @@ func TestIfdBuilder_FindN__Miss(t *testing.T) {
 }
 
 func TestIfdBuilder_Find__Hit(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -717,9 +691,7 @@ func TestIfdBuilder_Find__Hit(t *testing.T) {
 }
 
 func TestIfdBuilder_Find__Miss(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -774,9 +746,7 @@ func TestIfdBuilder_Find__Miss(t *testing.T) {
 }
 
 func TestIfdBuilder_Replace(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -842,9 +812,7 @@ func TestIfdBuilder_Replace(t *testing.T) {
 }
 
 func TestIfdBuilder_ReplaceN(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -910,9 +878,7 @@ func TestIfdBuilder_ReplaceN(t *testing.T) {
 }
 
 func TestIfdBuilder_DeleteFirst(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1012,9 +978,7 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 }
 
 func TestIfdBuilder_DeleteN(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1114,9 +1078,7 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 }
 
 func TestIfdBuilder_DeleteN_Two(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1200,9 +1162,7 @@ func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 }
 
 func TestIfdBuilder_DeleteAll(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1300,9 +1260,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1402,9 +1360,7 @@ func TestIfdBuilder_SetStandardWithName_UpdateGps(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1481,9 +1437,7 @@ func ExampleIfdBuilder_SetStandardWithName_updateGps() {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1559,9 +1513,7 @@ func ExampleIfdBuilder_SetStandardWithName_timestamp() {
 	rawExif, err := SearchFileAndExtractExif(filepath)
 	log.PanicIf(err)
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1624,9 +1576,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	// Decode from binary.
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1922,9 +1872,7 @@ func ExampleIfd_Thumbnail() {
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -1946,9 +1894,7 @@ func ExampleBuilderTag_SetValue() {
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -2005,9 +1951,7 @@ func ExampleIfdBuilder_SetStandardWithName() {
 
 	// Boilerplate.
 
-	im := NewIfdMapping()
-
-	err = LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -2077,9 +2021,7 @@ func ExampleIfdBuilder_SetStandardWithName() {
 func TestIfdBuilder_CreateIfdBuilderWithExistingIfd(t *testing.T) {
 	ti := NewTagIndex()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	mi, err := im.GetWithPath(exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString())
@@ -2152,9 +2094,7 @@ func TestNewStandardBuilderTag__TwoUnits(t *testing.T) {
 }
 
 func TestIfdBuilder_AddStandardWithName(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -2183,9 +2123,7 @@ func TestIfdBuilder_AddStandardWithName(t *testing.T) {
 }
 
 func TestGetOrCreateIbFromRootIb__Noop(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -2204,9 +2142,7 @@ func TestGetOrCreateIbFromRootIb__Noop(t *testing.T) {
 }
 
 func TestGetOrCreateIbFromRootIb__FqNoop(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -2225,9 +2161,7 @@ func TestGetOrCreateIbFromRootIb__FqNoop(t *testing.T) {
 }
 
 func TestGetOrCreateIbFromRootIb_InvalidChild(t *testing.T) {
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -2249,9 +2183,7 @@ func TestGetOrCreateIbFromRootIb__Child(t *testing.T) {
 		}
 	}()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()

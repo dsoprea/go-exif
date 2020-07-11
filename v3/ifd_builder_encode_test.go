@@ -183,16 +183,14 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
 	ibe := NewIfdByteEncoder()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -224,9 +222,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 	ibe := NewIfdByteEncoder()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -258,9 +254,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 	ibe := NewIfdByteEncoder()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -317,9 +311,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T) {
 	ibe := NewIfdByteEncoder()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -352,8 +344,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -361,9 +353,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 	// space for and then attach to a tag (which would normally be an entry,
 	// then, in a higher IFD).
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -473,8 +463,8 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -485,9 +475,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 
 	ibe := NewIfdByteEncoder()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -617,8 +605,8 @@ func Test_IfdByteEncoder_encodeIfdToBytes_fullExif(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -667,8 +655,8 @@ func Test_IfdByteEncoder_EncodeToExifPayload(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
@@ -718,14 +706,12 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
 			err := log.Wrap(state.(error))
-			log.PrintErrorf(err, "Test failure.")
-			panic(err)
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
 		}
 	}()
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
@@ -838,9 +824,7 @@ func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 func ExampleIfdByteEncoder_EncodeToExif() {
 	// Construct an IFD.
 
-	im := NewIfdMapping()
-
-	err := LoadStandardIfds(im)
+	im, err := exifcommon.NewIfdMappingWithStandard()
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
