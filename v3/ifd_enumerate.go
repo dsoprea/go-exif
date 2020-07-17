@@ -715,6 +715,14 @@ func (ifd *Ifd) ByteOrder() binary.ByteOrder {
 	return ifd.byteOrder
 }
 
+// NextIfd returns the Ifd struct for the next IFD in the chain.
+func (ifd *Ifd) NextIfd() *Ifd {
+
+	// TODO(dustin): Add test
+
+	return ifd.nextIfd
+}
+
 // ChildWithIfdPath returns an `Ifd` struct for the given child of the current
 // IFD.
 func (ifd *Ifd) ChildWithIfdPath(iiChild *exifcommon.IfdIdentity) (childIfd *Ifd, err error) {
