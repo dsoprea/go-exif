@@ -1,6 +1,6 @@
 module github.com/dsoprea/go-exif/v3
 
-go 1.13
+go 1.11
 
 // Development only
 // replace github.com/dsoprea/go-logging => ../../go-logging
