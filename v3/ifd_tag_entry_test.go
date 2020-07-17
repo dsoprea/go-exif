@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/dsoprea/go-logging"
-	"github.com/dsoprea/go-utility/filesystem"
+	"github.com/dsoprea/go-utility/v2/filesystem"
 
 	"github.com/dsoprea/go-exif/v3/common"
 )
