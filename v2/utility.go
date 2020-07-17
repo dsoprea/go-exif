@@ -34,6 +34,10 @@ func ParseExifFullTimestamp(fullTimestampPhrase string) (timestamp time.Time, er
 	parts := strings.Split(fullTimestampPhrase, " ")
 	datestampValue, timestampValue := parts[0], parts[1]
 
+	// Normalize the separators.
+	datestampValue = strings.ReplaceAll(datestampValue, "-", ":")
+	timestampValue = strings.ReplaceAll(timestampValue, "-", ":")
+
 	dateParts := strings.Split(datestampValue, ":")
 
 	year, err := strconv.ParseUint(dateParts[0], 10, 16)

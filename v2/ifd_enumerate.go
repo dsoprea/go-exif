@@ -1055,23 +1055,35 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	altitudeRefTags, foundAltitudeRef := ifd.EntriesByTagId[TagAltitudeRefId]
 
 	if foundAltitude == true && foundAltitudeRef == true {
+		altitudePhrase, err := altitudeTags[0].Format()
+		log.PanicIf(err)
+
+		ifdEnumerateLogger.Debugf(nil, "Altitude is [%s].", altitudePhrase)
+
 		altitudeValue, err := altitudeTags[0].Value()
 		log.PanicIf(err)
+
+		altitudeRefPhrase, err := altitudeRefTags[0].Format()
+		log.PanicIf(err)
+
+		ifdEnumerateLogger.Debugf(nil, "Altitude-reference is [%s].", altitudeRefPhrase)
 
 		altitudeRefValue, err := altitudeRefTags[0].Value()
 		log.PanicIf(err)
 
 		altitudeRaw := altitudeValue.([]exifcommon.Rational)
-		altitude := int(altitudeRaw[0].Numerator / altitudeRaw[0].Denominator)
+		if altitudeRaw[0].Denominator > 0 {
+			altitude := int(altitudeRaw[0].Numerator / altitudeRaw[0].Denominator)
 
-		if altitudeRefValue.([]byte)[0] == 1 {
-			altitude *= -1
+			if altitudeRefValue.([]byte)[0] == 1 {
+				altitude *= -1
+			}
+
+			gi.Altitude = altitude
 		}
-
-		gi.Altitude = altitude
 	}
 
-	// Parse time.
+	// Parse timestamp from separate date and time tags.
 
 	timestampTags, foundTimestamp := ifd.EntriesByTagId[TagTimestampId]
 	datestampTags, foundDatestamp := ifd.EntriesByTagId[TagDatestampId]
@@ -1080,7 +1092,13 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		datestampValue, err := datestampTags[0].Value()
 		log.PanicIf(err)
 
-		dateParts := strings.Split(datestampValue.(string), ":")
+		datePhrase := datestampValue.(string)
+		ifdEnumerateLogger.Debugf(nil, "Date tag value is [%s].", datePhrase)
+
+		// Normalize the separators.
+		datePhrase = strings.ReplaceAll(datePhrase, "-", ":")
+
+		dateParts := strings.Split(datePhrase, ":")
 
 		year, err1 := strconv.ParseUint(dateParts[0], 10, 16)
 		month, err2 := strconv.ParseUint(dateParts[1], 10, 8)
@@ -1089,6 +1107,11 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		if err1 == nil && err2 == nil && err3 == nil {
 			timestampValue, err := timestampTags[0].Value()
 			log.PanicIf(err)
+
+			timePhrase, err := timestampTags[0].Format()
+			log.PanicIf(err)
+
+			ifdEnumerateLogger.Debugf(nil, "Time tag value is [%s].", timePhrase)
 
 			timestampRaw := timestampValue.([]exifcommon.Rational)
 
