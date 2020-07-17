@@ -7,7 +7,7 @@ import (
 
 	"github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v3/common"
 )
 
 func TestTagExifA300FileSource_String(t *testing.T) {

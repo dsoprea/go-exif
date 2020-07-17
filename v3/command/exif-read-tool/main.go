@@ -23,8 +23,8 @@ import (
 	"github.com/dsoprea/go-logging"
 	"github.com/jessevdk/go-flags"
 
-	"github.com/dsoprea/go-exif/v2"
-	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v3"
+	"github.com/dsoprea/go-exif/v3/common"
 )
 
 const (

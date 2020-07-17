@@ -6,8 +6,8 @@ import (
 
 	"github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v2/common"
-	"github.com/dsoprea/go-exif/v2/undefined"
+	"github.com/dsoprea/go-exif/v3/common"
+	"github.com/dsoprea/go-exif/v3/undefined"
 )
 
 var (

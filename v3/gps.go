@@ -8,7 +8,7 @@ import (
 	"github.com/dsoprea/go-logging"
 	"github.com/golang/geo/s2"
 
-	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v3/common"
 )
 
 var (

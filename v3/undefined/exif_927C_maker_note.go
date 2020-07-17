@@ -9,7 +9,7 @@ import (
 
 	"github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v3/common"
 )
 
 type Tag927CMakerNote struct {

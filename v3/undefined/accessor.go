@@ -5,7 +5,7 @@ import (
 
 	"github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v2/common"
+	"github.com/dsoprea/go-exif/v3/common"
 )
 
 // Encode encodes the given encodeable undefined value to bytes.
