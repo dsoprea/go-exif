@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/dsoprea/go-exif.svg?branch=master)](https://travis-ci.org/dsoprea/go-exif)
 [![codecov](https://codecov.io/gh/dsoprea/go-exif/branch/master/graph/badge.svg)](https://codecov.io/gh/dsoprea/go-exif)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dsoprea/go-exif)](https://goreportcard.com/report/github.com/dsoprea/go-exif)
-[![GoDoc](https://godoc.org/github.com/dsoprea/go-exif?status.svg)](https://godoc.org/github.com/dsoprea/go-exif)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dsoprea/go-exif/v3)](https://goreportcard.com/report/github.com/dsoprea/go-exif/v3)
+[![GoDoc](https://godoc.org/github.com/dsoprea/go-exif/v3?status.svg)](https://godoc.org/github.com/dsoprea/go-exif/v3)
 
 # Overview
 
