@@ -486,20 +486,24 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 
 	if enumeratorThumbnailOffset != nil && enumeratorThumbnailSize != nil {
 		thumbnailData, err = ie.parseThumbnail(enumeratorThumbnailOffset, enumeratorThumbnailSize)
-		log.PanicIf(err)
+		if err != nil {
+			ifdEnumerateLogger.Errorf(
+				nil, err,
+				"We tried to bump our furthest-offset counter but there was an issue first seeking past the thumbnail.")
+		} else {
+			// In this case, the value is always an offset.
+			offset := enumeratorThumbnailOffset.getValueOffset()
 
-		// In this case, the value is always an offset.
-		offset := enumeratorThumbnailOffset.getValueOffset()
+			// This this case, the value is always a length.
+			length := enumeratorThumbnailSize.getValueOffset()
 
-		// This this case, the value is always a length.
-		length := enumeratorThumbnailSize.getValueOffset()
+			ifdEnumerateLogger.Debugf(nil, "Found thumbnail in IFD [%s]. Its offset is (%d) and is (%d) bytes.", ii, offset, length)
 
-		ifdEnumerateLogger.Debugf(nil, "Found thumbnail in IFD [%s]. Its offset is (%d) and is (%d) bytes.", ii, offset, length)
+			furthestOffset := offset + length
 
-		furthestOffset := offset + length
-
-		if furthestOffset > ie.furthestOffset {
-			ie.furthestOffset = furthestOffset
+			if furthestOffset > ie.furthestOffset {
+				ie.furthestOffset = furthestOffset
+			}
 		}
 	}
 
