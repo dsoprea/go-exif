@@ -225,14 +225,44 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	valueOffset, rawValueOffset, err := bp.getUint32()
 	log.PanicIf(err)
 
+	// Check whether the embedded type indicator is valid.
+
 	if tagType.IsValid() == false {
+		// Technically, we have the type on-file in the tags-index, but
+		// if the type stored alongside the data disagrees with it,
+		// which it apparently does, all bets are off.
+		ifdEnumerateLogger.Warningf(nil,
+			"Tag (0x%04x) in IFD [%s] at position (%d) has invalid type and will be skipped.",
+			tagId, ii, tagPosition, tagType)
+
 		ite = &IfdTagEntry{
 			tagId:   tagId,
 			tagType: tagType,
 		}
 
-		log.Panic(ErrTagTypeNotValid)
+		return nil, ErrTagTypeNotValid
 	}
+
+	// Check whether the embedded type is listed among the supported types for
+	// the registered tag. If not, skip processing the tag.
+
+	it, err := ie.tagIndex.Get(ii, tagId)
+	log.PanicIf(err)
+
+	if it.DoesSupportType(tagType) == false {
+		// The type in the stream disagrees with the type that this tag is
+		// expected to have. This can present issues with how we handle the
+		// special-case tags (e.g. thumbnails, GPS, etc..) when those tags
+		// suddenly have data that we no longer manipulate correctly/
+		// accurately.
+		ifdEnumerateLogger.Warningf(nil,
+			"Tag (0x%04x) in IFD [%s] at position (%d) has invalid type and will be skipped.",
+			tagId, ii, tagPosition, tagType)
+
+		return nil, ErrTagTypeNotValid
+	}
+
+	// Construct tag struct.
 
 	rs, err := ie.ebs.GetReadSeeker(0)
 	log.PanicIf(err)
@@ -397,11 +427,8 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	for i := 0; i < int(tagCount); i++ {
 		ite, err := ie.parseTag(ii, i, bp)
 		if err != nil {
-			if log.Is(err, ErrTagTypeNotValid) == true {
-				// Technically, we have the type on-file in the tags-index, but
-				// if the type stored alongside the data disagrees with it,
-				// which it apparently does, all bets are off.
-				ifdEnumerateLogger.Warningf(nil, "Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", ite.tagId, ii, i, ite.tagType)
+			if err == ErrTagTypeNotValid {
+				// This should've been fully logged in parseTag().
 				continue
 			}
 
@@ -1049,8 +1076,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	gi = new(GpsInfo)
 
-	if ifd.ifdIdentity.UnindexedString() != exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString() {
-		log.Panicf("GPS can only be read on GPS IFD: [%s] != [%s]", ifd.ifdIdentity.UnindexedString(), exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString())
+	if ifd.ifdIdentity.Equals(exifcommon.IfdGpsInfoStandardIfdIdentity) == false {
+		log.Panicf("GPS can only be read on GPS IFD: [%s]", ifd.ifdIdentity.UnindexedString())
 	}
 
 	if tags, found := ifd.entriesByTagId[TagGpsVersionId]; found == false {
