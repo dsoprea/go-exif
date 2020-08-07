@@ -247,7 +247,13 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	// the registered tag. If not, skip processing the tag.
 
 	it, err := ie.tagIndex.Get(ii, tagId)
-	log.PanicIf(err)
+	if err != nil {
+		if log.Is(err, ErrTagNotFound) == true {
+			ifdEnumerateLogger.Warningf(nil, "Tag (0x%04x) is not known and will be skipped.", tagId)
+		}
+
+		log.Panic(err)
+	}
 
 	if it.DoesSupportType(tagType) == false {
 		// The type in the stream disagrees with the type that this tag is
@@ -427,8 +433,9 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	for i := 0; i < int(tagCount); i++ {
 		ite, err := ie.parseTag(ii, i, bp)
 		if err != nil {
-			if err == ErrTagTypeNotValid {
-				// This should've been fully logged in parseTag().
+			if log.Is(err, ErrTagNotFound) == true || log.Is(err, ErrTagTypeNotValid) == true {
+				// These tags should've been fully logged in parseTag(). The
+				// ITE returned is nil so we can't print anything about them, now.
 				continue
 			}
 
