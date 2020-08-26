@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"encoding/binary"
 
@@ -148,6 +149,19 @@ type SignedRational struct {
 	Denominator int32
 }
 
+func isPrintableText(s string) bool {
+
+	// TODO(dustin): Add text
+
+	for _, c := range s {
+		if unicode.IsPrint(rune(c)) == false {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Format returns a stringified value for the given encoding. Automatically
 // parses. Automatically calculates count based on type size. This function
 // also supports undefined-type values (the ones that we support, anyway) by
@@ -166,6 +180,11 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 	case []byte:
 		return DumpBytesToString(t), nil
 	case string:
+		if isPrintableText(t) == false {
+			phrase = fmt.Sprintf("string with binary data (%d bytes)", len(t))
+			return phrase, nil
+		}
+
 		return t, nil
 	case []uint16:
 		if len(t) == 0 {
@@ -261,8 +280,14 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 
 		return fmt.Sprintf("%v", parts), nil
 	case fmt.Stringer:
+		s := t.String()
+		if isPrintableText(s) == false {
+			phrase = fmt.Sprintf("stringable with binary data (%d bytes)", len(s))
+			return phrase, nil
+		}
+
 		// An undefined value that is documented (or that we otherwise support).
-		return t.String(), nil
+		return s, nil
 	default:
 		// Affects only "unknown" values, in general.
 		log.Panicf("type can not be formatted into string: %v", reflect.TypeOf(value).Name())
