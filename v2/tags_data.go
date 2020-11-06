@@ -564,9 +564,18 @@ IFD:
   name: FNumber
 # NOTE(dustin): SRATIONAL isn't mentioned in the standard, but we have seen it in real data.
   type_names: [RATIONAL, SRATIONAL]
+- id: 0x830e
+  name: ModelPixelScaleTag
+  type_name: RATIONAL
 - id: 0x83bb
   name: IPTCNAA
   type_name: LONG
+- id: 0x8482
+  name: ModelTiepointTag
+  type_name: RATIONAL
+- id: 0x85d8
+  name: ModelTransformationTag
+  type_name: RATIONAL
 - id: 0x8649
   name: ImageResources
   type_name: BYTE
