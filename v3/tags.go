@@ -2,6 +2,7 @@ package exif
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/dsoprea/go-logging"
 	"gopkg.in/yaml.v2"
@@ -177,6 +178,8 @@ func (it *IndexedTag) DoesSupportType(tagType exifcommon.TagTypePrimitive) bool 
 type TagIndex struct {
 	tagsByIfd  map[string]map[uint16]*IndexedTag
 	tagsByIfdR map[string]map[string]*IndexedTag
+
+	mutex sync.Mutex
 }
 
 // NewTagIndex returns a new TagIndex struct.
@@ -196,6 +199,9 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 			err = log.Wrap(state.(error))
 		}
 	}()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
 
 	// Store by ID.
 
@@ -241,6 +247,9 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 		err := LoadStandardTags(ti)
 		log.PanicIf(err)
 	}
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
 
 	ifdPath := ii.UnindexedString()
 
