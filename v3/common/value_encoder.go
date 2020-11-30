@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"bytes"
+	"math"
 	"reflect"
 	"time"
 
@@ -113,6 +114,44 @@ func (ve *ValueEncoder) encodeLongs(value []uint32) (ed EncodedData, err error) 
 	return ed, nil
 }
 
+func (ve *ValueEncoder) encodeFloats(value []float32) (ed EncodedData, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	ed.UnitCount = uint32(len(value))
+	ed.Encoded = make([]byte, ed.UnitCount*4)
+
+	for i := uint32(0); i < ed.UnitCount; i++ {
+		ve.byteOrder.PutUint32(ed.Encoded[i*4:(i+1)*4], math.Float32bits(value[i]))
+	}
+
+	ed.Type = TypeFloat
+
+	return ed, nil
+}
+
+func (ve *ValueEncoder) encodeDoubles(value []float64) (ed EncodedData, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	ed.UnitCount = uint32(len(value))
+	ed.Encoded = make([]byte, ed.UnitCount*8)
+
+	for i := uint32(0); i < ed.UnitCount; i++ {
+		ve.byteOrder.PutUint64(ed.Encoded[i*8:(i+1)*8], math.Float64bits(value[i]))
+	}
+
+	ed.Type = TypeDouble
+
+	return ed, nil
+}
+
 func (ve *ValueEncoder) encodeRationals(value []Rational) (ed EncodedData, err error) {
 	defer func() {
 		if state := recover(); state != nil {
@@ -190,33 +229,38 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
 		}
 	}()
 
-	switch value.(type) {
+	switch t := value.(type) {
 	case []byte:
-		ed, err = ve.encodeBytes(value.([]byte))
+		ed, err = ve.encodeBytes(t)
 		log.PanicIf(err)
 	case string:
-		ed, err = ve.encodeAscii(value.(string))
+		ed, err = ve.encodeAscii(t)
 		log.PanicIf(err)
 	case []uint16:
-		ed, err = ve.encodeShorts(value.([]uint16))
+		ed, err = ve.encodeShorts(t)
 		log.PanicIf(err)
 	case []uint32:
-		ed, err = ve.encodeLongs(value.([]uint32))
+		ed, err = ve.encodeLongs(t)
+		log.PanicIf(err)
+	case []float32:
+		ed, err = ve.encodeFloats(t)
+		log.PanicIf(err)
+	case []float64:
+		ed, err = ve.encodeDoubles(t)
 		log.PanicIf(err)
 	case []Rational:
-		ed, err = ve.encodeRationals(value.([]Rational))
+		ed, err = ve.encodeRationals(t)
 		log.PanicIf(err)
 	case []int32:
-		ed, err = ve.encodeSignedLongs(value.([]int32))
+		ed, err = ve.encodeSignedLongs(t)
 		log.PanicIf(err)
 	case []SignedRational:
-		ed, err = ve.encodeSignedRationals(value.([]SignedRational))
+		ed, err = ve.encodeSignedRationals(t)
 		log.PanicIf(err)
 	case time.Time:
 		// For convenience, if the user doesn't want to deal with translation
 		// semantics with timestamps.
 
-		t := value.(time.Time)
 		s := ExifFullTimestampString(t)
 
 		ed, err = ve.encodeAscii(s)

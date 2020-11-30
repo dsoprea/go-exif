@@ -64,6 +64,12 @@ const (
 	// TypeSignedRational describes an encoded list of signed rationals.
 	TypeSignedRational TagTypePrimitive = 10
 
+	// TypeFloat describes an encoded list of floats
+	TypeFloat TagTypePrimitive = 11
+
+	// TypeDouble describes an encoded list of doubles.
+	TypeDouble TagTypePrimitive = 12
+
 	// TypeAsciiNoNul is just a pseudo-type, for our own purposes.
 	TypeAsciiNoNul TagTypePrimitive = 0xf0
 )
@@ -75,23 +81,19 @@ func (typeType TagTypePrimitive) String() string {
 
 // Size returns the size of one atomic unit of the type.
 func (tagType TagTypePrimitive) Size() int {
-	if tagType == TypeByte {
+	switch tagType {
+	case TypeByte, TypeAscii, TypeAsciiNoNul:
 		return 1
-	} else if tagType == TypeAscii || tagType == TypeAsciiNoNul {
-		return 1
-	} else if tagType == TypeShort {
+	case TypeShort:
 		return 2
-	} else if tagType == TypeLong {
+	case TypeLong, TypeSignedLong, TypeFloat:
 		return 4
-	} else if tagType == TypeRational {
+	case TypeRational, TypeSignedRational, TypeDouble:
 		return 8
-	} else if tagType == TypeSignedLong {
-		return 4
-	} else if tagType == TypeSignedRational {
-		return 8
-	} else {
-		log.Panicf("can not determine tag-value size for type (%d): [%s]", tagType, TypeNames[tagType])
-
+	default:
+		log.Panicf("can not determine tag-value size for type (%d): [%s]",
+			tagType,
+			TypeNames[tagType])
 		// Never called.
 		return 0
 	}
@@ -110,6 +112,8 @@ func (tagType TagTypePrimitive) IsValid() bool {
 		tagType == TypeRational ||
 		tagType == TypeSignedLong ||
 		tagType == TypeSignedRational ||
+		tagType == TypeFloat ||
+		tagType == TypeDouble ||
 		tagType == TypeUndefined
 }
 
@@ -124,6 +128,8 @@ var (
 		TypeUndefined:      "UNDEFINED",
 		TypeSignedLong:     "SLONG",
 		TypeSignedRational: "SRATIONAL",
+		TypeFloat:          "FLOAT",
+		TypeDouble:         "DOUBLE",
 
 		TypeAsciiNoNul: "_ASCII_NO_NUL",
 	}
@@ -186,36 +192,23 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 		}
 
 		return t, nil
-	case []uint16:
-		if len(t) == 0 {
+	case []uint16, []uint32, []int32, []float64, []float32:
+		val := reflect.ValueOf(t)
+
+		if val.Len() == 0 {
 			return "", nil
 		}
 
 		if justFirst == true {
 			var valueSuffix string
-			if len(t) > 1 {
+			if val.Len() > 1 {
 				valueSuffix = "..."
 			}
 
-			return fmt.Sprintf("%v%s", t[0], valueSuffix), nil
+			return fmt.Sprintf("%v%s", val.Index(0), valueSuffix), nil
 		}
 
-		return fmt.Sprintf("%v", t), nil
-	case []uint32:
-		if len(t) == 0 {
-			return "", nil
-		}
-
-		if justFirst == true {
-			var valueSuffix string
-			if len(t) > 1 {
-				valueSuffix = "..."
-			}
-
-			return fmt.Sprintf("%v%s", t[0], valueSuffix), nil
-		}
-
-		return fmt.Sprintf("%v", t), nil
+		return fmt.Sprintf("%v", val), nil
 	case []Rational:
 		if len(t) == 0 {
 			return "", nil
@@ -240,21 +233,6 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 		}
 
 		return fmt.Sprintf("%v", parts), nil
-	case []int32:
-		if len(t) == 0 {
-			return "", nil
-		}
-
-		if justFirst == true {
-			var valueSuffix string
-			if len(t) > 1 {
-				valueSuffix = "..."
-			}
-
-			return fmt.Sprintf("%v%s", t[0], valueSuffix), nil
-		}
-
-		return fmt.Sprintf("%v", t), nil
 	case []SignedRational:
 		if len(t) == 0 {
 			return "", nil
@@ -348,6 +326,16 @@ func FormatFromBytes(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, 
 
 		value, err = parser.ParseLongs(rawBytes, unitCount, byteOrder)
 		log.PanicIf(err)
+	case TypeFloat:
+		var err error
+
+		value, err = parser.ParseFloats(rawBytes, unitCount, byteOrder)
+		log.PanicIf(err)
+	case TypeDouble:
+		var err error
+
+		value, err = parser.ParseDoubles(rawBytes, unitCount, byteOrder)
+		log.PanicIf(err)
 	case TypeRational:
 		var err error
 
@@ -432,6 +420,16 @@ func TranslateStringToType(tagType TagTypePrimitive, valueString string) (value 
 		log.PanicIf(err)
 
 		return int32(n), nil
+	} else if tagType == TypeFloat {
+		n, err := strconv.ParseFloat(valueString, 32)
+		log.PanicIf(err)
+
+		return float32(n), nil
+	} else if tagType == TypeDouble {
+		n, err := strconv.ParseFloat(valueString, 64)
+		log.PanicIf(err)
+
+		return float64(n), nil
 	} else if tagType == TypeSignedRational {
 		parts := strings.SplitN(valueString, "/", 2)
 

@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"bytes"
+	"math"
 	"reflect"
 	"testing"
 
@@ -167,6 +168,78 @@ func TestParser_ParseLongs__Multiple(t *testing.T) {
 
 	if reflect.DeepEqual(value, []uint32{1, 2}) != true {
 		t.Fatalf("Encoding not correct: %v", value)
+	}
+}
+
+func TestParser_ParseFloats__Single(t *testing.T) {
+	p := new(Parser)
+
+	encoded := []byte{0x40, 0x49, 0x0f, 0xdb}
+
+	value, err := p.ParseFloats(encoded, 1, TestDefaultByteOrder)
+	log.PanicIf(err)
+
+	expectedResult := []float32{3.14159265}
+
+	for i, v := range value {
+		if v < expectedResult[i] ||
+			v >= math.Nextafter32(expectedResult[i], expectedResult[i]+1) {
+			t.Fatalf("Encoding not correct (1): %v", value)
+		}
+	}
+}
+
+func TestParser_ParseFloats__Multiple(t *testing.T) {
+	p := new(Parser)
+
+	encoded := []byte{0x40, 0x49, 0x0f, 0xdb, 0x40, 0x2d, 0xf8, 0x54}
+
+	value, err := p.ParseFloats(encoded, 2, TestDefaultByteOrder)
+	log.PanicIf(err)
+
+	expectedResult := []float32{3.14159265, 2.71828182}
+
+	for i, v := range value {
+		if v < expectedResult[i] ||
+			v >= math.Nextafter32(expectedResult[i], expectedResult[i]+1) {
+			t.Fatalf("Encoding not correct (1): %v", value)
+		}
+	}
+}
+
+func TestParser_ParseDoubles__Single(t *testing.T) {
+	p := new(Parser)
+
+	encoded := []byte{0x40, 0x09, 0x21, 0xfb, 0x53, 0xc8, 0xd4, 0xf1}
+
+	value, err := p.ParseDoubles(encoded, 1, TestDefaultByteOrder)
+	log.PanicIf(err)
+
+	expectedResult := []float64{3.14159265}
+	for i, v := range value {
+		if v < expectedResult[i] ||
+			v >= math.Nextafter(expectedResult[i], expectedResult[i]+1) {
+			t.Fatalf("Encoding not correct (1): %v", value)
+		}
+	}
+}
+
+func TestParser_ParseDoubles__Multiple(t *testing.T) {
+	p := new(Parser)
+
+	encoded := []byte{0x40, 0x09, 0x21, 0xfb, 0x53, 0xc8, 0xd4, 0xf1,
+		0x40, 0x05, 0xbf, 0x0a, 0x89, 0xf1, 0xb0, 0xdd}
+
+	value, err := p.ParseDoubles(encoded, 2, TestDefaultByteOrder)
+	log.PanicIf(err)
+
+	expectedResult := []float64{3.14159265, 2.71828182}
+
+	for i, v := range value {
+		if v < expectedResult[i] ||
+			v >= math.Nextafter(expectedResult[i], expectedResult[i]+1) {
+			t.Fatalf("Encoding not correct: %v", value)
+		}
 	}
 }
 
