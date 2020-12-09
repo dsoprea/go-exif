@@ -180,3 +180,9 @@ func getTestGpsImageFilepath() string {
 	testGpsImageFilepath := path.Join(assetsPath, "gps.jpg")
 	return testGpsImageFilepath
 }
+
+func getTestGeotiffFilepath() string {
+	assetsPath := exifcommon.GetTestAssetsPath()
+	testGeotiffFilepath := path.Join(assetsPath, "geotiff_example.tif")
+	return testGeotiffFilepath
+}

@@ -909,6 +909,36 @@ IFD:
 - id: 0xc74e
   name: OpcodeList3
   type_name: UNDEFINED
+# This tag may be used to specify the size of raster pixel spacing in the 
+# model space units, when the raster space can be embedded in the model space 
+# coordinate system without rotation, and consists of the following 3 values:
+#    ModelPixelScaleTag = (ScaleX, ScaleY, ScaleZ)
+# where ScaleX and ScaleY give the horizontal and vertical spacing of raster 
+# pixels. The ScaleZ is primarily used to map the pixel value of a digital 
+# elevation model into the correct Z-scale, and so for most other purposes 
+# this value should be zero (since most model spaces are 2-D, with Z=0).
+# Source: http://geotiff.maptools.org/spec/geotiff2.6.html#2.6.1
+- id: 0x830e
+  name: ModelPixelScaleTag
+  type_name: DOUBLE
+# This tag stores raster->model tiepoint pairs in the order
+#	ModelTiepointTag = (...,I,J,K, X,Y,Z...),
+# where (I,J,K) is the point at location (I,J) in raster space with 
+# pixel-value K, and (X,Y,Z) is a vector in model space. In most cases the 
+# model space is only two-dimensional, in which case both K and Z should be 
+# set to zero; this third dimension is provided in anticipation of future 
+# support for 3D digital elevation models and vertical coordinate systems.
+# Source: http://geotiff.maptools.org/spec/geotiff2.6.html#2.6.1
+- id: 0x8482
+  name: ModelTiepointTag
+  type_name: DOUBLE
+# This tag may be used to specify the transformation matrix between the 
+# raster space (and its dependent pixel-value space) and the (possibly 3D) 
+# model space.
+# Source: http://geotiff.maptools.org/spec/geotiff2.6.html#2.6.1
+- id: 0x85d8
+  name: ModelTransformationTag
+  type_name: DOUBLE
 IFD/Exif/Iop:
 - id: 0x0001
   name: InteroperabilityIndex
