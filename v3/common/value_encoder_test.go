@@ -535,7 +535,7 @@ func TestValueEncoder_Encode__Float(t *testing.T) {
 
 }
 
-func TestValueEncoder_Encode__Doubles(t *testing.T) {
+func TestValueEncoder_Encode__Double(t *testing.T) {
 	byteOrder := TestDefaultByteOrder
 	ve := NewValueEncoder(byteOrder)
 
