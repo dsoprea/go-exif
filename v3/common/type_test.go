@@ -1,6 +1,7 @@
 package exifcommon
 
 import (
+	"math"
 	"testing"
 
 	"github.com/dsoprea/go-logging"
@@ -54,6 +55,18 @@ func TestTypeSignedRational_String(t *testing.T) {
 	}
 }
 
+func TestTypeFloat_String(t *testing.T) {
+	if TypeFloat.String() != "FLOAT" {
+		t.Fatalf("Type name not correct (float): [%s]", TypeFloat.String())
+	}
+}
+
+func TestTypeDouble_String(t *testing.T) {
+	if TypeDouble.String() != "DOUBLE" {
+		t.Fatalf("Type name not correct (double): [%s]", TypeDouble.String())
+	}
+}
+
 func TestTypeByte_Size(t *testing.T) {
 	if TypeByte.Size() != 1 {
 		t.Fatalf("Type size not correct (byte): (%d)", TypeByte.Size())
@@ -99,6 +112,18 @@ func TestTypeSignedLong_Size(t *testing.T) {
 func TestTypeSignedRational_Size(t *testing.T) {
 	if TypeSignedRational.Size() != 8 {
 		t.Fatalf("Type size not correct (signed rational): (%d)", TypeSignedRational.Size())
+	}
+}
+
+func TestTypeFloat_Size(t *testing.T) {
+	if TypeFloat.Size() != 4 {
+		t.Fatalf("Type size not correct (float): (%d)", TypeFloat.Size())
+	}
+}
+
+func TestTypeDouble_Size(t *testing.T) {
+	if TypeDouble.Size() != 8 {
+		t.Fatalf("Type size not correct (double): (%d)", TypeDouble.Size())
 	}
 }
 
@@ -154,6 +179,30 @@ func TestFormat__Long(t *testing.T) {
 
 	if s != "[1 2]" {
 		t.Fatalf("Format output not correct (longs): [%s]", s)
+	}
+}
+
+func TestFormat__Float(t *testing.T) {
+	r := []byte{0x3f, 0x80, 0x00, 0x00,
+		0x40, 0x00, 0x00, 0x00}
+
+	s, err := FormatFromBytes(r, TypeFloat, false, TestDefaultByteOrder)
+	log.PanicIf(err)
+
+	if s != "[1 2]" {
+		t.Fatalf("Format output not correct (floats): [%s]", s)
+	}
+}
+
+func TestFormat__Double(t *testing.T) {
+	r := []byte{0x40, 0x09, 0x21, 0xfb, 0x53, 0xc8, 0xd4, 0xf1,
+		0x40, 0x05, 0xbf, 0x0a, 0x89, 0xf1, 0xb0, 0xdd}
+
+	s, err := FormatFromBytes(r, TypeDouble, false, TestDefaultByteOrder)
+	log.PanicIf(err)
+
+	if s != "[3.14159265 2.71828182]" {
+		t.Fatalf("Format output not correct (doubles): [%s]", s)
 	}
 }
 
@@ -258,6 +307,26 @@ func TestTranslateStringToType__TypeLong(t *testing.T) {
 
 	if v != uint32(11) {
 		t.Fatalf("Translation of string to type not correct (long): %v", v)
+	}
+}
+
+func TestTranslateStringToType__TypeFloat(t *testing.T) {
+	v, err := TranslateStringToType(TypeFloat, "3.14159265")
+	log.PanicIf(err)
+
+	expected := float32(3.14159265)
+	if v.(float32) < expected || v.(float32) >= math.Nextafter32(expected, expected+1) {
+		t.Fatalf("Translation of string to type not correct (float32): %v", v)
+	}
+}
+
+func TestTranslateStringToType__TypeDouble(t *testing.T) {
+	v, err := TranslateStringToType(TypeDouble, "3.14159265")
+	log.PanicIf(err)
+
+	expected := float64(3.14159265)
+	if v.(float64) < expected || v.(float64) >= math.Nextafter(expected, expected+1) {
+		t.Fatalf("Translation of string to type not correct (double): %v", v)
 	}
 }
 

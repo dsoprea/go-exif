@@ -315,6 +315,40 @@ func (vc *ValueContext) ReadLongs() (value []uint32, err error) {
 	return value, nil
 }
 
+// ReadFloats parses the list of encoded, floats from the value-context.
+func (vc *ValueContext) ReadFloats() (value []float32, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	rawValue, err := vc.readRawEncoded()
+	log.PanicIf(err)
+
+	value, err = parser.ParseFloats(rawValue, vc.unitCount, vc.byteOrder)
+	log.PanicIf(err)
+
+	return value, nil
+}
+
+// ReadDoubles parses the list of encoded, doubles from the value-context.
+func (vc *ValueContext) ReadDoubles() (value []float64, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	rawValue, err := vc.readRawEncoded()
+	log.PanicIf(err)
+
+	value, err = parser.ParseDoubles(rawValue, vc.unitCount, vc.byteOrder)
+	log.PanicIf(err)
+
+	return value, nil
+}
+
 // ReadRationals parses the list of encoded, unsigned rationals from the value-
 // context.
 func (vc *ValueContext) ReadRationals() (value []Rational, err error) {

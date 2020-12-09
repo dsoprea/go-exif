@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"bytes"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -170,6 +171,80 @@ func TestValueEncoder_encodeLongs__Cycle(t *testing.T) {
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")
+	}
+}
+
+func TestValueEncoder_encodeFloats__Cycle(t *testing.T) {
+	byteOrder := TestDefaultByteOrder
+	ve := NewValueEncoder(byteOrder)
+
+	original := []float32{3.14159265, 2.71828182, 51.0, 68.0, 85.0}
+
+	ed, err := ve.encodeFloats(original)
+	log.PanicIf(err)
+
+	if ed.Type != TypeFloat {
+		t.Fatalf("IFD type not expected.")
+	}
+
+	expected := []byte{
+		0x40, 0x49, 0x0f, 0xdb,
+		0x40, 0x2d, 0xf8, 0x54,
+		0x42, 0x4c, 0x00, 0x00,
+		0x42, 0x88, 0x00, 0x00,
+		0x42, 0xaa, 0x00, 0x00,
+	}
+
+	if bytes.Equal(ed.Encoded, expected) != true {
+		t.Fatalf("Data not encoded correctly.")
+	} else if ed.UnitCount != 5 {
+		t.Fatalf("Unit-count not correct.")
+	}
+
+	recovered, err := parser.ParseFloats(ed.Encoded, ed.UnitCount, byteOrder)
+	log.PanicIf(err)
+
+	for i, v := range recovered {
+		if v < original[i] || v >= math.Nextafter32(original[i], original[i]+1) {
+			t.Fatalf("ReadFloats expecting %v, received %v", original[i], v)
+		}
+	}
+}
+
+func TestValueEncoder_encodeDoubles__Cycle(t *testing.T) {
+	byteOrder := TestDefaultByteOrder
+	ve := NewValueEncoder(byteOrder)
+
+	original := []float64{3.14159265, 2.71828182, 954877.1230695, 68.0, 85.0}
+
+	ed, err := ve.encodeDoubles(original)
+	log.PanicIf(err)
+
+	if ed.Type != TypeDouble {
+		t.Fatalf("IFD type not expected.")
+	}
+
+	expected := []byte{
+		0x40, 0x09, 0x21, 0xfb, 0x53, 0xc8, 0xd4, 0xf1,
+		0x40, 0x05, 0xbf, 0x0a, 0x89, 0xf1, 0xb0, 0xdd,
+		0x41, 0x2d, 0x23, 0xfa, 0x3f, 0x02, 0xf7, 0x2b,
+		0x40, 0x51, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x40, 0x55, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+
+	if reflect.DeepEqual(ed.Encoded, expected) != true {
+		t.Fatalf("Data not encoded correctly.")
+	} else if ed.UnitCount != 5 {
+		t.Fatalf("Unit-count not correct.")
+	}
+
+	recovered, err := parser.ParseDoubles(ed.Encoded, ed.UnitCount, byteOrder)
+	log.PanicIf(err)
+
+	for i, v := range recovered {
+		if v < original[i] || v >= math.Nextafter(original[i], original[i]+1) {
+			t.Fatalf("ReadDoubles expecting %v, received %v", original[i], v)
+		}
 	}
 }
 
@@ -429,6 +504,64 @@ func TestValueEncoder_Encode__Long(t *testing.T) {
 	} else if ed.UnitCount != 5 {
 		t.Fatalf("Unit-count not correct.")
 	}
+}
+
+func TestValueEncoder_Encode__Float(t *testing.T) {
+	byteOrder := TestDefaultByteOrder
+	ve := NewValueEncoder(byteOrder)
+
+	original := []float32{3.14159265, 2.71828182, 51.0, 68.0, 85.0}
+
+	ed, err := ve.Encode(original)
+	log.PanicIf(err)
+
+	if ed.Type != TypeFloat {
+		t.Fatalf("IFD type not expected.")
+	}
+
+	expected := []byte{
+		0x40, 0x49, 0x0f, 0xdb,
+		0x40, 0x2d, 0xf8, 0x54,
+		0x42, 0x4c, 0x00, 0x00,
+		0x42, 0x88, 0x00, 0x00,
+		0x42, 0xaa, 0x00, 0x00,
+	}
+
+	if bytes.Equal(ed.Encoded, expected) != true {
+		t.Fatalf("Data not encoded correctly.")
+	} else if ed.UnitCount != 5 {
+		t.Fatalf("Unit-count not correct.")
+	}
+
+}
+
+func TestValueEncoder_Encode__Doubles(t *testing.T) {
+	byteOrder := TestDefaultByteOrder
+	ve := NewValueEncoder(byteOrder)
+
+	original := []float64{3.14159265, 2.71828182, 954877.1230695, 68.0, 85.0}
+
+	ed, err := ve.Encode(original)
+	log.PanicIf(err)
+
+	if ed.Type != TypeDouble {
+		t.Fatalf("IFD type not expected.")
+	}
+
+	expected := []byte{
+		0x40, 0x09, 0x21, 0xfb, 0x53, 0xc8, 0xd4, 0xf1,
+		0x40, 0x05, 0xbf, 0x0a, 0x89, 0xf1, 0xb0, 0xdd,
+		0x41, 0x2d, 0x23, 0xfa, 0x3f, 0x02, 0xf7, 0x2b,
+		0x40, 0x51, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x40, 0x55, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+
+	if bytes.Equal(ed.Encoded, expected) != true {
+		t.Fatalf("Data not encoded correctly.")
+	} else if ed.UnitCount != 5 {
+		t.Fatalf("Unit-count not correct.")
+	}
+
 }
 
 func TestValueEncoder_Encode__Rational(t *testing.T) {

@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"bytes"
+	"math"
 
 	"encoding/binary"
 
@@ -130,6 +131,50 @@ func (p *Parser) ParseLongs(data []byte, unitCount uint32, byteOrder binary.Byte
 	value = make([]uint32, count)
 	for i := 0; i < count; i++ {
 		value[i] = byteOrder.Uint32(data[i*4:])
+	}
+
+	return value, nil
+}
+
+// ParseFloats knows how to encode an encoded list of floats.
+func (p *Parser) ParseFloats(data []byte, unitCount uint32, byteOrder binary.ByteOrder) (value []float32, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	count := int(unitCount)
+
+	if len(data) != (TypeFloat.Size() * count) {
+		log.Panic(ErrNotEnoughData)
+	}
+
+	value = make([]float32, count)
+	for i := 0; i < count; i++ {
+		value[i] = math.Float32frombits(byteOrder.Uint32(data[i*4 : (i+1)*4]))
+	}
+
+	return value, nil
+}
+
+// ParseDoubles knows how to encode an encoded list of doubles.
+func (p *Parser) ParseDoubles(data []byte, unitCount uint32, byteOrder binary.ByteOrder) (value []float64, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	count := int(unitCount)
+
+	if len(data) != (TypeDouble.Size() * count) {
+		log.Panic(ErrNotEnoughData)
+	}
+
+	value = make([]float64, count)
+	for i := 0; i < count; i++ {
+		value[i] = math.Float64frombits(byteOrder.Uint64(data[i*8 : (i+1)*8]))
 	}
 
 	return value, nil
