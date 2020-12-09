@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestValueEncoder_encodeBytes__Cycle(t *testing.T) {
