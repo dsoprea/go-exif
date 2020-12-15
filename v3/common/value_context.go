@@ -439,6 +439,12 @@ func (vc *ValueContext) Values() (values interface{}, err error) {
 	} else if vc.tagType == TypeSignedRational {
 		values, err = vc.ReadSignedRationals()
 		log.PanicIf(err)
+	} else if vc.tagType == TypeFloat {
+		values, err = vc.ReadFloats()
+		log.PanicIf(err)
+	} else if vc.tagType == TypeDouble {
+		values, err = vc.ReadDoubles()
+		log.PanicIf(err)
 	} else if vc.tagType == TypeUndefined {
 		log.Panicf("will not parse undefined-type value")
 
