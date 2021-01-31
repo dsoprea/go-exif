@@ -186,6 +186,13 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 	case []byte:
 		return DumpBytesToString(t), nil
 	case string:
+		for i, c := range t {
+			if c == 0 {
+				t = t[:i]
+				break
+			}
+		}
+
 		if isPrintableText(t) == false {
 			phrase = fmt.Sprintf("string with binary data (%d bytes)", len(t))
 			return phrase, nil
