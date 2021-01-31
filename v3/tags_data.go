@@ -59,6 +59,15 @@ IFD/Exif:
 - id: 0x9004
   name: DateTimeDigitized
   type_name: ASCII
+- id: 0x9010
+  name: OffsetTime
+  type_name: ASCII
+- id: 0x9011
+  name: OffsetTimeOriginal
+  type_name: ASCII
+- id: 0x9012
+  name: OffsetTimeDigitized
+  type_name: ASCII
 - id: 0x9101
   name: ComponentsConfiguration
   type_name: UNDEFINED
