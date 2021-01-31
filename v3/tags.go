@@ -180,6 +180,8 @@ type TagIndex struct {
 	tagsByIfdR map[string]map[string]*IndexedTag
 
 	mutex sync.Mutex
+
+	doUniversalSearch bool
 }
 
 // NewTagIndex returns a new TagIndex struct.
@@ -190,6 +192,16 @@ func NewTagIndex() *TagIndex {
 	ti.tagsByIfdR = make(map[string]map[string]*IndexedTag)
 
 	return ti
+}
+
+// SetUniversalSearch enables a fallback to matching tags under *any* IFD.
+func (ti *TagIndex) SetUniversalSearch(flag bool) {
+	ti.doUniversalSearch = flag
+}
+
+// UniversalSearch enables a fallback to matching tags under *any* IFD.
+func (ti *TagIndex) UniversalSearch() bool {
+	return ti.doUniversalSearch
 }
 
 // Add registers a new tag to be recognized during the parse.
@@ -234,9 +246,7 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	return nil
 }
 
-// Get returns information about the non-IFD tag given a tag ID. `ifdPath` must
-// not be fully-qualified.
-func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, err error) {
+func (ti *TagIndex) getOne(ifdPath string, id uint16) (it *IndexedTag, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -251,8 +261,6 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	ifdPath := ii.UnindexedString()
-
 	family, found := ti.tagsByIfd[ifdPath]
 	if found == false {
 		return nil, ErrTagNotFound
@@ -264,6 +272,53 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 	}
 
 	return it, nil
+}
+
+// Get returns information about the non-IFD tag given a tag ID. `ifdPath` must
+// not be fully-qualified.
+func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	ifdPath := ii.UnindexedString()
+
+	it, err = ti.getOne(ifdPath, id)
+	if err == nil {
+		return it, nil
+	} else if err != ErrTagNotFound {
+		log.Panic(err)
+	}
+
+	if ti.doUniversalSearch == false {
+		return nil, ErrTagNotFound
+	}
+
+	// We've been told to fallback to look for the tag in other IFDs.
+
+	skipIfdPath := ii.UnindexedString()
+
+	for currentIfdPath, _ := range ti.tagsByIfd {
+		if currentIfdPath == skipIfdPath {
+			// Skip the primary IFD, which has already been checked.
+			continue
+		}
+
+		it, err = ti.getOne(currentIfdPath, id)
+		if err == nil {
+			tagsLogger.Warningf(nil,
+				"Found tag (0x%02x) in the wrong IFD: [%s] != [%s]",
+				id, currentIfdPath, ifdPath)
+
+			return it, nil
+		} else if err != ErrTagNotFound {
+			log.Panic(err)
+		}
+	}
+
+	return nil, ErrTagNotFound
 }
 
 var (

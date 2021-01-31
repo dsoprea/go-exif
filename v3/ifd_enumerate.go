@@ -261,7 +261,10 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		log.Panic(err)
 	}
 
-	if it.DoesSupportType(tagType) == false {
+	// If we're trying to be as forgiving as possible then use whatever type was
+	// reported in the format. Otherwise, only accept a type that's expected for
+	// this tag.
+	if ie.tagIndex.UniversalSearch() == false && it.DoesSupportType(tagType) == false {
 		// The type in the stream disagrees with the type that this tag is
 		// expected to have. This can present issues with how we handle the
 		// special-case tags (e.g. thumbnails, GPS, etc..) when those tags
@@ -405,7 +408,7 @@ func (ie *IfdEnumerate) tagPostParse(ite *IfdTagEntry, med *MiscellaneousExifDat
 	// tag should ever be repeated, and b) all but one had an incorrect
 	// type and caused parsing/conversion woes. So, this is a quick fix
 	// for those scenarios.
-	if it.DoesSupportType(tagType) == false {
+	if ie.tagIndex.UniversalSearch() == false && it.DoesSupportType(tagType) == false {
 		ifdEnumerateLogger.Warningf(nil,
 			"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
 			ii.UnindexedString(), tagId, it.Name,

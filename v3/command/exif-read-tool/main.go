@@ -56,6 +56,7 @@ type parameters struct {
 	ThumbnailOutputFilepath string `short:"t" long:"thumbnail-output-filepath" description:"File-path to write thumbnail to (if present)"`
 	DoNotPrintTags          bool   `short:"n" long:"no-tags" description:"Do not actually print tags. Good for auditing the logs or merely checking the EXIF structure for errors."`
 	SkipBlocks              int    `short:"s" long:"skip" description:"Skip this many EXIF blocks before returning"`
+	DoUniversalTagSearch    bool   `short:"u" long:"universal-tags" description:"If tags not found in known mapped IFDs, fallback to trying all IFDs."`
 }
 
 var (
@@ -107,7 +108,7 @@ func main() {
 
 	// Run the parse.
 
-	entries, _, err := exif.GetFlatExifData(rawExif, nil)
+	entries, _, err := exif.GetFlatExifDataUniversalSearch(rawExif, nil, arguments.DoUniversalTagSearch)
 	if err != nil {
 		if arguments.SkipBlocks > 0 {
 			mainLogger.Warningf(nil, "Encountered an error. This might be related to the request to skip EXIF blocks.")

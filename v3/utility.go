@@ -76,6 +76,36 @@ func GetFlatExifData(exifData []byte, so *ScanOptions) (exifTags []ExifTag, med 
 		}
 	}()
 
+	exifTags, med, err = getFlatExifDataUniversalSearch(exifData, so, false)
+	log.PanicIf(err)
+
+	return exifTags, med, nil
+}
+
+// RELEASE(dustin): GetFlatExifDataUniversalSearch is a kludge to allow univeral tag searching in a backwards-compatible manner. For the next release, undo this and simply add the flag to GetFlatExifData.
+
+// GetFlatExifDataUniversalSearch returns a simple, flat representation of all tags.
+func GetFlatExifDataUniversalSearch(exifData []byte, so *ScanOptions, doUniversalSearch bool) (exifTags []ExifTag, med *MiscellaneousExifData, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	exifTags, med, err = getFlatExifDataUniversalSearch(exifData, so, doUniversalSearch)
+	log.PanicIf(err)
+
+	return exifTags, med, nil
+}
+
+// GetFlatExifData returns a simple, flat representation of all tags.
+func getFlatExifDataUniversalSearch(exifData []byte, so *ScanOptions, doUniversalSearch bool) (exifTags []ExifTag, med *MiscellaneousExifData, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
 	eh, err := ParseExifHeader(exifData)
 	log.PanicIf(err)
 
@@ -83,6 +113,10 @@ func GetFlatExifData(exifData []byte, so *ScanOptions) (exifTags []ExifTag, med 
 	log.PanicIf(err)
 
 	ti := NewTagIndex()
+
+	if doUniversalSearch == true {
+		ti.SetUniversalSearch(true)
+	}
 
 	ebs := NewExifReadSeekerWithBytes(exifData)
 	ie := NewIfdEnumerate(im, ti, ebs, eh.ByteOrder)
