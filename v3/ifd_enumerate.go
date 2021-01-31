@@ -268,8 +268,8 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		// suddenly have data that we no longer manipulate correctly/
 		// accurately.
 		ifdEnumerateLogger.Warningf(nil,
-			"Tag (0x%04x) in IFD [%s] at position (%d) has unsupported type (%04x) and will be skipped.",
-			tagId, ii, tagPosition, tagType)
+			"Tag (0x%04x) in IFD [%s] at position (%d) has unsupported type (0x%02x) and will be skipped.",
+			tagId, ii, tagPosition, int(tagType))
 
 		return nil, ErrTagTypeNotValid
 	}
