@@ -107,6 +107,12 @@ func GetFlatExifData(exifData []byte, so *ScanOptions) (exifTags []ExifTag, med 
 		if err != nil {
 			if err == exifcommon.ErrUnhandledUndefinedTypedTag {
 				value = exifundefined.UnparseableUnknownTagValuePlaceholder
+			} else if log.Is(err, exifcommon.ErrParseFail) == true {
+				utilityLogger.Warningf(nil,
+					"Could not parse value for tag [%s] (%04x) [%s].",
+					ite.IfdPath(), ite.TagId(), ite.TagName())
+
+				return nil
 			} else {
 				log.Panic(err)
 			}

@@ -55,6 +55,7 @@ type parameters struct {
 	IsVerbose               bool   `short:"v" long:"verbose" description:"Print logging"`
 	ThumbnailOutputFilepath string `short:"t" long:"thumbnail-output-filepath" description:"File-path to write thumbnail to (if present)"`
 	DoNotPrintTags          bool   `short:"n" long:"no-tags" description:"Do not actually print tags. Good for auditing the logs or merely checking the EXIF structure for errors."`
+	SkipBlocks              int    `short:"s" long:"skip" description:"Skip this many EXIF blocks before returning"`
 }
 
 var (
@@ -92,7 +93,7 @@ func main() {
 	data, err := ioutil.ReadAll(f)
 	log.PanicIf(err)
 
-	rawExif, err := exif.SearchAndExtractExif(data)
+	rawExif, err := exif.SearchAndExtractExifN(data, arguments.SkipBlocks)
 	if err != nil {
 		if err == exif.ErrNoExif {
 			fmt.Printf("No EXIF data.\n")
@@ -107,7 +108,13 @@ func main() {
 	// Run the parse.
 
 	entries, _, err := exif.GetFlatExifData(rawExif, nil)
-	log.PanicIf(err)
+	if err != nil {
+		if arguments.SkipBlocks > 0 {
+			mainLogger.Warningf(nil, "Encountered an error. This might be related to the request to skip EXIF blocks.")
+		}
+
+		log.Panic(err)
+	}
 
 	// Write the thumbnail is requested and present.
 

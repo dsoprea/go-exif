@@ -232,15 +232,15 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		// if the type stored alongside the data disagrees with it,
 		// which it apparently does, all bets are off.
 		ifdEnumerateLogger.Warningf(nil,
-			"Tag (0x%04x) in IFD [%s] at position (%d) has invalid type and will be skipped.",
-			tagId, ii, tagPosition, tagType)
+			"Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (0x%04x) and will be skipped.",
+			tagId, ii, tagPosition, int(tagType))
 
 		ite = &IfdTagEntry{
 			tagId:   tagId,
 			tagType: tagType,
 		}
 
-		return nil, ErrTagTypeNotValid
+		return ite, ErrTagTypeNotValid
 	}
 
 	// Check whether the embedded type is listed among the supported types for
@@ -250,6 +250,12 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	if err != nil {
 		if log.Is(err, ErrTagNotFound) == true {
 			ifdEnumerateLogger.Warningf(nil, "Tag (0x%04x) is not known and will be skipped.", tagId)
+
+			ite = &IfdTagEntry{
+				tagId: tagId,
+			}
+
+			return ite, ErrTagNotFound
 		}
 
 		log.Panic(err)
@@ -262,7 +268,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		// suddenly have data that we no longer manipulate correctly/
 		// accurately.
 		ifdEnumerateLogger.Warningf(nil,
-			"Tag (0x%04x) in IFD [%s] at position (%d) has invalid type and will be skipped.",
+			"Tag (0x%04x) in IFD [%s] at position (%d) has unsupported type (%04x) and will be skipped.",
 			tagId, ii, tagPosition, tagType)
 
 		return nil, ErrTagTypeNotValid
@@ -544,7 +550,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	nextIfdOffset, _, err = bp.getUint32()
 	log.PanicIf(err)
 
-	ifdEnumerateLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
+	ifdEnumerateLogger.Debugf(nil, "Next IFD at offset: (0x%08x)", nextIfdOffset)
 
 	return nextIfdOffset, entries, thumbnailData, nil
 }

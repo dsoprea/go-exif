@@ -70,10 +70,58 @@ func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
 	return rawExif, nil
 }
 
-// SearchAndExtractExifWithReader searches for an EXIF blob using an
-// `io.Reader`. We can't know how much long the EXIF data is without parsing it,
-// so this will likely grab up a lot of the image-data, too.
-func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
+// SearchAndExtractExifN searches for an EXIF blob in the byte-slice, but skips
+// the given number of EXIF blocks first. This is a forensics tool that helps
+// identify multiple EXIF blocks in a file.
+func SearchAndExtractExifN(data []byte, n int) (rawExif []byte, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	skips := 0
+	totalDiscarded := 0
+	for {
+		b := bytes.NewBuffer(data)
+
+		var discarded int
+
+		rawExif, discarded, err = searchAndExtractExifWithReaderWithDiscarded(b)
+		if err != nil {
+			if err == ErrNoExif {
+				return nil, err
+			}
+
+			log.Panic(err)
+		}
+
+		exifLogger.Debugf(nil, "Read EXIF block (%d).", skips)
+
+		totalDiscarded += discarded
+
+		if skips >= n {
+			exifLogger.Debugf(nil, "Reached requested EXIF block (%d).", n)
+			break
+		}
+
+		nextOffset := discarded + 1
+		exifLogger.Debugf(nil, "Skipping EXIF block (%d) by seeking to position (%d).", skips, nextOffset)
+
+		data = data[nextOffset:]
+		skips++
+	}
+
+	exifLogger.Debugf(nil, "Found EXIF blob (%d) bytes from initial position.", totalDiscarded)
+	return rawExif, nil
+}
+
+// searchAndExtractExifWithReaderWithDiscarded searches for an EXIF blob using
+// an `io.Reader`. We can't know how much long the EXIF data is without parsing
+// it, so this will likely grab up a lot of the image-data, too.
+//
+// This function returned the count of preceding bytes.
+func searchAndExtractExifWithReaderWithDiscarded(r io.Reader) (rawExif []byte, discarded int, err error) {
 	defer func() {
 		if state := recover(); state != nil {
 			err = log.Wrap(state.(error))
@@ -85,13 +133,12 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 	// least, again, with JPEGs).
 
 	br := bufio.NewReader(r)
-	discarded := 0
 
 	for {
 		window, err := br.Peek(ExifSignatureLength)
 		if err != nil {
 			if err == io.EOF {
-				return nil, ErrNoExif
+				return nil, 0, ErrNoExif
 			}
 
 			log.Panic(err)
@@ -121,6 +168,30 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 
 	rawExif, err = ioutil.ReadAll(br)
 	log.PanicIf(err)
+
+	return rawExif, discarded, nil
+}
+
+// RELEASE(dustin): We should replace the implementation of SearchAndExtractExifWithReader with searchAndExtractExifWithReaderWithDiscarded and drop the latter.
+
+// SearchAndExtractExifWithReader searches for an EXIF blob using an
+// `io.Reader`. We can't know how much long the EXIF data is without parsing it,
+// so this will likely grab up a lot of the image-data, too.
+func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	rawExif, _, err = searchAndExtractExifWithReaderWithDiscarded(r)
+	if err != nil {
+		if err == ErrNoExif {
+			return nil, err
+		}
+
+		log.Panic(err)
+	}
 
 	return rawExif, nil
 }

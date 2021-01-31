@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"bytes"
+	"errors"
 	"math"
 
 	"encoding/binary"
@@ -11,6 +12,10 @@ import (
 
 var (
 	parserLogger = log.NewLogger("exifcommon.parser")
+)
+
+var (
+	ErrParseFail = errors.New("parse failure")
 )
 
 // Parser knows how to parse all well-defined, encoded EXIF types.
@@ -58,6 +63,14 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 	if len(data) == 0 || data[count-1] != 0 {
 		s := string(data[:count])
 		parserLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
+
+		for _, c := range s {
+			if c > 127 {
+				// Binary
+
+				return "", ErrParseFail
+			}
+		}
 
 		return s, nil
 	}
