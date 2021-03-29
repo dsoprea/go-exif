@@ -186,3 +186,9 @@ func getTestGeotiffFilepath() string {
 	testGeotiffFilepath := path.Join(assetsPath, "geotiff_example.tif")
 	return testGeotiffFilepath
 }
+
+func getTestBrokenExifFilepath() string {
+	assetsPath := exifcommon.GetTestAssetsPath()
+	testBrokenExifFilepath := path.Join(assetsPath, "broken_exif.jpg")
+	return testBrokenExifFilepath
+}

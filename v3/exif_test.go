@@ -2,14 +2,13 @@ package exif
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
-
-	"encoding/binary"
-	"io/ioutil"
 
 	"github.com/dsoprea/go-logging"
 
@@ -406,6 +405,31 @@ func TestExif_BuildAndParseExifHeader(t *testing.T) {
 		t.Fatalf("Byte-order of EXIF header not correct.")
 	} else if eh.FirstIfdOffset != 0x11223344 {
 		t.Fatalf("First IFD offset not correct.")
+	}
+}
+
+func TestExif_ParseBrokenExif(t *testing.T) {
+	file, err := os.Open(getTestBrokenExifFilepath())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	rawExif, err := SearchAndExtractExifWithReader(file)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	ifd, err := exifcommon.NewIfdMappingWithStandard()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	tag := NewTagIndex()
+	_, _, err = Collect(ifd, tag, rawExif)
+	if err != nil {
+		t.Error(err)
+		return
 	}
 }
 
