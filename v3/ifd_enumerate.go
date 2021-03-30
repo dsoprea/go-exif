@@ -1445,7 +1445,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		}
 
 		// If there's another IFD in the chain.
-		if nextIfdOffset != 0 {
+		if nextIfdOffset > offset {
 			iiSibling := ii.NewSibling(ii.Index() + 1)
 
 			// Allow the next link to know what the previous link was.
