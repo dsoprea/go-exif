@@ -250,9 +250,11 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	}
 
 	if bytes.Equal(data[:4], ExifBigEndianSignature[:]) == true {
+		exifLogger.Debugf(nil, "Byte-order is big-endian.")
 		eh.ByteOrder = binary.BigEndian
 	} else if bytes.Equal(data[:4], ExifLittleEndianSignature[:]) == true {
 		eh.ByteOrder = binary.LittleEndian
+		exifLogger.Debugf(nil, "Byte-order is little-endian.")
 	} else {
 		return eh, ErrNoExif
 	}
