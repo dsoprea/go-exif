@@ -156,11 +156,11 @@ type SignedRational struct {
 }
 
 func isPrintableText(s string) bool {
-
-	// TODO(dustin): Add text
-
 	for _, c := range s {
-		if unicode.IsPrint(rune(c)) == false {
+		// unicode.IsPrint() returns false for newline characters.
+		if c == 0x0d || c == 0x0a {
+			continue
+		} else if unicode.IsPrint(rune(c)) == false {
 			return false
 		}
 	}

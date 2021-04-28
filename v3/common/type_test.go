@@ -411,3 +411,27 @@ func TestTranslateStringToType__InvalidType(t *testing.T) {
 //     log.Panicf("from-string encoding for type not supported; this shouldn't happen: [%s]", tagType.String())
 //     return nil, nil
 // }
+
+func TestIsPrintableText_letters(t *testing.T) {
+	if isPrintableText("abc") != true {
+		t.Fatalf("Printable text interpreted as nonprintable.")
+	}
+}
+
+func TestIsPrintableText_space(t *testing.T) {
+	if isPrintableText(" ") != true {
+		t.Fatalf("Printable text interpreted as nonprintable.")
+	}
+}
+
+func TestIsPrintableText_newlines(t *testing.T) {
+	if isPrintableText("\r\n") != true {
+		t.Fatalf("Printable text interpreted as nonprintable.")
+	}
+}
+
+func TestIsPrintableText_punctuationAndSymbols(t *testing.T) {
+	if isPrintableText(",:-/$©") != true {
+		t.Fatalf("Printable text interpreted as nonprintable.")
+	}
+}
