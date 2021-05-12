@@ -163,6 +163,8 @@ type IfdEnumerate struct {
 	tagIndex       *TagIndex
 	ifdMapping     *exifcommon.IfdMapping
 	furthestOffset uint32
+
+	visitedIfdOffsets map[uint32]struct{}
 }
 
 // NewIfdEnumerate returns a new instance of IfdEnumerate.
@@ -172,6 +174,8 @@ func NewIfdEnumerate(ifdMapping *exifcommon.IfdMapping, tagIndex *TagIndex, ebs 
 		byteOrder:  byteOrder,
 		ifdMapping: ifdMapping,
 		tagIndex:   tagIndex,
+
+		visitedIfdOffsets: make(map[uint32]struct{}),
 	}
 }
 
@@ -553,7 +557,19 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	nextIfdOffset, _, err = bp.getUint32()
 	log.PanicIf(err)
 
-	ifdEnumerateLogger.Debugf(nil, "Next IFD at offset: (0x%08x)", nextIfdOffset)
+	_, alreadyVisited := ie.visitedIfdOffsets[nextIfdOffset]
+
+	if alreadyVisited == true {
+		ifdEnumerateLogger.Warningf(nil, "IFD at offset (0x%08x) has been linked-to more than once. There might be a cycle in the IFD chain. Not reparsing.", nextIfdOffset)
+		nextIfdOffset = 0
+	}
+
+	if nextIfdOffset != 0 {
+		ie.visitedIfdOffsets[nextIfdOffset] = struct{}{}
+		ifdEnumerateLogger.Debugf(nil, "[%s] Next IFD at offset: (0x%08x)", ii.String(), nextIfdOffset)
+	} else {
+		ifdEnumerateLogger.Debugf(nil, "[%s] IFD chain has terminated.", ii.String())
+	}
 
 	return nextIfdOffset, entries, thumbnailData, nil
 }
