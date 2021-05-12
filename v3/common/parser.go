@@ -62,13 +62,16 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 
 	if len(data) == 0 || data[count-1] != 0 {
 		s := string(data[:count])
-		parserLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
+		parserLogger.Warningf(nil, "ASCII not terminated with NUL as expected: [%v]", s)
 
-		for _, c := range s {
+		for i, c := range s {
 			if c > 127 {
 				// Binary
 
-				return "", ErrParseFail
+				t := s[:i]
+				parserLogger.Warningf(nil, "ASCII also had binary characters. Truncating: [%v]->[%s]", s, t)
+
+				return t, nil
 			}
 		}
 
