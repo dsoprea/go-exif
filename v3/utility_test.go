@@ -1,7 +1,11 @@
 package exif
 
 import (
+	"os"
 	"testing"
+
+	"github.com/dsoprea/go-logging/v2"
+	"github.com/dsoprea/go-utility/v2/filesystem"
 )
 
 func TestGpsDegreesEquals_Equals(t *testing.T) {
@@ -49,5 +53,48 @@ func TestGpsDegreesEquals_NotEqual_Position(t *testing.T) {
 	r := GpsDegreesEquals(gi1, gi2)
 	if r != false {
 		t.Fatalf("GpsDegrees structs were equal but not supposed to be.")
+	}
+}
+
+func TestGetFlatExifData(t *testing.T) {
+	testExifData := getTestExifData()
+
+	exifTags, _, err := GetFlatExifData(testExifData, nil)
+	log.PanicIf(err)
+
+	if len(exifTags) != 59 {
+		t.Fatalf("Tag count not correct: (%d)", len(exifTags))
+	}
+}
+
+func TestGetFlatExifDataUniversalSearch(t *testing.T) {
+	testExifData := getTestExifData()
+
+	exifTags, _, err := GetFlatExifDataUniversalSearch(testExifData, nil, false)
+	log.PanicIf(err)
+
+	if len(exifTags) != 59 {
+		t.Fatalf("Tag count not correct: (%d)", len(exifTags))
+	}
+}
+
+func TestGetFlatExifDataUniversalSearchWithReadSeeker(t *testing.T) {
+	testImageFilepath := getTestImageFilepath()
+
+	f, err := os.Open(testImageFilepath)
+	log.PanicIf(err)
+
+	defer f.Close()
+
+	rawExif, err := SearchAndExtractExifWithReader(f)
+	log.PanicIf(err)
+
+	sb := rifs.NewSeekableBufferWithBytes(rawExif)
+
+	exifTags, _, err := GetFlatExifDataUniversalSearchWithReadSeeker(sb, nil, false)
+	log.PanicIf(err)
+
+	if len(exifTags) != 59 {
+		t.Fatalf("Tag count not correct: (%d)", len(exifTags))
 	}
 }
