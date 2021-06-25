@@ -94,7 +94,7 @@ There is a runnable reading/dumping tool included:
 
 ```
 $ go get github.com/dsoprea/go-exif/v3/command/exif-read-tool
-$ exif-read-tool -filepath "<media file-path>"
+$ exif-read-tool --filepath "<media file-path>"
 ```
 
 Example output:
@@ -113,7 +113,7 @@ IFD-PATH=[IFD] ID=(0x0132) NAME=[DateTime] COUNT=(20) TYPE=[ASCII] VALUE=[2017:1
 You can also print the raw, parsed data as JSON:
 
 ```
-$ exif-read-tool -filepath "<media file-path>" -json
+$ exif-read-tool --filepath "<media file-path>" -json
 ```
 
 Example output:
