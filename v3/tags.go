@@ -176,6 +176,7 @@ func (it *IndexedTag) DoesSupportType(tagType exifcommon.TagTypePrimitive) bool 
 
 // TagIndex is a tag-lookup facility.
 type TagIndex struct {
+	tagsInit   sync.Once
 	tagsByIfd  map[string]map[uint16]*IndexedTag
 	tagsByIfdR map[string]map[string]*IndexedTag
 
@@ -253,10 +254,8 @@ func (ti *TagIndex) getOne(ifdPath string, id uint16) (it *IndexedTag, err error
 		}
 	}()
 
-	if len(ti.tagsByIfd) == 0 {
-		err := LoadStandardTags(ti)
-		log.PanicIf(err)
-	}
+	err = LoadStandardTags(ti)
+	log.PanicIf(err)
 
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
@@ -384,10 +383,8 @@ func (ti *TagIndex) GetWithName(ii *exifcommon.IfdIdentity, name string) (it *In
 		}
 	}()
 
-	if len(ti.tagsByIfdR) == 0 {
-		err := LoadStandardTags(ti)
-		log.PanicIf(err)
-	}
+	err = LoadStandardTags(ti)
+	log.PanicIf(err)
 
 	ifdPath := ii.UnindexedString()
 
@@ -408,68 +405,72 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 		}
 	}()
 
-	// Read static data.
+	ti.tagsInit.Do(func() {
 
-	encodedIfds := make(map[string][]encodedTag)
+		// Read static data.
 
-	err = yaml.Unmarshal([]byte(tagsYaml), encodedIfds)
-	log.PanicIf(err)
+		encodedIfds := make(map[string][]encodedTag)
 
-	// Load structure.
+		err = yaml.Unmarshal([]byte(tagsYaml), encodedIfds)
+		log.PanicIf(err)
 
-	count := 0
-	for ifdPath, tags := range encodedIfds {
-		for _, tagInfo := range tags {
-			tagId := uint16(tagInfo.Id)
-			tagName := tagInfo.Name
-			tagTypeName := tagInfo.TypeName
-			tagTypeNames := tagInfo.TypeNames
+		// Load structure.
 
-			if tagTypeNames == nil {
-				if tagTypeName == "" {
-					log.Panicf("no tag-types were given when registering standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
+		count := 0
+		for ifdPath, tags := range encodedIfds {
+			for _, tagInfo := range tags {
+				tagId := uint16(tagInfo.Id)
+				tagName := tagInfo.Name
+				tagTypeName := tagInfo.TypeName
+				tagTypeNames := tagInfo.TypeNames
+
+				if tagTypeNames == nil {
+					if tagTypeName == "" {
+						log.Panicf("no tag-types were given when registering standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
+					}
+
+					tagTypeNames = []string{
+						tagTypeName,
+					}
+				} else if tagTypeName != "" {
+					log.Panicf("both 'type_names' and 'type_name' were given when registering standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
 				}
 
-				tagTypeNames = []string{
-					tagTypeName,
+				tagTypes := make([]exifcommon.TagTypePrimitive, 0)
+				for _, tagTypeName := range tagTypeNames {
+
+					// TODO(dustin): Discard unsupported types. This helps us with non-standard types that have actually been found in real data, that we ignore for right now. e.g. SSHORT, FLOAT, DOUBLE
+					tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
+					if found == false {
+						tagsLogger.Warningf(nil, "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
+						continue
+					}
+
+					tagTypes = append(tagTypes, tagTypeId)
 				}
-			} else if tagTypeName != "" {
-				log.Panicf("both 'type_names' and 'type_name' were given when registering standard tag [%s] (0x%04x) [%s]", ifdPath, tagId, tagName)
-			}
 
-			tagTypes := make([]exifcommon.TagTypePrimitive, 0)
-			for _, tagTypeName := range tagTypeNames {
-
-				// TODO(dustin): Discard unsupported types. This helps us with non-standard types that have actually been found in real data, that we ignore for right now. e.g. SSHORT, FLOAT, DOUBLE
-				tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
-				if found == false {
-					tagsLogger.Warningf(nil, "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
+				if len(tagTypes) == 0 {
+					tagsLogger.Warningf(nil, "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
 					continue
 				}
 
-				tagTypes = append(tagTypes, tagTypeId)
+				it := &IndexedTag{
+					IfdPath:        ifdPath,
+					Id:             tagId,
+					Name:           tagName,
+					SupportedTypes: tagTypes,
+				}
+
+				err = ti.Add(it)
+				log.PanicIf(err)
+
+				count++
 			}
-
-			if len(tagTypes) == 0 {
-				tagsLogger.Warningf(nil, "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
-				continue
-			}
-
-			it := &IndexedTag{
-				IfdPath:        ifdPath,
-				Id:             tagId,
-				Name:           tagName,
-				SupportedTypes: tagTypes,
-			}
-
-			err = ti.Add(it)
-			log.PanicIf(err)
-
-			count++
 		}
-	}
 
-	tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
+		tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
+
+	})
 
 	return nil
 }
