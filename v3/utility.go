@@ -1,19 +1,22 @@
 package exif
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
 
-	"github.com/dsoprea/go-logging"
-	"github.com/dsoprea/go-utility/v2/filesystem"
+	"github.com/dsoprea/go-exif"
+	log "github.com/dsoprea/go-logging"
+	rifs "github.com/dsoprea/go-utility/v2/filesystem"
 
-	"github.com/dsoprea/go-exif/v3/common"
-	"github.com/dsoprea/go-exif/v3/undefined"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+	exifundefined "github.com/dsoprea/go-exif/v3/undefined"
 )
 
 var (
-	utilityLogger = log.NewLogger("exif.utility")
+	utilityLogger      = log.NewLogger("exif.utility")
+	ErrInvalidMaxBlock = errors.New("cannot read maxBlock < -1")
 )
 
 // ExifTag is one simple representation of a tag in a flat list of all of them.
@@ -84,6 +87,50 @@ func GetFlatExifData(exifData []byte, so *ScanOptions) (exifTags []ExifTag, med 
 	log.PanicIf(err)
 
 	return exifTags, med, nil
+}
+
+// GetAllExifData returns all existing EXIF entries until reaches maxBlock/found no more EXIF blocks
+// maxBlock == -1 to read untils no more EXIF blocks found
+func GetAllExifData(imageData []byte, so *ScanOptions, maxBlock int) (exifTags []ExifTag, blockRead int, err error) {
+	defer func() {
+		if state := recover(); state != nil {
+			err = log.Wrap(state.(error))
+		}
+	}()
+
+	if maxBlock < -1 {
+		return nil, 0, ErrInvalidMaxBlock
+	}
+
+	for n := 0; maxBlock == -1 || n < maxBlock; n++ {
+		exifData, err := exif.SearchAndExtractExif(imageData)
+		if err != nil {
+			if errors.Is(err, exif.ErrNoExif) {
+				if n == 0 {
+					return exifTags, blockRead, nil
+				}
+				break
+			}
+			log.Panic(err)
+		}
+
+		// help find next EXIF without searching from start
+		imageData = exifData[ExifSignatureLength:]
+
+		entries, _, err := GetFlatExifData(exifData, so)
+		if err != nil {
+			fmt.Println("ERROR:", err, errors.Is(err, io.EOF))
+			if err == io.EOF || err == io.ErrUnexpectedEOF {
+				continue
+			}
+			log.PanicIf(err)
+		}
+
+		blockRead++
+		exifTags = append(exifTags, entries...)
+	}
+
+	return exifTags, blockRead, nil
 }
 
 // RELEASE(dustin): GetFlatExifDataUniversalSearch is a kludge to allow univeral tag searching in a backwards-compatible manner. For the next release, undo this and simply add the flag to GetFlatExifData.
