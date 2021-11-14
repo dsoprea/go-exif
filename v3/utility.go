@@ -117,10 +117,9 @@ func GetAllExifData(imageData []byte, so *ScanOptions, maxBlock int) (exifTags [
 		// help find next EXIF without searching from start
 		imageData = exifData[ExifSignatureLength:]
 
-		entries, _, err := GetFlatExifData(exifData, so)
+		entries, _, err := GetFlatExifDataUniversalSearch(exifData, so, true)
 		if err != nil {
-			fmt.Println("ERROR:", err, errors.Is(err, io.EOF))
-			if err == io.EOF || err == io.ErrUnexpectedEOF {
+			if log.Is(err, io.EOF) || log.Is(err, io.ErrUnexpectedEOF) {
 				continue
 			}
 			log.PanicIf(err)
