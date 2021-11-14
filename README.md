@@ -7,6 +7,9 @@
 
 This package provides native Go functionality to parse an existing EXIF block, update an existing EXIF block, or add a new EXIF block.
 
+**Disclaimer**: Original repository is at https://github.com/dsoprea/go-exif, this is my custom clone verison that investigate somethings about the repo as well as adding some ultility to the function. Feel free to clone !!!
+
+Following instruction is from the author of this repository:
 
 # Getting
 
