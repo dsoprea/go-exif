@@ -16,6 +16,10 @@ To get the project and dependencies:
 $ go get -t github.com/dsoprea/go-exif/v3
 ```
 
+new version go
+```
+$ go install github.com/dsoprea/go-exif/v3@latest
+```
 
 # Scope
 
