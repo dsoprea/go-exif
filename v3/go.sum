@@ -8,6 +8,8 @@ github.com/dsoprea/go-utility v0.0.0-20200711062821-fab8125e9bdf h1:/w4QxepU4AHh
 github.com/dsoprea/go-utility v0.0.0-20200711062821-fab8125e9bdf/go.mod h1:95+K3z2L0mqsVYd6yveIv1lmtT3tcQQ3dVakPySffW8=
 github.com/dsoprea/go-utility/v2 v2.0.0-20221003140548-8965201d14f4 h1:2lI9TaLgoPeN6MK8oF19E5OCtGkj+MIrUkaKemxDrtE=
 github.com/dsoprea/go-utility/v2 v2.0.0-20221003140548-8965201d14f4/go.mod h1:tIt4Fa4LTj7yvKZoReegmWCcARTNnNsucxBEmXKBPL4=
+github.com/dsoprea/go-utility/v2 v2.0.0-20221003142440-7a1927d49d9d h1:Vk9UcMAKXUx7X9p0lBMjwBTxkDfTxo+vAIGbrqLhvEI=
+github.com/dsoprea/go-utility/v2 v2.0.0-20221003142440-7a1927d49d9d/go.mod h1:LVjRU0RNUuMDqkPTxcALio0LWPFPXxxFCvVGVAwEpFc=
 github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
 github.com/go-errors/errors v1.0.2/go.mod h1:psDX2osz5VnTOnFWbDeWwS7yejl+uV3FEWEp4lssFEs=
 github.com/go-errors/errors v1.1.1/go.mod h1:psDX2osz5VnTOnFWbDeWwS7yejl+uV3FEWEp4lssFEs=
