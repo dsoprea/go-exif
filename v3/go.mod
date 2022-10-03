@@ -8,8 +8,7 @@ go 1.12
 
 require (
 	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd
-	github.com/dsoprea/go-utility v0.0.0-20221003141017-b854b1d8773e // indirect
-	github.com/dsoprea/go-utility/v2 v2.0.0-20200717064901-2fccff4aa15e
+	github.com/dsoprea/go-utility/v2 v2.0.0-20221003140548-8965201d14f4
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551
 	github.com/jessevdk/go-flags v1.4.0
