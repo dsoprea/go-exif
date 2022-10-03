@@ -17,6 +17,11 @@ $ go get -t github.com/dsoprea/go-exif/v3
 ```
 
 
+# Requirements
+
+- Go >= 1.17: Due to a breakage with "go test", we only officially support 1.17 for testing/CI reasons. It may still work in earlier versions if such a need is critically required, however.
+
+
 # Scope
 
 This project is concerned only with parsing and encoding raw EXIF data. It does

@@ -1,12 +1,9 @@
 language: go
 go:
-  - master
   - stable
-  - "1.14"
-  - "1.13"
-  - "1.12"
-env:
-  - GO111MODULE=on
+  - "1.19"
+  - "1.18"
+  - "1.17"
 install:
   - go get -t ./...
 script:
