@@ -6,6 +6,8 @@ github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd h1:l+vLbuxptsC6
 github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd/go.mod h1:7I+3Pe2o/YSU88W0hWlm9S22W7XI1JFNJ86U0zPKMf8=
 github.com/dsoprea/go-utility v0.0.0-20200711062821-fab8125e9bdf h1:/w4QxepU4AHh3AuO6/g8y/YIIHH5+aKP3Bj8sg5cqhU=
 github.com/dsoprea/go-utility v0.0.0-20200711062821-fab8125e9bdf/go.mod h1:95+K3z2L0mqsVYd6yveIv1lmtT3tcQQ3dVakPySffW8=
+github.com/dsoprea/go-utility v0.0.0-20221003142440-7a1927d49d9d h1:5CKPAqjqyjfuYBCQXvTZOCFE6VJQqIVrSfVDiQ9nRjI=
+github.com/dsoprea/go-utility v0.0.0-20221003142440-7a1927d49d9d/go.mod h1:KVK+/Hul09ujXAGq+42UBgCTnXkiJZRnLYdURGjQUwo=
 github.com/dsoprea/go-utility/v2 v2.0.0-20221003140548-8965201d14f4 h1:2lI9TaLgoPeN6MK8oF19E5OCtGkj+MIrUkaKemxDrtE=
 github.com/dsoprea/go-utility/v2 v2.0.0-20221003140548-8965201d14f4/go.mod h1:tIt4Fa4LTj7yvKZoReegmWCcARTNnNsucxBEmXKBPL4=
 github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
