@@ -201,7 +201,7 @@ providing their non-trivial time or image corpus to test go-exif:
 - [philip-firstorder](https://github.com/philip-firstorder) (200K images)
 - [matchstick](https://github.com/matchstick) (102K images)
 
-In addition to these, it has been tested on my own collection, north of 478K
+In addition to these, it has been tested on my own collection, north of 560K
 images.
 
 [search-and-extract-exif]: https://godoc.org/github.com/dsoprea/go-exif/v3#SearchAndExtractExif
