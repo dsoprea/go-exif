@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"encoding/binary"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 const (
@@ -245,3 +246,30 @@ func BuildExifHeader(byteOrder binary.ByteOrder, firstIfdOffset uint32) (headerB
 
 	return b.Bytes(), nil
 }
+
+type ExifInfo struct {
+
+	// The time at which the image was captured.
+	DateTimeOriginal    time.Time
+	HasDateTimeOriginal bool
+
+	// The offset from UTC
+	OffsetTimeOriginal    time.Duration
+	HasOffsetTimeOriginal bool
+}
+
+// This function converts the DateTimeOriginal value to UTC if the ExifInfo has an OffsetTimeOriginal value.
+// By default we can make no assumptions about the time zone the original date time was captured in.
+// We only know the time in UTC if the exif info provides the OffsetTimeOriginal value.
+//
+// E.g. New York is typically 5h earlier than UTC. During DST New York is only 4h earlier than UTC.
+// Given a date time original value of 2022:11:05 17:38:25, and a OffsetTimeOriginal value of -04:00,
+// we need to add 4*60*60 seconds to the time in New York to get the time in UTC.
+// This finally gives us a time in UTC of 2022:11:05 21:38:25.
+func (ei *ExifInfo) DateTimeOriginalInUTC() time.Time {
+	return ei.DateTimeOriginal.Add(-1 * ei.OffsetTimeOriginal).In(time.UTC)
+}
+
+// func (ei *ExifInfo) String() string {
+// 	return fmt.Sprintf("ExifInfo<LAT=(%.05f) LON=(%.05f) ALT=(%d) TIME=[%s]>", gi.Latitude.Decimal(), gi.Longitude.Decimal(), gi.Altitude, gi.Timestamp)
+// }
