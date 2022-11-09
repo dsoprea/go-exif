@@ -81,25 +81,25 @@ func TestIfdBuilder_Add(t *testing.T) {
 
 	if tags[0].tagId != 0x11 {
 		t.Fatalf("tag (0) tag-ID not correct")
-	} else if bytes.Compare(tags[0].value.Bytes(), []byte("test string")) != 0 {
+	} else if !bytes.Equal(tags[0].value.Bytes(), []byte("test string")) {
 		t.Fatalf("tag (0) value not correct")
 	}
 
 	if tags[1].tagId != 0x22 {
 		t.Fatalf("tag (1) tag-ID not correct")
-	} else if bytes.Compare(tags[1].value.Bytes(), []byte("test string2")) != 0 {
+	} else if !bytes.Equal(tags[1].value.Bytes(), []byte("test string2")) {
 		t.Fatalf("tag (1) value not correct")
 	}
 
 	if tags[2].tagId != 0x33 {
 		t.Fatalf("tag (2) tag-ID not correct")
-	} else if bytes.Compare(tags[2].value.Bytes(), []byte("test string3")) != 0 {
+	} else if !bytes.Equal(tags[2].value.Bytes(), []byte("test string3")) {
 		t.Fatalf("tag (2) value not correct")
 	}
 
 	if tags[3].tagId != 0x44 {
 		t.Fatalf("tag (3) tag-ID not correct")
-	} else if bytes.Compare(tags[3].value.Bytes(), originalBytes) != 0 {
+	} else if !bytes.Equal(tags[3].value.Bytes(), originalBytes) {
 		t.Fatalf("tag (3) value not correct")
 	}
 }
@@ -455,12 +455,12 @@ func TestIfdBuilder_FindN__First_2_2Returned(t *testing.T) {
 	tags := ib.Tags()
 
 	bt = tags[found[0]]
-	if bt.tagId != 0x11 || bytes.Compare(bt.value.Bytes(), []byte("test string")) != 0 {
+	if bt.tagId != 0x11 || !bytes.Equal(bt.value.Bytes(), []byte("test string")) {
 		log.Panicf("Found entry 0 is not correct: (0x%04x) [%s]", bt.tagId, bt.value)
 	}
 
 	bt = tags[found[1]]
-	if bt.tagId != 0x11 || bytes.Compare(bt.value.Bytes(), []byte("test string4")) != 0 {
+	if bt.tagId != 0x11 || !bytes.Equal(bt.value.Bytes(), []byte("test string4")) {
 		log.Panicf("Found entry 1 is not correct: (0x%04x) [%s]", bt.tagId, bt.value)
 	}
 }
@@ -740,7 +740,7 @@ func TestIfdBuilder_Find__Miss(t *testing.T) {
 	_, err = ib.Find(0x99)
 	if err == nil {
 		t.Fatalf("Expected an error.")
-	} else if log.Is(err, ErrTagEntryNotFound) == false {
+	} else if !log.Is(err, ErrTagEntryNotFound) {
 		log.Panic(err)
 	}
 }
@@ -787,7 +787,7 @@ func TestIfdBuilder_Replace(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Pre-replace tags are not correct.")
 	}
 
@@ -806,7 +806,7 @@ func TestIfdBuilder_Replace(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x99, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x99, 0x33}, currentIds) {
 		t.Fatalf("Post-replace tags are not correct.")
 	}
 }
@@ -853,7 +853,7 @@ func TestIfdBuilder_ReplaceN(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Pre-replace tags are not correct.")
 	}
 
@@ -872,7 +872,7 @@ func TestIfdBuilder_ReplaceN(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0xA9, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0xA9, 0x33}, currentIds) {
 		t.Fatalf("Post-replace tags are not correct.")
 	}
 }
@@ -933,7 +933,7 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Pre-delete tags not correct.")
 	}
 
@@ -949,7 +949,7 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Post-delete (1) tags not correct.")
 	}
 
@@ -965,14 +965,14 @@ func TestIfdBuilder_DeleteFirst(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) {
 		t.Fatalf("Post-delete (2) tags not correct.")
 	}
 
 	err = ib.DeleteFirst(0x22)
 	if err == nil {
 		t.Fatalf("Expected an error.")
-	} else if log.Is(err, ErrTagEntryNotFound) == false {
+	} else if !log.Is(err, ErrTagEntryNotFound) {
 		log.Panic(err)
 	}
 }
@@ -1033,7 +1033,7 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Pre-delete tags not correct.")
 	}
 
@@ -1049,7 +1049,7 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Post-delete (1) tags not correct.")
 	}
 
@@ -1065,14 +1065,14 @@ func TestIfdBuilder_DeleteN(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) {
 		t.Fatalf("Post-delete (2) tags not correct.")
 	}
 
 	err = ib.DeleteN(0x22, 1)
 	if err == nil {
 		t.Fatalf("Expected an error.")
-	} else if log.Is(err, ErrTagEntryNotFound) == false {
+	} else if !log.Is(err, ErrTagEntryNotFound) {
 		log.Panic(err)
 	}
 }
@@ -1133,7 +1133,7 @@ func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Pre-delete tags not correct.")
 	}
 
@@ -1149,14 +1149,14 @@ func TestIfdBuilder_DeleteN_Two(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) {
 		t.Fatalf("Post-delete tags not correct.")
 	}
 
 	err = ib.DeleteFirst(0x22)
 	if err == nil {
 		t.Fatalf("Expected an error.")
-	} else if log.Is(err, ErrTagEntryNotFound) == false {
+	} else if !log.Is(err, ErrTagEntryNotFound) {
 		log.Panic(err)
 	}
 }
@@ -1217,7 +1217,7 @@ func TestIfdBuilder_DeleteAll(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x22, 0x22, 0x33}, currentIds) {
 		t.Fatalf("Pre-delete tags not correct.")
 	}
 
@@ -1235,14 +1235,14 @@ func TestIfdBuilder_DeleteAll(t *testing.T) {
 		currentIds[i] = bt.tagId
 	}
 
-	if reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) == false {
+	if !reflect.DeepEqual([]uint16{0x11, 0x33}, currentIds) {
 		t.Fatalf("Post-delete tags not correct.")
 	}
 
 	err = ib.DeleteFirst(0x22)
 	if err == nil {
 		t.Fatalf("Expected an error.")
-	} else if log.Is(err, ErrTagEntryNotFound) == false {
+	} else if !log.Is(err, ErrTagEntryNotFound) {
 		log.Panic(err)
 	}
 }
@@ -1339,7 +1339,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain(t *testing.T) {
 		"TAG<PARENTS=[] FQ-IFD-PATH=[IFD] IFD-TAG-ID=(0x0000) CHILD-IFD=[] TAG-INDEX=(5) TAG=[0x0128]>",
 	}
 
-	if reflect.DeepEqual(actual, expected) == false {
+	if !reflect.DeepEqual(actual, expected) {
 		fmt.Printf("ACTUAL:\n%s\n\nEXPECTED:\n%s\n", strings.Join(actual, "\n"), strings.Join(expected, "\n"))
 		t.Fatalf("IB did not [correctly] duplicate the IFD structure.")
 	}
@@ -1610,7 +1610,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 	// Check the thumbnail.
 
-	if bytes.Compare(recoveredThumbnailData, originalThumbnailData) != 0 {
+	if !bytes.Equal(recoveredThumbnailData, originalThumbnailData) {
 		t.Fatalf("recovered thumbnail does not match original")
 	}
 
@@ -1660,7 +1660,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	for _, ite := range originalTags {
 		// Adds a lot of noise if/when debugging, and we're already checking the
 		// thumbnail bytes separately.
-		if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() == true {
+		if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() {
 			continue
 		}
 
@@ -1684,7 +1684,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 	for _, ite := range recoveredTags {
 		// Adds a lot of noise if/when debugging, and we're already checking the
 		// thumbnail bytes separately.
-		if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() == true {
+		if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() {
 			continue
 		}
 
@@ -1784,7 +1784,7 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 
 // 	// Check the thumbnail.
 
-// 	if bytes.Compare(recoveredThumbnailData, originalThumbnailData) != 0 {
+// 	if !bytes.Equal(recoveredThumbnailData, originalThumbnailData) {
 // 		t.Fatalf("recovered thumbnail does not match original")
 // 	}
 
@@ -1857,10 +1857,10 @@ func TestIfdBuilder_NewIfdBuilderFromExistingChain_RealData(t *testing.T) {
 // 			expectedValueBytes = append(expectedValueBytes, []byte{'A', 'S', 'C', 'I', 'I', 0, 0, 0}...)
 // 			expectedValueBytes = append(expectedValueBytes, []byte("TEST COMMENT")...)
 
-// 			if bytes.Compare(recoveredValueBytes, expectedValueBytes) != 0 {
+// 			if !bytes.Equal(recoveredValueBytes, expectedValueBytes) {
 // 				t.Fatalf("Recovered UserComment does not have the right value: %v != %v", recoveredValueBytes, expectedValueBytes)
 // 			}
-// 		} else if bytes.Compare(recoveredValueBytes, originalValueBytes) != 0 {
+// 		} else if !bytes.Equal(recoveredValueBytes, originalValueBytes) {
 // 			t.Fatalf("bytes of tag content not correct: %v != %v  ITE=%s", recoveredValueBytes, originalValueBytes, recoveredIte)
 // 		}
 // 	}
@@ -2069,7 +2069,7 @@ func TestNewStandardBuilderTag__OneUnit(t *testing.T) {
 		t.Fatalf("II in BuilderTag not correct")
 	} else if bt.tagId != 0x8833 {
 		t.Fatalf("tag-ID not correct")
-	} else if bytes.Compare(bt.value.Bytes(), []byte{0x0, 0x0, 0x12, 0x34}) != 0 {
+	} else if !bytes.Equal(bt.value.Bytes(), []byte{0x0, 0x0, 0x12, 0x34}) {
 		t.Fatalf("value not correct")
 	}
 }

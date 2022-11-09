@@ -3,6 +3,7 @@ package exif
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,9 +12,7 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 const (
@@ -96,23 +95,23 @@ func SearchAndExtractExifN(data []byte, n int) (rawExif []byte, err error) {
 			log.Panic(err)
 		}
 
-		exifLogger.Debugf(nil, "Read EXIF block (%d).", skips)
+		exifLogger.Debugf(context.TODO(), "Read EXIF block (%d).", skips)
 
 		totalDiscarded += discarded
 
 		if skips >= n {
-			exifLogger.Debugf(nil, "Reached requested EXIF block (%d).", n)
+			exifLogger.Debugf(context.TODO(), "Reached requested EXIF block (%d).", n)
 			break
 		}
 
 		nextOffset := discarded + 1
-		exifLogger.Debugf(nil, "Skipping EXIF block (%d) by seeking to position (%d).", skips, nextOffset)
+		exifLogger.Debugf(context.TODO(), "Skipping EXIF block (%d) by seeking to position (%d).", skips, nextOffset)
 
 		data = data[nextOffset:]
 		skips++
 	}
 
-	exifLogger.Debugf(nil, "Found EXIF blob (%d) bytes from initial position.", totalDiscarded)
+	exifLogger.Debugf(context.TODO(), "Found EXIF blob (%d) bytes from initial position.", totalDiscarded)
 	return rawExif, nil
 }
 
@@ -146,7 +145,7 @@ func searchAndExtractExifWithReaderWithDiscarded(r io.Reader) (rawExif []byte, d
 
 		_, err = ParseExifHeader(window)
 		if err != nil {
-			if log.Is(err, ErrNoExif) == true {
+			if log.Is(err, ErrNoExif) {
 				// No EXIF. Move forward by one byte.
 
 				_, err := br.Discard(1)
@@ -164,7 +163,7 @@ func searchAndExtractExifWithReaderWithDiscarded(r io.Reader) (rawExif []byte, d
 		break
 	}
 
-	exifLogger.Debugf(nil, "Found EXIF blob (%d) bytes from initial position.", discarded)
+	exifLogger.Debugf(context.TODO(), "Found EXIF blob (%d) bytes from initial position.", discarded)
 
 	rawExif, err = ioutil.ReadAll(br)
 	log.PanicIf(err)
@@ -245,16 +244,16 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	//      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
 	if len(data) < ExifSignatureLength {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header: (%d)", len(data))
+		exifLogger.Warningf(context.Todo(), "Not enough data for EXIF header: (%d)", len(data))
 		return eh, ErrNoExif
 	}
 
-	if bytes.Equal(data[:4], ExifBigEndianSignature[:]) == true {
-		exifLogger.Debugf(nil, "Byte-order is big-endian.")
+	if bytes.Equal(data[:4], ExifBigEndianSignature[:]) {
+		exifLogger.Debugf(context.TODO(), "Byte-order is big-endian.")
 		eh.ByteOrder = binary.BigEndian
-	} else if bytes.Equal(data[:4], ExifLittleEndianSignature[:]) == true {
+	} else if bytes.Equal(data[:4], ExifLittleEndianSignature[:]) {
 		eh.ByteOrder = binary.LittleEndian
-		exifLogger.Debugf(nil, "Byte-order is little-endian.")
+		exifLogger.Debugf(context.TODO(), "Byte-order is little-endian.")
 	} else {
 		return eh, ErrNoExif
 	}

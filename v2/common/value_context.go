@@ -5,7 +5,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -147,7 +147,7 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 
 	unitSizeRaw := uint32(tagType.Size())
 
-	if vc.isEmbedded() == true {
+	if vc.isEmbedded() {
 		byteLength := unitSizeRaw * vc.unitCount
 		return vc.rawValueOffset[:byteLength], nil
 	}
@@ -158,7 +158,7 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 // GetFarOffset returns the offset if the value is not embedded [within the
 // pointer itself] or an error if an embedded value.
 func (vc *ValueContext) GetFarOffset() (offset uint32, err error) {
-	if vc.isEmbedded() == true {
+	if vc.isEmbedded() {
 		return 0, ErrNotFarValue
 	}
 

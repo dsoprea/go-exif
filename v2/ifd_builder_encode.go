@@ -219,7 +219,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 
 	// Write unit-count.
 
-	if bt.value.IsBytes() == true {
+	if bt.value.IsBytes() {
 		effectiveType := bt.typeId
 		if bt.typeId == exifcommon.TypeUndefined {
 			effectiveType = exifcommon.TypeByte
@@ -235,7 +235,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 		len_ := len(valueBytes)
 		unitCount := uint32(len_) / typeSize
 
-		if _, found := tagsWithoutAlignment[bt.tagId]; found == false {
+		if !_, found := tagsWithoutAlignment[bt.tagId]; found {
 			remainder := uint32(len_) % typeSize
 
 			if remainder > 0 {
@@ -262,7 +262,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 			log.PanicIf(err)
 		}
 	} else {
-		if bt.value.IsIb() == false {
+		if !bt.value.IsIb() {
 			log.Panicf("tag value is not a byte-slice but also not a child IB: %v", bt)
 		}
 
@@ -364,7 +364,7 @@ func (ibe *IfdByteEncoder) encodeIfdToBytes(ib *IfdBuilder, ifdAddressableOffset
 
 	// N the link from this IFD to the next IFD that will be written in the
 	// next cycle.
-	if setNextIb == true {
+	if setNextIb {
 		// Write address of next IFD in chain. This will be the original
 		// allocation offset plus the size of everything we have allocated for
 		// this IFD and its child-IFDs.

@@ -5,7 +5,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -56,7 +56,7 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 
 	if len(data) == 0 || data[count-1] != 0 {
 		s := string(data[:count])
-		parserLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
+		parserLogger.Warningf(context.Todo(), "ascii not terminated with nul as expected: [%v]", s)
 
 		return s, nil
 	}

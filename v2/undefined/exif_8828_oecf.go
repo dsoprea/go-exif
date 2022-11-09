@@ -6,9 +6,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v2/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type Tag8828Oecf struct {
@@ -39,7 +37,7 @@ func (Codec8828Oecf) Encode(value interface{}, byteOrder binary.ByteOrder) (enco
 	// TODO(dustin): Add test
 
 	oecf, ok := value.(Tag8828Oecf)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a Tag8828Oecf")
 	}
 

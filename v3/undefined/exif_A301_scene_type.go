@@ -5,9 +5,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type TagExifA301SceneType uint32
@@ -35,7 +33,7 @@ func (CodecExifA301SceneType) Encode(value interface{}, byteOrder binary.ByteOrd
 	}()
 
 	st, ok := value.(TagExifA301SceneType)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a TagExif9101ComponentsConfiguration")
 	}
 

@@ -8,7 +8,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 type TagTypePrimitive uint16
@@ -132,7 +132,7 @@ func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder
 	// Truncate the items if it's not bytes or a string and we just want the first.
 
 	valueSuffix := ""
-	if justFirst == true && unitCount > 1 && tagType != TypeByte && tagType != TypeAscii && tagType != TypeAsciiNoNul {
+	if justFirst && unitCount > 1 && tagType != TypeByte && tagType != TypeAscii && tagType != TypeAsciiNoNul {
 		unitCount = 1
 		valueSuffix = "..."
 	}
@@ -157,7 +157,7 @@ func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder
 		log.PanicIf(err)
 
 		if len(items) > 0 {
-			if justFirst == true {
+			if justFirst {
 				return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
 			} else {
 				return fmt.Sprintf("%v", items), nil
@@ -170,7 +170,7 @@ func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder
 		log.PanicIf(err)
 
 		if len(items) > 0 {
-			if justFirst == true {
+			if justFirst {
 				return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
 			} else {
 				return fmt.Sprintf("%v", items), nil
@@ -188,7 +188,7 @@ func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder
 				parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
 			}
 
-			if justFirst == true {
+			if justFirst {
 				return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
 			} else {
 				return fmt.Sprintf("%v", parts), nil
@@ -201,7 +201,7 @@ func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder
 		log.PanicIf(err)
 
 		if len(items) > 0 {
-			if justFirst == true {
+			if justFirst {
 				return fmt.Sprintf("%v%s", items[0], valueSuffix), nil
 			} else {
 				return fmt.Sprintf("%v", items), nil
@@ -219,7 +219,7 @@ func Format(rawBytes []byte, tagType TagTypePrimitive, justFirst bool, byteOrder
 		}
 
 		if len(items) > 0 {
-			if justFirst == true {
+			if justFirst {
 				return fmt.Sprintf("%v%s", parts[0], valueSuffix), nil
 			} else {
 				return fmt.Sprintf("%v", parts), nil

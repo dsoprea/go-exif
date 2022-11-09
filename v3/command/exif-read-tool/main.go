@@ -14,17 +14,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 	"github.com/jessevdk/go-flags"
 
 	"github.com/dsoprea/go-exif/v3"
-	"github.com/dsoprea/go-exif/v3/common"
 )
 
 const (
@@ -78,7 +78,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	if arguments.IsVerbose == true {
+	if arguments.IsVerbose {
 		cla := log.NewConsoleLogAdapter()
 		log.AddAdapter("console", cla)
 
@@ -104,14 +104,14 @@ func main() {
 		log.Panic(err)
 	}
 
-	mainLogger.Debugf(nil, "EXIF blob is (%d) bytes.", len(rawExif))
+	mainLogger.Debugf(context.TODO(), "EXIF blob is (%d) bytes.", len(rawExif))
 
 	// Run the parse.
 
 	entries, _, err := exif.GetFlatExifDataUniversalSearch(rawExif, nil, arguments.DoUniversalTagSearch)
 	if err != nil {
 		if arguments.SkipBlocks > 0 {
-			mainLogger.Warningf(nil, "Encountered an error. This might be related to the request to skip EXIF blocks.")
+			mainLogger.Warningf(context.Todo(), "Encountered an error. This might be related to the request to skip EXIF blocks.")
 		}
 
 		log.Panic(err)
@@ -130,7 +130,7 @@ func main() {
 		log.PanicIf(err)
 
 		var thumbnail []byte
-		if ifd, found := index.Lookup[exif.ThumbnailFqIfdPath]; found == true {
+		if ifd, found := index.Lookup[exif.ThumbnailFqIfdPath]; found {
 			thumbnail, err = ifd.Thumbnail()
 			if err != nil && err != exif.ErrNoThumbnail {
 				log.Panic(err)
@@ -138,9 +138,9 @@ func main() {
 		}
 
 		if thumbnail == nil {
-			mainLogger.Debugf(nil, "No thumbnails found.")
+			mainLogger.Debugf(context.TODO(), "No thumbnails found.")
 		} else {
-			if arguments.PrintAsJson == false {
+			if !arguments.PrintAsJson {
 				fmt.Printf("Writing (%d) bytes for thumbnail: [%s]\n", len(thumbnail), thumbnailOutputFilepath)
 				fmt.Printf("\n")
 			}
@@ -150,8 +150,8 @@ func main() {
 		}
 	}
 
-	if arguments.DoNotPrintTags == false {
-		if arguments.PrintAsJson == true {
+	if !arguments.DoNotPrintTags {
+		if arguments.PrintAsJson {
 			data, err := json.MarshalIndent(entries, "", "    ")
 			log.PanicIf(err)
 

@@ -3,9 +3,7 @@ package exifundefined
 import (
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v2/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type Tag001CGPSAreaInformation struct {
@@ -31,7 +29,7 @@ func (Codec001CGPSAreaInformation) Encode(value interface{}, byteOrder binary.By
 	}()
 
 	s, ok := value.(Tag001CGPSAreaInformation)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a Tag001CGPSAreaInformation")
 	}
 

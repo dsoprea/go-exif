@@ -144,12 +144,12 @@ func TestMainJson(t *testing.T) {
 	err = json.Unmarshal(expectedRaw, &expected)
 	log.PanicIf(err)
 
-	// if reflect.DeepEqual(actual, expected) == false {
+	// if !reflect.DeepEqual(actual, expected) {
 	// 	t.Fatalf("Output not as expected:\nACTUAL:\n%s\nEXPECTED:\n%s", actualRaw, expectedRaw)
 	// }
 
 	for i, tagInfo := range actual {
-		if reflect.DeepEqual(tagInfo, expected[i]) == false {
+		if !reflect.DeepEqual(tagInfo, expected[i]) {
 			actualBytes, err := json.MarshalIndent(tagInfo, "", "  ")
 			log.PanicIf(err)
 

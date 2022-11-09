@@ -220,7 +220,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	valueOffset, rawValueOffset, err := bp.getUint32()
 	log.PanicIf(err)
 
-	if tagType.IsValid() == false {
+	if !tagType.IsValid() {
 		ite = &IfdTagEntry{
 			tagId:   tagId,
 			tagType: tagType,
@@ -255,7 +255,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 
 		// We also need to set `tag.ChildFqIfdPath` but can't do it here
 		// because we don't have the IFD index.
-	} else if log.Is(err, exifcommon.ErrChildIfdNotMapped) == false {
+	} else if !log.Is(err, exifcommon.ErrChildIfdNotMapped) {
 		log.Panic(err)
 	}
 
@@ -300,7 +300,7 @@ func (ie *IfdEnumerate) postparseTag(ite *IfdTagEntry, med *MiscellaneousExifDat
 			med.unknownTags[originalBt] = exifcommon.BasicTag{}
 		}
 
-		utilityLogger.Debugf(nil,
+		utilityLogger.Debugf(context.TODO(),
 			"Tag (0x%04x) is not valid for IFD [%s]. Attempting secondary "+
 				"lookup.", tagId, ii.String())
 
@@ -355,7 +355,7 @@ func (ie *IfdEnumerate) postparseTag(ite *IfdTagEntry, med *MiscellaneousExifDat
 	// tag should ever be repeated, and b) all but one had an incorrect
 	// type and caused parsing/conversion woes. So, this is a quick fix
 	// for those scenarios.
-	if it.DoesSupportType(tagType) == false {
+	if !it.DoesSupportType(tagType) {
 		ifdEnumerateLogger.Warningf(nil,
 			"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
 			ii.UnindexedString(), tagId, it.Name,
@@ -379,7 +379,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	tagCount, _, err := bp.getUint16()
 	log.PanicIf(err)
 
-	ifdEnumerateLogger.Debugf(nil, "IFD [%s] tag-count: (%d)", ii.String(), tagCount)
+	ifdEnumerateLogger.Debugf(context.TODO(), "IFD [%s] tag-count: (%d)", ii.String(), tagCount)
 
 	entries = make([]*IfdTagEntry, 0)
 
@@ -389,11 +389,11 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	for i := 0; i < int(tagCount); i++ {
 		ite, err := ie.parseTag(ii, i, bp)
 		if err != nil {
-			if log.Is(err, ErrTagTypeNotValid) == true {
+			if log.Is(err, ErrTagTypeNotValid) {
 				// Technically, we have the type on-file in the tags-index, but
 				// if the type stored alongside the data disagrees with it,
 				// which it apparently does, all bets are off.
-				ifdEnumerateLogger.Warningf(nil, "Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", ite.tagId, ii, i, ite.tagType)
+				ifdEnumerateLogger.Warningf(context.Todo(), "Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", ite.tagId, ii, i, ite.tagType)
 				continue
 			}
 
@@ -416,15 +416,15 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 			log.PanicIf(err)
 		}
 
-		if ite.IsThumbnailOffset() == true {
-			ifdEnumerateLogger.Debugf(nil, "Skipping the thumbnail offset tag (0x%04x). Use accessors to get it or set it.", tagId)
+		if ite.IsThumbnailOffset() {
+			ifdEnumerateLogger.Debugf(context.TODO(), "Skipping the thumbnail offset tag (0x%04x). Use accessors to get it or set it.", tagId)
 
 			enumeratorThumbnailOffset = ite
 			entries = append(entries, ite)
 
 			continue
-		} else if ite.IsThumbnailSize() == true {
-			ifdEnumerateLogger.Debugf(nil, "Skipping the thumbnail size tag (0x%04x). Use accessors to get it or set it.", tagId)
+		} else if ite.IsThumbnailSize() {
+			ifdEnumerateLogger.Debugf(context.TODO(), "Skipping the thumbnail size tag (0x%04x). Use accessors to get it or set it.", tagId)
 
 			enumeratorThumbnailSize = ite
 			entries = append(entries, ite)
@@ -453,8 +453,8 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 		// (the standard IFD tag type), later, unless we skip it because it's
 		// [likely] not even in the standard list of known tags.
 		if ite.ChildIfdPath() != "" {
-			if doDescend == true {
-				ifdEnumerateLogger.Debugf(nil, "Descending from IFD [%s] to IFD [%s].", ii, ite.ChildIfdPath())
+			if doDescend {
+				ifdEnumerateLogger.Debugf(context.TODO(), "Descending from IFD [%s] to IFD [%s].", ii, ite.ChildIfdPath())
 
 				currentIfdTag := ii.IfdTag()
 
@@ -469,7 +469,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 				err := ie.scan(iiChild, ite.getValueOffset(), visitor, med)
 				log.PanicIf(err)
 
-				ifdEnumerateLogger.Debugf(nil, "Ascending from IFD [%s] to IFD [%s].", ite.ChildIfdPath(), ii)
+				ifdEnumerateLogger.Debugf(context.TODO(), "Ascending from IFD [%s] to IFD [%s].", ite.ChildIfdPath(), ii)
 			}
 		}
 
@@ -486,7 +486,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 		// This this case, the value is always a length.
 		length := enumeratorThumbnailSize.getValueOffset()
 
-		ifdEnumerateLogger.Debugf(nil, "Found thumbnail in IFD [%s]. Its offset is (%d) and is (%d) bytes.", ii, offset, length)
+		ifdEnumerateLogger.Debugf(context.TODO(), "Found thumbnail in IFD [%s]. Its offset is (%d) and is (%d) bytes.", ii, offset, length)
 
 		furthestOffset := offset + length
 
@@ -498,7 +498,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	nextIfdOffset, _, err = bp.getUint32()
 	log.PanicIf(err)
 
-	ifdEnumerateLogger.Debugf(nil, "Next IFD at offset: (%08x)", nextIfdOffset)
+	ifdEnumerateLogger.Debugf(context.TODO(), "Next IFD at offset: (%08x)", nextIfdOffset)
 
 	return nextIfdOffset, entries, thumbnailData, nil
 }
@@ -544,7 +544,7 @@ func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32
 	for ifdIndex := 0; ; ifdIndex++ {
 		iiSibling := iiGeneral.NewSibling(ifdIndex)
 
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] at offset (0x%04x) (scan).", iiSibling.String(), ifdOffset)
+		ifdEnumerateLogger.Debugf(context.TODO(), "Parsing IFD [%s] at offset (0x%04x) (scan).", iiSibling.String(), ifdOffset)
 
 		bp, err := ie.getByteParser(ifdOffset)
 		if err != nil {
@@ -605,7 +605,7 @@ func (ie *IfdEnumerate) Scan(iiRoot *exifcommon.IfdIdentity, ifdOffset uint32, v
 	err = ie.scan(iiRoot, ifdOffset, visitor, med)
 	log.PanicIf(err)
 
-	ifdEnumerateLogger.Debugf(nil, "Scan: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d) (Scan).", ie.FurthestOffset())
+	ifdEnumerateLogger.Debugf(context.TODO(), "Scan: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d) (Scan).", ie.FurthestOffset())
 
 	return med, nil
 }
@@ -683,7 +683,7 @@ func (ifd *Ifd) FindTagWithId(tagId uint16) (results []*IfdTagEntry, err error) 
 	}()
 
 	results, found := ifd.EntriesByTagId[tagId]
-	if found != true {
+	if !found {
 		log.Panic(ErrTagNotFound)
 	}
 
@@ -700,7 +700,7 @@ func (ifd *Ifd) FindTagWithName(tagName string) (results []*IfdTagEntry, err err
 	}()
 
 	it, err := ifd.tagIndex.GetWithName(ifd.ifdIdentity, tagName)
-	if log.Is(err, ErrTagNotFound) == true {
+	if log.Is(err, ErrTagNotFound) {
 		log.Panic(ErrTagNotKnown)
 	} else if err != nil {
 		log.Panic(err)
@@ -759,7 +759,7 @@ func (ifd *Ifd) dumpTags(tags []*IfdTagEntry) []*IfdTagEntry {
 			ifdsFoundCount++
 
 			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
-			if found != true {
+			if !found {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
 
@@ -803,7 +803,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 		} else {
 			// This will just add noise to the output (byte-tags are fully
 			// dumped).
-			if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() == true {
+			if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() {
 				continue
 			}
 
@@ -815,16 +815,16 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 			}
 
 			var valuePhrase string
-			if populateValues == true {
+			if populateValues {
 				var err error
 
 				valuePhrase, err = ite.Format()
 				if err != nil {
-					if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) == true {
-						ifdEnumerateLogger.Warningf(nil, "Skipping non-standard undefined tag: [%s] (%04x)", ifd.ifdIdentity.UnindexedString(), ite.TagId())
+					if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) {
+						ifdEnumerateLogger.Warningf(context.Todo(), "Skipping non-standard undefined tag: [%s] (%04x)", ifd.ifdIdentity.UnindexedString(), ite.TagId())
 						continue
 					} else if err == exifundefined.ErrUnparseableValue {
-						ifdEnumerateLogger.Warningf(nil, "Skipping unparseable undefined tag: [%s] (%04x) [%s]", ifd.ifdIdentity.UnindexedString(), ite.TagId(), it.Name)
+						ifdEnumerateLogger.Warningf(context.Todo(), "Skipping unparseable undefined tag: [%s] (%04x) [%s]", ifd.ifdIdentity.UnindexedString(), ite.TagId(), it.Name)
 						continue
 					}
 
@@ -842,7 +842,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 			ifdsFoundCount++
 
 			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
-			if found != true {
+			if !found {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
 
@@ -884,7 +884,7 @@ func (ifd *Ifd) printIfdTree(level int, nextLink bool) {
 			ifdsFoundCount++
 
 			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
-			if found != true {
+			if !found {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
 
@@ -932,7 +932,7 @@ func (ifd *Ifd) dumpTree(tagsDump []string, level int) []string {
 			ifdsFoundCount++
 
 			childIfd, found := ifd.ChildIfdIndex[childIfdPath]
-			if found != true {
+			if !found {
 				log.Panicf("alien child IFD referenced by a tag: [%s]", childIfdPath)
 			}
 
@@ -977,10 +977,10 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panicf("GPS can only be read on GPS IFD: [%s] != [%s]", ifd.ifdIdentity.UnindexedString(), exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString())
 	}
 
-	if tags, found := ifd.EntriesByTagId[TagGpsVersionId]; found == false {
+	if !tags, found := ifd.EntriesByTagId[TagGpsVersionId]; found {
 		// We've seen this. We'll just have to default to assuming we're in a
 		// 2.2.0.0 format.
-		ifdEnumerateLogger.Warningf(nil, "No GPS version tag (0x%04x) found.", TagGpsVersionId)
+		ifdEnumerateLogger.Warningf(context.Todo(), "No GPS version tag (0x%04x) found.", TagGpsVersionId)
 	} else {
 		versionBytes, err := tags[0].GetRawBytes()
 		log.PanicIf(err)
@@ -994,14 +994,14 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		}
 
 		if hit != true {
-			ifdEnumerateLogger.Warningf(nil, "GPS version not supported: %v", versionBytes)
+			ifdEnumerateLogger.Warningf(context.Todo(), "GPS version not supported: %v", versionBytes)
 			log.Panic(ErrNoGpsTags)
 		}
 	}
 
 	tags, found := ifd.EntriesByTagId[TagLatitudeId]
-	if found == false {
-		ifdEnumerateLogger.Warningf(nil, "latitude not found")
+	if !found {
+		ifdEnumerateLogger.Warningf(context.Todo(), "latitude not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1010,8 +1010,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	// Look for whether North or South.
 	tags, found = ifd.EntriesByTagId[TagLatitudeRefId]
-	if found == false {
-		ifdEnumerateLogger.Warningf(nil, "latitude-ref not found")
+	if !found {
+		ifdEnumerateLogger.Warningf(context.Todo(), "latitude-ref not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1019,8 +1019,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	log.PanicIf(err)
 
 	tags, found = ifd.EntriesByTagId[TagLongitudeId]
-	if found == false {
-		ifdEnumerateLogger.Warningf(nil, "longitude not found")
+	if !found {
+		ifdEnumerateLogger.Warningf(context.Todo(), "longitude not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1029,8 +1029,8 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	// Look for whether West or East.
 	tags, found = ifd.EntriesByTagId[TagLongitudeRefId]
-	if found == false {
-		ifdEnumerateLogger.Warningf(nil, "longitude-ref not found")
+	if !found {
+		ifdEnumerateLogger.Warningf(context.Todo(), "longitude-ref not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1054,11 +1054,11 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	altitudeTags, foundAltitude := ifd.EntriesByTagId[TagAltitudeId]
 	altitudeRefTags, foundAltitudeRef := ifd.EntriesByTagId[TagAltitudeRefId]
 
-	if foundAltitude == true && foundAltitudeRef == true {
+	if foundAltitude == true && foundAltitudeRef {
 		altitudePhrase, err := altitudeTags[0].Format()
 		log.PanicIf(err)
 
-		ifdEnumerateLogger.Debugf(nil, "Altitude is [%s].", altitudePhrase)
+		ifdEnumerateLogger.Debugf(context.TODO(), "Altitude is [%s].", altitudePhrase)
 
 		altitudeValue, err := altitudeTags[0].Value()
 		log.PanicIf(err)
@@ -1066,7 +1066,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		altitudeRefPhrase, err := altitudeRefTags[0].Format()
 		log.PanicIf(err)
 
-		ifdEnumerateLogger.Debugf(nil, "Altitude-reference is [%s].", altitudeRefPhrase)
+		ifdEnumerateLogger.Debugf(context.TODO(), "Altitude-reference is [%s].", altitudeRefPhrase)
 
 		altitudeRefValue, err := altitudeRefTags[0].Value()
 		log.PanicIf(err)
@@ -1088,12 +1088,12 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	timestampTags, foundTimestamp := ifd.EntriesByTagId[TagTimestampId]
 	datestampTags, foundDatestamp := ifd.EntriesByTagId[TagDatestampId]
 
-	if foundTimestamp == true && foundDatestamp == true {
+	if foundTimestamp == true && foundDatestamp {
 		datestampValue, err := datestampTags[0].Value()
 		log.PanicIf(err)
 
 		datePhrase := datestampValue.(string)
-		ifdEnumerateLogger.Debugf(nil, "Date tag value is [%s].", datePhrase)
+		ifdEnumerateLogger.Debugf(context.TODO(), "Date tag value is [%s].", datePhrase)
 
 		// Normalize the separators.
 		datePhrase = strings.ReplaceAll(datePhrase, "-", ":")
@@ -1111,7 +1111,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 			timePhrase, err := timestampTags[0].Format()
 			log.PanicIf(err)
 
-			ifdEnumerateLogger.Debugf(nil, "Time tag value is [%s].", timePhrase)
+			ifdEnumerateLogger.Debugf(context.TODO(), "Time tag value is [%s].", timePhrase)
 
 			timestampRaw := timestampValue.([]exifcommon.Rational)
 
@@ -1216,7 +1216,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 
 		queue = queue[1:]
 
-		ifdEnumerateLogger.Debugf(nil, "Parsing IFD [%s] (%d) at offset (0x%04x) (Collect).", ii.String(), ii.Index(), offset)
+		ifdEnumerateLogger.Debugf(context.TODO(), "Parsing IFD [%s] (%d) at offset (0x%04x) (Collect).", ii.String(), ii.Index(), offset)
 
 		bp, err := ie.getByteParser(offset)
 		if err != nil {
@@ -1244,7 +1244,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 			tagId := ite.TagId()
 
 			tags, found := entriesByTagId[tagId]
-			if found == false {
+			if !found {
 				tags = make([]*IfdTagEntry, 0)
 			}
 
@@ -1285,7 +1285,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 		lookup[ii.String()] = ifd
 
 		// Add a link from the previous IFD in the chain to us.
-		if previousIfd, found := edges[offset]; found == true {
+		if previousIfd, found := edges[offset]; found {
 			previousIfd.NextIfd = ifd
 		}
 
@@ -1349,7 +1349,7 @@ func (ie *IfdEnumerate) Collect(rootIfdOffset uint32) (index IfdIndex, err error
 	err = ie.setChildrenIndex(index.RootIfd)
 	log.PanicIf(err)
 
-	ifdEnumerateLogger.Debugf(nil, "Collect: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d).", ie.FurthestOffset())
+	ifdEnumerateLogger.Debugf(context.TODO(), "Collect: It looks like the furthest offset that contained EXIF data in the EXIF blob was (%d).", ie.FurthestOffset())
 
 	return index, nil
 }

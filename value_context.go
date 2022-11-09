@@ -3,7 +3,7 @@ package exif
 import (
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -110,7 +110,7 @@ func (vc *ValueContext) readRawEncoded() (rawBytes []byte, err error) {
 
 	unitSizeRaw := uint32(tagType.Size())
 
-	if vc.isEmbedded() == true {
+	if vc.isEmbedded() {
 		byteLength := unitSizeRaw * vc.unitCount
 		return vc.rawValueOffset[:byteLength], nil
 	} else {

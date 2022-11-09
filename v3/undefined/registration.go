@@ -1,8 +1,6 @@
 package exifundefined
 
-import (
-	"github.com/dsoprea/go-logging"
-)
+import log "github.com/dsoprea/go-logging"
 
 // UndefinedTagHandle defines one undefined-type tag with a corresponding
 // decoder.
@@ -15,7 +13,7 @@ func registerEncoder(entity EncodeableValue, encoder UndefinedValueEncoder) {
 	typeName := entity.EncoderName()
 
 	_, found := encoders[typeName]
-	if found == true {
+	if found {
 		log.Panicf("encoder already registered: %v", typeName)
 	}
 
@@ -29,7 +27,7 @@ func registerDecoder(ifdPath string, tagId uint16, decoder UndefinedValueDecoder
 	}
 
 	_, found := decoders[uth]
-	if found == true {
+	if found {
 		log.Panicf("decoder already registered: %v", uth)
 	}
 

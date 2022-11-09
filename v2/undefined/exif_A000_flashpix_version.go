@@ -3,9 +3,7 @@ package exifundefined
 import (
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v2/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type TagA000FlashpixVersion struct {
@@ -31,7 +29,7 @@ func (CodecA000FlashpixVersion) Encode(value interface{}, byteOrder binary.ByteO
 	}()
 
 	s, ok := value.(TagA000FlashpixVersion)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a TagA000FlashpixVersion")
 	}
 

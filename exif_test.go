@@ -10,7 +10,7 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestVisit(t *testing.T) {
@@ -43,7 +43,7 @@ func TestVisit(t *testing.T) {
 		if _, err := ParseExifHeader(data[i:]); err == nil {
 			foundAt = i
 			break
-		} else if log.Is(err, ErrNoExif) == false {
+		} else if !log.Is(err, ErrNoExif) {
 			log.Panic(err)
 		}
 	}
@@ -165,7 +165,7 @@ func TestVisit(t *testing.T) {
 		"IFD-PATH=[IFD] ID=(0x0128) NAME=[ResolutionUnit] COUNT=(1) TYPE=[SHORT] VALUE=[2]",
 	}
 
-	if reflect.DeepEqual(tags, expected) == false {
+	if !reflect.DeepEqual(tags, expected) {
 		fmt.Printf("\n")
 		fmt.Printf("ACTUAL:\n")
 		fmt.Printf("\n")
@@ -194,7 +194,7 @@ func TestSearchFileAndExtractExif(t *testing.T) {
 	rawExif, err := SearchFileAndExtractExif(testImageFilepath)
 	log.PanicIf(err)
 
-	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
+	if !bytes.Equal(rawExif[:len(testExifData)], testExifData) {
 		t.Fatalf("found EXIF data not correct")
 	}
 }
@@ -206,7 +206,7 @@ func TestSearchAndExtractExif(t *testing.T) {
 	rawExif, err := SearchAndExtractExif(imageData)
 	log.PanicIf(err)
 
-	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
+	if !bytes.Equal(rawExif[:len(testExifData)], testExifData) {
 		t.Fatalf("found EXIF data not correct")
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestUndefinedValue_ExifVersion(t *testing.T) {
@@ -75,7 +75,7 @@ func TestUndefinedValue_ExifVersion(t *testing.T) {
 		t.Fatalf("Tag type not correct: (%d)", ite.TagType)
 	} else if ite.UnitCount != (uint32(len(valueString))) {
 		t.Fatalf("Tag unit-count not correct: (%d)", ite.UnitCount)
-	} else if bytes.Compare(ite.RawValueOffset, []byte{'0', '2', '3', '0'}) != 0 {
+	} else if !bytes.Equal(ite.RawValueOffset, []byte{'0', '2', '3', '0'}) {
 		t.Fatalf("Tag's value (as raw bytes) is not correct: [%x]", ite.RawValueOffset)
 	} else if ite.ChildIfdPath != "" {
 		t.Fatalf("Tag's child IFD-path should be empty: [%s]", ite.ChildIfdPath)

@@ -7,7 +7,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -62,14 +62,14 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 
 	if len(data) == 0 || data[count-1] != 0 {
 		s := string(data[:count])
-		parserLogger.Warningf(nil, "ASCII not terminated with NUL as expected: [%v]", s)
+		parserLogger.Warningf(context.Todo(), "ASCII not terminated with NUL as expected: [%v]", s)
 
 		for i, c := range s {
 			if c > 127 {
 				// Binary
 
 				t := s[:i]
-				parserLogger.Warningf(nil, "ASCII also had binary characters. Truncating: [%v]->[%s]", s, t)
+				parserLogger.Warningf(context.Todo(), "ASCII also had binary characters. Truncating: [%v]->[%s]", s, t)
 
 				return t, nil
 			}

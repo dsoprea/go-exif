@@ -1,9 +1,10 @@
 package exif
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 	"gopkg.in/yaml.v2"
 )
 
@@ -98,12 +99,12 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	// Store by ID.
 
 	family, found := ti.tagsByIfd[it.IfdPath]
-	if found == false {
+	if !found {
 		family = make(map[uint16]*IndexedTag)
 		ti.tagsByIfd[it.IfdPath] = family
 	}
 
-	if _, found := family[it.Id]; found == true {
+	if _, found := family[it.Id]; found {
 		log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", it.IfdPath, it.Id)
 	}
 
@@ -112,12 +113,12 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	// Store by name.
 
 	familyR, found := ti.tagsByIfdR[it.IfdPath]
-	if found == false {
+	if !found {
 		familyR = make(map[string]*IndexedTag)
 		ti.tagsByIfdR[it.IfdPath] = familyR
 	}
 
-	if _, found := familyR[it.Name]; found == true {
+	if _, found := familyR[it.Name]; found {
 		log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", it.IfdPath, it.Name)
 	}
 
@@ -140,12 +141,12 @@ func (ti *TagIndex) Get(ifdPath string, id uint16) (it *IndexedTag, err error) {
 	}
 
 	family, found := ti.tagsByIfd[ifdPath]
-	if found == false {
+	if !found {
 		log.Panic(ErrTagNotFound)
 	}
 
 	it, found = family[id]
-	if found == false {
+	if !found {
 		log.Panic(ErrTagNotFound)
 	}
 
@@ -166,7 +167,7 @@ func (ti *TagIndex) GetWithName(ifdPath string, name string) (it *IndexedTag, er
 	}
 
 	it, found := ti.tagsByIfdR[ifdPath][name]
-	if found != true {
+	if !found {
 		log.Panic(ErrTagNotFound)
 	}
 
@@ -204,7 +205,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 			}
 
 			tagTypeId, found := TypeNamesR[tagTypeName]
-			if found == false {
+			if !found {
 				log.Panicf("type [%s] for [%s] not valid", tagTypeName, tagName)
 				continue
 			}
@@ -223,7 +224,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 		}
 	}
 
-	tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
+	tagsLogger.Debugf(context.TODO(), "(%d) tags loaded.", count)
 
 	return nil
 }

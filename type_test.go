@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestTagType_EncodeDecode_Byte(t *testing.T) {
@@ -17,14 +17,14 @@ func TestTagType_EncodeDecode_Byte(t *testing.T) {
 	encoded, err := tt.Encode(data)
 	log.PanicIf(err)
 
-	if bytes.Compare(encoded, data) != 0 {
+	if !bytes.Equal(encoded, data) {
 		t.Fatalf("Data not encoded correctly.")
 	}
 
 	restored, err := tt.ParseBytes(encoded, uint32(len(data)))
 	log.PanicIf(err)
 
-	if bytes.Compare(restored, data) != 0 {
+	if !bytes.Equal(restored, data) {
 		t.Fatalf("Data not decoded correctly.")
 	}
 }
@@ -57,7 +57,7 @@ func TestTagType_EncodeDecode_Shorts(t *testing.T) {
 	encoded, err := tt.Encode(data)
 	log.PanicIf(err)
 
-	if bytes.Compare(encoded, []byte{0x00, 0x11, 0x00, 0x22, 0x00, 0x33}) != 0 {
+	if !bytes.Equal(encoded, []byte{0x00, 0x11, 0x00, 0x22, 0x00, 0x33}) {
 		t.Fatalf("Data not encoded correctly.")
 	}
 
@@ -77,7 +77,7 @@ func TestTagType_EncodeDecode_Long(t *testing.T) {
 	encoded, err := tt.Encode(data)
 	log.PanicIf(err)
 
-	if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33}) != 0 {
+	if !bytes.Equal(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33}) {
 		t.Fatalf("Data not encoded correctly.")
 	}
 
@@ -100,7 +100,7 @@ func TestTagType_EncodeDecode_Rational(t *testing.T) {
 	encoded, err := tt.Encode(data)
 	log.PanicIf(err)
 
-	if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44}) != 0 {
+	if !bytes.Equal(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44}) {
 		t.Fatalf("Data not encoded correctly.")
 	}
 
@@ -120,7 +120,7 @@ func TestTagType_EncodeDecode_SignedLong(t *testing.T) {
 	encoded, err := tt.Encode(data)
 	log.PanicIf(err)
 
-	if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33}) != 0 {
+	if !bytes.Equal(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33}) {
 		t.Fatalf("Data not encoded correctly.")
 	}
 
@@ -143,7 +143,7 @@ func TestTagType_EncodeDecode_SignedRational(t *testing.T) {
 	encoded, err := tt.Encode(data)
 	log.PanicIf(err)
 
-	if bytes.Compare(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44}) != 0 {
+	if !bytes.Equal(encoded, []byte{0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x44}) {
 		t.Fatalf("Data not encoded correctly.")
 	}
 

@@ -2,13 +2,14 @@ package exif
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 
 	"crypto/sha1"
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 const (
@@ -114,7 +115,7 @@ func (uc TagUnknownType_9298_UserComment) String() string {
 
 func (uc TagUnknownType_9298_UserComment) ValueBytes() (value []byte, err error) {
 	encodingTypeBytes, found := TagUnknownType_9298_UserComment_Encodings[uc.EncodingType]
-	if found == false {
+	if !found {
 		log.Panicf("encoding-type not valid for unknown-type tag 9298 (UserComment): (%d)", uc.EncodingType)
 	}
 
@@ -255,7 +256,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 
 	var valueContextPtr *ValueContext
 
-	if vc, ok := valueContext.(*ValueContext); ok == true {
+	if vc, ok := valueContext.(*ValueContext); ok {
 		// Legacy usage.
 
 		valueContextPtr = vc
@@ -266,7 +267,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 		valueContextPtr = &valueContextValue
 	}
 
-	typeLogger.Debugf(nil, "UndefinedValue: IFD-PATH=[%s] TAG-ID=(0x%02x)", ifdPath, tagId)
+	typeLogger.Debugf(context.TODO(), "UndefinedValue: IFD-PATH=[%s] TAG-ID=(0x%02x)", ifdPath, tagId)
 
 	if ifdPath == IfdPathStandardExif {
 		if tagId == 0x9000 {
@@ -302,7 +303,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 
 			encoding := valueBytes[:8]
 			for encodingIndex, encodingBytes := range TagUnknownType_9298_UserComment_Encodings {
-				if bytes.Compare(encoding, encodingBytes) == 0 {
+				if bytes.Equal(encoding, encodingBytes) {
 					uc := TagUnknownType_9298_UserComment{
 						EncodingType:  encodingIndex,
 						EncodingBytes: valueBytes[8:],
@@ -312,7 +313,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 				}
 			}
 
-			typeLogger.Warningf(nil, "User-comment encoding not valid. Returning 'unknown' type (the default).")
+			typeLogger.Warningf(context.TODO(), "User-comment encoding not valid. Returning 'unknown' type (the default).")
 			return unknownUc, nil
 		} else if tagId == 0x927c {
 			// MakerNote
@@ -352,7 +353,7 @@ func UndefinedValue(ifdPath string, tagId uint16, valueContext interface{}, byte
 			log.PanicIf(err)
 
 			for configurationId, configurationBytes := range TagUnknownType_9101_ComponentsConfiguration_Configurations {
-				if bytes.Compare(valueBytes, configurationBytes) == 0 {
+				if bytes.Equal(valueBytes, configurationBytes) {
 					cc := TagUnknownType_9101_ComponentsConfiguration{
 						ConfigurationId:    configurationId,
 						ConfigurationBytes: valueBytes,

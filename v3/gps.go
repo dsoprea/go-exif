@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 	"github.com/golang/geo/s2"
-
-	"github.com/dsoprea/go-exif/v3/common"
 )
 
 var (
@@ -109,7 +107,7 @@ func (gi *GpsInfo) S2CellId() s2.CellID {
 	ll := s2.LatLngFromDegrees(latitude, longitude)
 	cellId := s2.CellIDFromLatLng(ll)
 
-	if cellId.IsValid() == false {
+	if !cellId.IsValid() {
 		panic(ErrGpsCoordinatesNotValid)
 	}
 

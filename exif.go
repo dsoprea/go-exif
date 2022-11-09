@@ -2,6 +2,7 @@ package exif
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 const (
@@ -78,7 +79,7 @@ func SearchAndExtractExif(data []byte) (rawExif []byte, err error) {
 		if _, err := ParseExifHeader(data[i:]); err == nil {
 			foundAt = i
 			break
-		} else if log.Is(err, ErrNoExif) == false {
+		} else if !log.Is(err, ErrNoExif) {
 			return nil, err
 		}
 	}
@@ -143,32 +144,32 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	//      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
 	if len(data) < 2 {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header (1): (%d)", len(data))
+		exifLogger.Warningf(context.TODO(), "Not enough data for EXIF header (1): (%d)", len(data))
 		return eh, ErrNoExif
 	}
 
 	byteOrderBytes := [2]byte{data[0], data[1]}
 
 	byteOrder, found := ByteOrderLookup[byteOrderBytes]
-	if found == false {
-		// exifLogger.Warningf(nil, "EXIF byte-order not recognized: [%v]", byteOrderBytes)
+	if !found {
+		// exifLogger.Warningf(context.Todo(), "EXIF byte-order not recognized: [%v]", byteOrderBytes)
 		return eh, ErrNoExif
 	}
 
 	if len(data) < 4 {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header (2): (%d)", len(data))
+		exifLogger.Warningf(context.TODO(), "Not enough data for EXIF header (2): (%d)", len(data))
 		return eh, ErrNoExif
 	}
 
 	fixedBytes := [2]byte{data[2], data[3]}
 	expectedFixedBytes := ExifFixedBytesLookup[byteOrder]
 	if fixedBytes != expectedFixedBytes {
-		// exifLogger.Warningf(nil, "EXIF header fixed-bytes should be [%v] but are: [%v]", expectedFixedBytes, fixedBytes)
+		// exifLogger.Warningf(context.Todo(), "EXIF header fixed-bytes should be [%v] but are: [%v]", expectedFixedBytes, fixedBytes)
 		return eh, ErrNoExif
 	}
 
 	if len(data) < 2 {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header (3): (%d)", len(data))
+		exifLogger.Warningf(context.TODO(), "Not enough data for EXIF header (3): (%d)", len(data))
 		return eh, ErrNoExif
 	}
 

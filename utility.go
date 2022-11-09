@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func DumpBytes(data []byte) {
@@ -174,7 +174,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 			it, err := ti.Get(ifd.IfdPath, ite.TagId)
 			if err != nil {
 				// If it's a non-standard tag, just leave the name blank.
-				if log.Is(err, ErrTagNotFound) != true {
+				if !log.Is(err, ErrTagNotFound) {
 					log.PanicIf(err)
 				}
 			} else {
@@ -209,9 +209,7 @@ func GetFlatExifData(exifData []byte) (exifTags []ExifTag, err error) {
 			exifTags = append(exifTags, et)
 		}
 
-		for _, childIfd := range ifd.Children {
-			q = append(q, childIfd)
-		}
+		q = append(q, ifd.Children...)
 
 		if ifd.NextIfd != nil {
 			q = append(q, ifd.NextIfd)

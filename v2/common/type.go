@@ -9,7 +9,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -172,7 +172,7 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 			return "", nil
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if len(t) > 1 {
 				valueSuffix = "..."
@@ -187,7 +187,7 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 			return "", nil
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if len(t) > 1 {
 				valueSuffix = "..."
@@ -206,12 +206,12 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 		for i, r := range t {
 			parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
 
-			if justFirst == true {
+			if justFirst {
 				break
 			}
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if len(t) > 1 {
 				valueSuffix = "..."
@@ -226,7 +226,7 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 			return "", nil
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if len(t) > 1 {
 				valueSuffix = "..."
@@ -245,12 +245,12 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 		for i, r := range t {
 			parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
 
-			if justFirst == true {
+			if justFirst {
 				break
 			}
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if len(t) > 1 {
 				valueSuffix = "..."

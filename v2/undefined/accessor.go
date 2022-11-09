@@ -3,9 +3,7 @@ package exifundefined
 import (
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v2/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 // Encode encodes the given encodeable undefined value to bytes.
@@ -19,7 +17,7 @@ func Encode(value EncodeableValue, byteOrder binary.ByteOrder) (encoded []byte, 
 	encoderName := value.EncoderName()
 
 	encoder, found := encoders[encoderName]
-	if found == false {
+	if !found {
 		log.Panicf("no encoder registered for type [%s]", encoderName)
 	}
 
@@ -43,7 +41,7 @@ func Decode(valueContext *exifcommon.ValueContext) (value EncodeableValue, err e
 	}
 
 	decoder, found := decoders[uth]
-	if found == false {
+	if !found {
 		// We have no choice but to return the error. We have no way of knowing how
 		// much data there is without already knowing what data-type this tag is.
 		return nil, exifcommon.ErrUnhandledUndefinedTypedTag

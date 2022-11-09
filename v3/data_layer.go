@@ -3,8 +3,8 @@ package exif
 import (
 	"io"
 
-	"github.com/dsoprea/go-logging"
-	"github.com/dsoprea/go-utility/v2/filesystem"
+	log "github.com/dsoprea/go-logging"
+	rifs "github.com/dsoprea/go-utility/v2/filesystem"
 )
 
 type ExifBlobSeeker interface {

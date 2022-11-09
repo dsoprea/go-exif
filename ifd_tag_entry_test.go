@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestIfdTagEntry_ValueString_Allocated(t *testing.T) {
@@ -89,7 +89,7 @@ func TestIfdTagEntry_ValueBytes_Allocated(t *testing.T) {
 	value, err := ite.ValueBytes(data, TestDefaultByteOrder)
 	log.PanicIf(err)
 
-	if bytes.Compare(value, data) != 0 {
+	if !bytes.Equal(value, data) {
 		t.Fatalf("Value not expected: [%s] != [%s]", value, data)
 	}
 }
@@ -110,7 +110,7 @@ func TestIfdTagEntry_ValueBytes_Embedded(t *testing.T) {
 	value, err := ite.ValueBytes(nil, TestDefaultByteOrder)
 	log.PanicIf(err)
 
-	if bytes.Compare(value, data) != 0 {
+	if !bytes.Equal(value, data) {
 		t.Fatalf("Value not expected: [%s] != [%s]", value, data)
 	}
 }
@@ -131,7 +131,7 @@ func TestIfdTagEntry_Value_Normal(t *testing.T) {
 	value, err := ite.Value(nil, TestDefaultByteOrder)
 	log.PanicIf(err)
 
-	if bytes.Compare(value.([]byte), data) != 0 {
+	if !bytes.Equal(value.([]byte), data) {
 		t.Fatalf("Value not expected: [%s] != [%s]", value, data)
 	}
 }
@@ -157,7 +157,7 @@ func TestIfdTagEntry_Value_Unknown(t *testing.T) {
 	vb, err := gs.ValueBytes()
 	log.PanicIf(err)
 
-	if bytes.Compare(vb, data) != 0 {
+	if !bytes.Equal(vb, data) {
 		t.Fatalf("Value not expected: [%s] != [%s]", value, data)
 	}
 }
@@ -204,7 +204,7 @@ func TestIfdTagEntryValueResolver_ValueBytes(t *testing.T) {
 	value, err := itevr.ValueBytes(&ite)
 	log.PanicIf(err)
 
-	if bytes.Compare(value, allocatedData) != 0 {
+	if !bytes.Equal(value, allocatedData) {
 		t.Fatalf("bytes not expected: %v != %v", value, allocatedData)
 	}
 }

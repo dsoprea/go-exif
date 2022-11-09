@@ -12,7 +12,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -141,7 +141,7 @@ func TestMainJson(t *testing.T) {
 	err = json.Unmarshal(expectedRaw, &expected)
 	log.PanicIf(err)
 
-	if reflect.DeepEqual(actual, expected) == false {
+	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Output not as expected:\nACTUAL:\n%s\nEXPECTED:\n%s", actualRaw, expectedRaw)
 	}
 }

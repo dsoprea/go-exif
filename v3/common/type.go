@@ -10,7 +10,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -160,7 +160,7 @@ func isPrintableText(s string) bool {
 		// unicode.IsPrint() returns false for newline characters.
 		if c == 0x0d || c == 0x0a {
 			continue
-		} else if unicode.IsPrint(rune(c)) == false {
+		} else if !unicode.IsPrint(rune(c)) {
 			return false
 		}
 	}
@@ -193,7 +193,7 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 			}
 		}
 
-		if isPrintableText(t) == false {
+		if !isPrintableText(t) {
 			phrase = fmt.Sprintf("string with binary data (%d bytes)", len(t))
 			return phrase, nil
 		}
@@ -206,7 +206,7 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 			return "", nil
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if val.Len() > 1 {
 				valueSuffix = "..."
@@ -225,12 +225,12 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 		for i, r := range t {
 			parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
 
-			if justFirst == true {
+			if justFirst {
 				break
 			}
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if len(t) > 1 {
 				valueSuffix = "..."
@@ -249,12 +249,12 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 		for i, r := range t {
 			parts[i] = fmt.Sprintf("%d/%d", r.Numerator, r.Denominator)
 
-			if justFirst == true {
+			if justFirst {
 				break
 			}
 		}
 
-		if justFirst == true {
+		if justFirst {
 			var valueSuffix string
 			if len(t) > 1 {
 				valueSuffix = "..."
@@ -266,7 +266,7 @@ func FormatFromType(value interface{}, justFirst bool) (phrase string, err error
 		return fmt.Sprintf("%v", parts), nil
 	case fmt.Stringer:
 		s := t.String()
-		if isPrintableText(s) == false {
+		if !isPrintableText(s) {
 			phrase = fmt.Sprintf("stringable with binary data (%d bytes)", len(s))
 			return phrase, nil
 		}

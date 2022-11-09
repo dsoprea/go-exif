@@ -3,6 +3,7 @@ package exif
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,9 +12,7 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
-
-	"github.com/dsoprea/go-exif/v2/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 const (
@@ -99,7 +98,7 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 
 		_, err = ParseExifHeader(window)
 		if err != nil {
-			if log.Is(err, ErrNoExif) == true {
+			if log.Is(err, ErrNoExif) {
 				// No EXIF. Move forward by one byte.
 
 				_, err := br.Discard(1)
@@ -117,7 +116,7 @@ func SearchAndExtractExifWithReader(r io.Reader) (rawExif []byte, err error) {
 		break
 	}
 
-	exifLogger.Debugf(nil, "Found EXIF blob (%d) bytes from initial position.", discarded)
+	exifLogger.Debugf(context.TODO(), "Found EXIF blob (%d) bytes from initial position.", discarded)
 
 	rawExif, err = ioutil.ReadAll(br)
 	log.PanicIf(err)
@@ -174,13 +173,13 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	//      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
 	if len(data) < ExifSignatureLength {
-		exifLogger.Warningf(nil, "Not enough data for EXIF header: (%d)", len(data))
+		exifLogger.Warningf(context.Todo(), "Not enough data for EXIF header: (%d)", len(data))
 		return eh, ErrNoExif
 	}
 
-	if bytes.Equal(data[:4], ExifBigEndianSignature[:]) == true {
+	if bytes.Equal(data[:4], ExifBigEndianSignature[:]) {
 		eh.ByteOrder = binary.BigEndian
-	} else if bytes.Equal(data[:4], ExifLittleEndianSignature[:]) == true {
+	} else if bytes.Equal(data[:4], ExifLittleEndianSignature[:]) {
 		eh.ByteOrder = binary.LittleEndian
 	} else {
 		return eh, ErrNoExif
