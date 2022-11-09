@@ -144,9 +144,9 @@ func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimi
 
 	// We specifically check for the cases that we know to expect.
 
-	if supportsLong == true && supportsShort {
+	if supportsLong && supportsShort {
 		return exifcommon.TypeLong
-	} else if supportsRational == true && supportsSignedRational {
+	} else if supportsRational && supportsSignedRational {
 		if value == nil {
 			log.Panicf("GetEncodingType: require value to be given")
 		}

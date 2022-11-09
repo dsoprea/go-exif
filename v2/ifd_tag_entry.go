@@ -11,10 +11,6 @@ import (
 	exifundefined "github.com/dsoprea/go-exif/v2/undefined"
 )
 
-var (
-	iteLogger = log.NewLogger("exif.ifd_tag_entry")
-)
-
 // IfdTagEntry refers to a tag in the loaded EXIF block.
 type IfdTagEntry struct {
 	tagId          uint16

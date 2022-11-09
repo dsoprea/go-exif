@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v2/common"
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
 )
 
 func Test_ByteWriter_writeAsBytes_uint8(t *testing.T) {
@@ -299,17 +299,17 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
 	if childIfdBlock != nil {
 		t.Fatalf("no child-IFDs were expected to be allocated (2)")
-	} else if bytes.Compare(b.Bytes(), []byte{
+	} else if !bytes.Equal(b.Bytes(), []byte{
 		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x12, 0x34, // Tag 1
 		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x12, 0x39, // Tag 2
-	}) != 0 {
+	}) {
 		t.Fatalf("encoded tag-entry bytes not correct (2)")
 	} else if ida.NextOffset() != addressableOffset+uint32(10) {
 		t.Fatalf("allocation offset not expected (2)")
-	} else if bytes.Compare(ida.Bytes(), []byte{
+	} else if !bytes.Equal(ida.Bytes(), []byte{
 		0x12, 0x34, 0x56, 0x78, 0x9A,
 		0xbc, 0xde, 0xf0, 0x12, 0x34,
-	}) != 0 {
+	}) {
 		t.Fatalf("allocated data not correct (2)")
 	}
 }

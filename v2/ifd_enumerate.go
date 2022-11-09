@@ -78,7 +78,6 @@ var (
 type byteParser struct {
 	byteOrder       binary.ByteOrder
 	addressableData []byte
-	ifdOffset       uint32
 	currentOffset   uint32
 }
 
@@ -320,7 +319,7 @@ func (ie *IfdEnumerate) postparseTag(ite *IfdTagEntry, med *MiscellaneousExifDat
 			// they want to specifically manage these types of tags, they
 			// can use more advanced functionality to specifically -handle
 			// unknown tags.
-			utilityLogger.Warningf(nil,
+			utilityLogger.Warningf(context.TODO(),
 				"Tag with ID (0x%04x) in IFD [%s] is not recognized and "+
 					"will be ignored.", tagId, ii.String())
 
@@ -329,7 +328,7 @@ func (ie *IfdEnumerate) postparseTag(ite *IfdTagEntry, med *MiscellaneousExifDat
 
 		ite.setTagName(it.Name)
 
-		utilityLogger.Warningf(nil,
+		utilityLogger.Warningf(context.TODO(),
 			"Tag with ID (0x%04x) is not valid for IFD [%s], but it *is* "+
 				"valid as tag [%s] under IFD [%s] and has the same type "+
 				"[%s], so we will use that. This EXIF blob was probably "+
@@ -357,7 +356,7 @@ func (ie *IfdEnumerate) postparseTag(ite *IfdTagEntry, med *MiscellaneousExifDat
 	// type and caused parsing/conversion woes. So, this is a quick fix
 	// for those scenarios.
 	if !it.DoesSupportType(tagType) {
-		ifdEnumerateLogger.Warningf(nil,
+		ifdEnumerateLogger.Warningf(context.TODO(),
 			"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
 			ii.UnindexedString(), tagId, it.Name,
 			tagType, it.SupportedTypes)
@@ -550,7 +549,7 @@ func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32
 		bp, err := ie.getByteParser(ifdOffset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
-				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] at offset (0x%04x) is unreachable. Terminating scan.", iiSibling.String(), ifdOffset)
+				ifdEnumerateLogger.Errorf(context.TODO(), nil, "IFD [%s] at offset (0x%04x) is unreachable. Terminating scan.", iiSibling.String(), ifdOffset)
 				break
 			}
 
@@ -804,7 +803,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 		} else {
 			// This will just add noise to the output (byte-tags are fully
 			// dumped).
-			if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() {
+			if ite.IsThumbnailOffset() || ite.IsThumbnailSize() {
 				continue
 			}
 
@@ -988,13 +987,13 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 		hit := false
 		for _, acceptedGpsVersion := range ValidGpsVersions {
-			if bytes.Compare(versionBytes, acceptedGpsVersion[:]) == 0 {
+			if bytes.Equal(versionBytes, acceptedGpsVersion[:]) {
 				hit = true
 				break
 			}
 		}
 
-		if hit != true {
+		if !hit {
 			ifdEnumerateLogger.Warningf(context.TODO(), "GPS version not supported: %v", versionBytes)
 			log.Panic(ErrNoGpsTags)
 		}
@@ -1055,7 +1054,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	altitudeTags, foundAltitude := ifd.EntriesByTagId[TagAltitudeId]
 	altitudeRefTags, foundAltitudeRef := ifd.EntriesByTagId[TagAltitudeRefId]
 
-	if foundAltitude == true && foundAltitudeRef {
+	if foundAltitude && foundAltitudeRef {
 		altitudePhrase, err := altitudeTags[0].Format()
 		log.PanicIf(err)
 
@@ -1089,7 +1088,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	timestampTags, foundTimestamp := ifd.EntriesByTagId[TagTimestampId]
 	datestampTags, foundDatestamp := ifd.EntriesByTagId[TagDatestampId]
 
-	if foundTimestamp == true && foundDatestamp {
+	if foundTimestamp && foundDatestamp {
 		datestampValue, err := datestampTags[0].Value()
 		log.PanicIf(err)
 

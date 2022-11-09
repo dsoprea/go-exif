@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsoprea/go-exif/v2/common"
-	"github.com/dsoprea/go-exif/v2/undefined"
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
+	exifundefined "github.com/dsoprea/go-exif/v2/undefined"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestIfdBuilder_Add(t *testing.T) {
@@ -2144,9 +2144,9 @@ func TestNewStandardBuilderTag__TwoUnits(t *testing.T) {
 		t.Fatalf("II in BuilderTag not correct")
 	} else if bt.tagId != 0x8833 {
 		t.Fatalf("tag-ID not correct")
-	} else if bytes.Compare(bt.value.Bytes(), []byte{
+	} else if !bytes.Equal(bt.value.Bytes(), []byte{
 		0x0, 0x0, 0x12, 0x34,
-		0x0, 0x0, 0x56, 0x78}) != 0 {
+		0x0, 0x0, 0x56, 0x78}) {
 		t.Fatalf("value not correct")
 	}
 }
