@@ -12,6 +12,8 @@ import (
 
 	"encoding/binary"
 
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
+	exifundefined "github.com/dsoprea/go-exif/v2/undefined"
 	log "github.com/dsoprea/go-logging"
 )
 

@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
 	log "github.com/dsoprea/go-logging"
 )
 
@@ -173,7 +174,7 @@ func ParseExifHeader(data []byte) (eh ExifHeader, err error) {
 	//      -> http://www.cipa.jp/std/documents/e/DC-008-Translation-2016-E.pdf
 
 	if len(data) < ExifSignatureLength {
-		exifLogger.Warningf(context.Todo(), "Not enough data for EXIF header: (%d)", len(data))
+		exifLogger.Warningf(context.TODO(), "Not enough data for EXIF header: (%d)", len(data))
 		return eh, ErrNoExif
 	}
 

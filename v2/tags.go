@@ -6,6 +6,8 @@ import (
 
 	log "github.com/dsoprea/go-logging"
 	"gopkg.in/yaml.v2"
+
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
 )
 
 const (
@@ -378,7 +380,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 				// TODO(dustin): Discard unsupported types. This helps us with non-standard types that have actually been found in real data, that we ignore for right now. e.g. SSHORT, FLOAT, DOUBLE
 				tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
 				if !found {
-					tagsLogger.Warningf(context.Todo(), "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
+					tagsLogger.Warningf(context.TODO(), "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
 					continue
 				}
 
@@ -386,7 +388,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 			}
 
 			if len(tagTypes) == 0 {
-				tagsLogger.Warningf(context.Todo(), "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
+				tagsLogger.Warningf(context.TODO(), "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
 				continue
 			}
 

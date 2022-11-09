@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
+
 	log "github.com/dsoprea/go-logging"
 	"github.com/jessevdk/go-flags"
 

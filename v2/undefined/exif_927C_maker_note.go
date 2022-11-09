@@ -7,6 +7,8 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
+
 	log "github.com/dsoprea/go-logging"
 )
 

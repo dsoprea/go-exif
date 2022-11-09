@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"bytes"
+	"context"
 
 	"encoding/binary"
 
@@ -56,7 +57,7 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 
 	if len(data) == 0 || data[count-1] != 0 {
 		s := string(data[:count])
-		parserLogger.Warningf(context.Todo(), "ascii not terminated with nul as expected: [%v]", s)
+		parserLogger.Warningf(context.TODO(), "ascii not terminated with nul as expected: [%v]", s)
 
 		return s, nil
 	}

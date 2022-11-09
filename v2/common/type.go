@@ -13,10 +13,6 @@ import (
 )
 
 var (
-	typeLogger = log.NewLogger("exif.type")
-)
-
-var (
 	// ErrNotEnoughData is used when there isn't enough data to accommodate what
 	// we're trying to parse (sizeof(type) * unit_count).
 	ErrNotEnoughData = errors.New("not enough data for type")

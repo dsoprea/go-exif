@@ -2,6 +2,7 @@ package exif
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,10 +12,10 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v2/common"
-	"github.com/dsoprea/go-exif/v2/undefined"
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
+	exifundefined "github.com/dsoprea/go-exif/v2/undefined"
 )
 
 var (
@@ -393,7 +394,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 				// Technically, we have the type on-file in the tags-index, but
 				// if the type stored alongside the data disagrees with it,
 				// which it apparently does, all bets are off.
-				ifdEnumerateLogger.Warningf(context.Todo(), "Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", ite.tagId, ii, i, ite.tagType)
+				ifdEnumerateLogger.Warningf(context.TODO(), "Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (%d) and will be skipped.", ite.tagId, ii, i, ite.tagType)
 				continue
 			}
 
@@ -821,10 +822,10 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 				valuePhrase, err = ite.Format()
 				if err != nil {
 					if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) {
-						ifdEnumerateLogger.Warningf(context.Todo(), "Skipping non-standard undefined tag: [%s] (%04x)", ifd.ifdIdentity.UnindexedString(), ite.TagId())
+						ifdEnumerateLogger.Warningf(context.TODO(), "Skipping non-standard undefined tag: [%s] (%04x)", ifd.ifdIdentity.UnindexedString(), ite.TagId())
 						continue
 					} else if err == exifundefined.ErrUnparseableValue {
-						ifdEnumerateLogger.Warningf(context.Todo(), "Skipping unparseable undefined tag: [%s] (%04x) [%s]", ifd.ifdIdentity.UnindexedString(), ite.TagId(), it.Name)
+						ifdEnumerateLogger.Warningf(context.TODO(), "Skipping unparseable undefined tag: [%s] (%04x) [%s]", ifd.ifdIdentity.UnindexedString(), ite.TagId(), it.Name)
 						continue
 					}
 
@@ -977,10 +978,10 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panicf("GPS can only be read on GPS IFD: [%s] != [%s]", ifd.ifdIdentity.UnindexedString(), exifcommon.IfdGpsInfoStandardIfdIdentity.UnindexedString())
 	}
 
-	if !tags, found := ifd.EntriesByTagId[TagGpsVersionId]; found {
+	if tags, found := ifd.EntriesByTagId[TagGpsVersionId]; !found {
 		// We've seen this. We'll just have to default to assuming we're in a
 		// 2.2.0.0 format.
-		ifdEnumerateLogger.Warningf(context.Todo(), "No GPS version tag (0x%04x) found.", TagGpsVersionId)
+		ifdEnumerateLogger.Warningf(context.TODO(), "No GPS version tag (0x%04x) found.", TagGpsVersionId)
 	} else {
 		versionBytes, err := tags[0].GetRawBytes()
 		log.PanicIf(err)
@@ -994,14 +995,14 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		}
 
 		if hit != true {
-			ifdEnumerateLogger.Warningf(context.Todo(), "GPS version not supported: %v", versionBytes)
+			ifdEnumerateLogger.Warningf(context.TODO(), "GPS version not supported: %v", versionBytes)
 			log.Panic(ErrNoGpsTags)
 		}
 	}
 
 	tags, found := ifd.EntriesByTagId[TagLatitudeId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "latitude not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "latitude not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1011,7 +1012,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	// Look for whether North or South.
 	tags, found = ifd.EntriesByTagId[TagLatitudeRefId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "latitude-ref not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "latitude-ref not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1020,7 +1021,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	tags, found = ifd.EntriesByTagId[TagLongitudeId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "longitude not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "longitude not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1030,7 +1031,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	// Look for whether West or East.
 	tags, found = ifd.EntriesByTagId[TagLongitudeRefId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "longitude-ref not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "longitude-ref not found")
 		log.Panic(ErrNoGpsTags)
 	}
 

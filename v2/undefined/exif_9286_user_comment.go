@@ -2,9 +2,12 @@ package exifundefined
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"encoding/binary"
+
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
 
 	log "github.com/dsoprea/go-logging"
 )
@@ -124,7 +127,7 @@ func (Codec9286UserComment) Decode(valueContext *exifcommon.ValueContext) (value
 		}
 	}
 
-	exif9286Logger.Warningf(context.Todo(), "User-comment encoding not valid. Returning 'unknown' type (the default).")
+	exif9286Logger.Warningf(context.TODO(), "User-comment encoding not valid. Returning 'unknown' type (the default).")
 	return unknownUc, nil
 }
 

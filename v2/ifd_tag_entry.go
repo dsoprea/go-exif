@@ -5,10 +5,10 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v2/common"
-	"github.com/dsoprea/go-exif/v2/undefined"
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
+	exifundefined "github.com/dsoprea/go-exif/v2/undefined"
 )
 
 var (
