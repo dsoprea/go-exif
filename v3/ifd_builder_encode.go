@@ -7,9 +7,9 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 )
 
 const (
@@ -235,7 +235,7 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 		len_ := len(valueBytes)
 		unitCount := uint32(len_) / typeSize
 
-		if !_, found := tagsWithoutAlignment[bt.tagId]; found {
+		if _, found := tagsWithoutAlignment[bt.tagId]; !found {
 			remainder := uint32(len_) % typeSize
 
 			if remainder > 0 {

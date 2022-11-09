@@ -5,10 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
-	"github.com/dsoprea/go-utility/v2/filesystem"
-
-	"github.com/dsoprea/go-exif/v3/common"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
+	rifs "github.com/dsoprea/go-utility/v2/filesystem"
 )
 
 func TestTagA20CSpatialFrequencyResponse_String(t *testing.T) {
@@ -17,8 +16,8 @@ func TestTagA20CSpatialFrequencyResponse_String(t *testing.T) {
 		Rows:        9,
 		ColumnNames: []string{"column1", "column2"},
 		Values: []exifcommon.Rational{
-			{1, 2},
-			{3, 4},
+			{Numerator: 1, Denominator: 2},
+			{Numerator: 3, Denominator: 4},
 		},
 	}
 
@@ -34,8 +33,8 @@ func TestCodecA20CSpatialFrequencyResponse_Encode(t *testing.T) {
 		Rows:        9,
 		ColumnNames: []string{"column1", "column2"},
 		Values: []exifcommon.Rational{
-			{1, 2},
-			{3, 4},
+			{Numerator: 1, Denominator: 2},
+			{Numerator: 3, Denominator: 4},
 		},
 	}
 
@@ -68,8 +67,8 @@ func TestCodecA20CSpatialFrequencyResponse_Decode(t *testing.T) {
 		Rows:        9,
 		ColumnNames: []string{"column1", "column2"},
 		Values: []exifcommon.Rational{
-			{1, 2},
-			{3, 4},
+			{Numerator: 1, Denominator: 2},
+			{Numerator: 3, Denominator: 4},
 		},
 	}
 

@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+
 	log "github.com/dsoprea/go-logging"
 	"github.com/jessevdk/go-flags"
 
@@ -111,7 +113,7 @@ func main() {
 	entries, _, err := exif.GetFlatExifDataUniversalSearch(rawExif, nil, arguments.DoUniversalTagSearch)
 	if err != nil {
 		if arguments.SkipBlocks > 0 {
-			mainLogger.Warningf(context.Todo(), "Encountered an error. This might be related to the request to skip EXIF blocks.")
+			mainLogger.Warningf(context.TODO(), "Encountered an error. This might be related to the request to skip EXIF blocks.")
 		}
 
 		log.Panic(err)

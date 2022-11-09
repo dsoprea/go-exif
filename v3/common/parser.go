@@ -2,6 +2,7 @@ package exifcommon
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"math"
 
@@ -62,14 +63,14 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 
 	if len(data) == 0 || data[count-1] != 0 {
 		s := string(data[:count])
-		parserLogger.Warningf(context.Todo(), "ASCII not terminated with NUL as expected: [%v]", s)
+		parserLogger.Warningf(context.TODO(), "ASCII not terminated with NUL as expected: [%v]", s)
 
 		for i, c := range s {
 			if c > 127 {
 				// Binary
 
 				t := s[:i]
-				parserLogger.Warningf(context.Todo(), "ASCII also had binary characters. Truncating: [%v]->[%s]", s, t)
+				parserLogger.Warningf(context.TODO(), "ASCII also had binary characters. Truncating: [%v]->[%s]", s, t)
 
 				return t, nil
 			}

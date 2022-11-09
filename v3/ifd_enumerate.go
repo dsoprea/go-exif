@@ -2,6 +2,7 @@ package exif
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,10 +12,10 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v3/common"
-	"github.com/dsoprea/go-exif/v3/undefined"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+	exifundefined "github.com/dsoprea/go-exif/v3/undefined"
 )
 
 var (
@@ -77,7 +78,6 @@ var (
 type byteParser struct {
 	byteOrder     binary.ByteOrder
 	rs            io.ReadSeeker
-	ifdOffset     uint32
 	currentOffset uint32
 }
 
@@ -235,7 +235,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		// Technically, we have the type on-file in the tags-index, but
 		// if the type stored alongside the data disagrees with it,
 		// which it apparently does, all bets are off.
-		ifdEnumerateLogger.Warningf(nil,
+		ifdEnumerateLogger.Warningf(context.TODO(),
 			"Tag (0x%04x) in IFD [%s] at position (%d) has invalid type (0x%04x) and will be skipped.",
 			tagId, ii, tagPosition, int(tagType))
 
@@ -253,7 +253,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 	it, err := ie.tagIndex.Get(ii, tagId)
 	if err != nil {
 		if log.Is(err, ErrTagNotFound) {
-			ifdEnumerateLogger.Warningf(context.Todo(), "Tag (0x%04x) is not known and will be skipped.", tagId)
+			ifdEnumerateLogger.Warningf(context.TODO(), "Tag (0x%04x) is not known and will be skipped.", tagId)
 
 			ite = &IfdTagEntry{
 				tagId: tagId,
@@ -274,7 +274,7 @@ func (ie *IfdEnumerate) parseTag(ii *exifcommon.IfdIdentity, tagPosition int, bp
 		// special-case tags (e.g. thumbnails, GPS, etc..) when those tags
 		// suddenly have data that we no longer manipulate correctly/
 		// accurately.
-		ifdEnumerateLogger.Warningf(nil,
+		ifdEnumerateLogger.Warningf(context.TODO(),
 			"Tag (0x%04x) in IFD [%s] at position (%d) has unsupported type (0x%02x) and will be skipped.",
 			tagId, ii, tagPosition, int(tagType))
 
@@ -376,7 +376,7 @@ func (ie *IfdEnumerate) tagPostParse(ite *IfdTagEntry, med *MiscellaneousExifDat
 			// they want to specifically manage these types of tags, they
 			// can use more advanced functionality to specifically -handle
 			// unknown tags.
-			utilityLogger.Warningf(nil,
+			utilityLogger.Warningf(context.TODO(),
 				"Tag with ID (0x%04x) in IFD [%s] is not recognized and "+
 					"will be ignored.", tagId, ii.String())
 
@@ -385,7 +385,7 @@ func (ie *IfdEnumerate) tagPostParse(ite *IfdTagEntry, med *MiscellaneousExifDat
 
 		ite.setTagName(it.Name)
 
-		utilityLogger.Warningf(nil,
+		utilityLogger.Warningf(context.TODO(),
 			"Tag with ID (0x%04x) is not valid for IFD [%s], but it *is* "+
 				"valid as tag [%s] under IFD [%s] and has the same type "+
 				"[%s], so we will use that. This EXIF blob was probably "+
@@ -413,7 +413,7 @@ func (ie *IfdEnumerate) tagPostParse(ite *IfdTagEntry, med *MiscellaneousExifDat
 	// type and caused parsing/conversion woes. So, this is a quick fix
 	// for those scenarios.
 	if !ie.tagIndex.UniversalSearch() && !it.DoesSupportType(tagType) {
-		ifdEnumerateLogger.Warningf(nil,
+		ifdEnumerateLogger.Warningf(context.TODO(),
 			"Skipping tag [%s] (0x%04x) [%s] with an unexpected type: %v ∉ %v",
 			ii.UnindexedString(), tagId, it.Name,
 			tagType, it.SupportedTypes)
@@ -446,7 +446,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	for i := 0; i < int(tagCount); i++ {
 		ite, err := ie.parseTag(ii, i, bp)
 		if err != nil {
-			if log.Is(err, ErrTagNotFound) == true || log.Is(err, ErrTagTypeNotValid) {
+			if log.Is(err, ErrTagNotFound) || log.Is(err, ErrTagTypeNotValid) {
 				// These tags should've been fully logged in parseTag(). The
 				// ITE returned is nil so we can't print anything about them, now.
 				continue
@@ -535,7 +535,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 		thumbnailData, err = ie.parseThumbnail(enumeratorThumbnailOffset, enumeratorThumbnailSize)
 		if err != nil {
 			ifdEnumerateLogger.Errorf(
-				nil, err,
+				context.TODO(), err,
 				"We tried to bump our furthest-offset counter but there was an issue first seeking past the thumbnail.")
 		} else {
 			// In this case, the value is always an offset.
@@ -560,7 +560,7 @@ func (ie *IfdEnumerate) parseIfd(ii *exifcommon.IfdIdentity, bp *byteParser, vis
 	_, alreadyVisited := ie.visitedIfdOffsets[nextIfdOffset]
 
 	if alreadyVisited {
-		ifdEnumerateLogger.Warningf(context.Todo(), "IFD at offset (0x%08x) has been linked-to more than once. There might be a cycle in the IFD chain. Not reparsing.", nextIfdOffset)
+		ifdEnumerateLogger.Warningf(context.TODO(), "IFD at offset (0x%08x) has been linked-to more than once. There might be a cycle in the IFD chain. Not reparsing.", nextIfdOffset)
 		nextIfdOffset = 0
 	}
 
@@ -620,7 +620,7 @@ func (ie *IfdEnumerate) scan(iiGeneral *exifcommon.IfdIdentity, ifdOffset uint32
 		bp, err := ie.getByteParser(ifdOffset)
 		if err != nil {
 			if err == ErrOffsetInvalid {
-				ifdEnumerateLogger.Errorf(nil, nil, "IFD [%s] at offset (0x%04x) is unreachable. Terminating scan.", iiSibling.String(), ifdOffset)
+				ifdEnumerateLogger.Errorf(context.TODO(), nil, "IFD [%s] at offset (0x%04x) is unreachable. Terminating scan.", iiSibling.String(), ifdOffset)
 				break
 			}
 
@@ -938,7 +938,7 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 		} else {
 			// This will just add noise to the output (byte-tags are fully
 			// dumped).
-			if ite.IsThumbnailOffset() == true || ite.IsThumbnailSize() {
+			if ite.IsThumbnailOffset() || ite.IsThumbnailSize() {
 				continue
 			}
 
@@ -956,10 +956,10 @@ func (ifd *Ifd) printTagTree(populateValues bool, index, level int, nextLink boo
 				valuePhrase, err = ite.Format()
 				if err != nil {
 					if log.Is(err, exifcommon.ErrUnhandledUndefinedTypedTag) {
-						ifdEnumerateLogger.Warningf(context.Todo(), "Skipping non-standard undefined tag: [%s] (%04x)", ifd.ifdIdentity.UnindexedString(), ite.TagId())
+						ifdEnumerateLogger.Warningf(context.TODO(), "Skipping non-standard undefined tag: [%s] (%04x)", ifd.ifdIdentity.UnindexedString(), ite.TagId())
 						continue
 					} else if err == exifundefined.ErrUnparseableValue {
-						ifdEnumerateLogger.Warningf(context.Todo(), "Skipping unparseable undefined tag: [%s] (%04x) [%s]", ifd.ifdIdentity.UnindexedString(), ite.TagId(), it.Name)
+						ifdEnumerateLogger.Warningf(context.TODO(), "Skipping unparseable undefined tag: [%s] (%04x) [%s]", ifd.ifdIdentity.UnindexedString(), ite.TagId(), it.Name)
 						continue
 					}
 
@@ -1112,31 +1112,31 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 		log.Panicf("GPS can only be read on GPS IFD: [%s]", ifd.ifdIdentity.UnindexedString())
 	}
 
-	if !tags, found := ifd.entriesByTagId[TagGpsVersionId]; found {
+	if tags, found := ifd.entriesByTagId[TagGpsVersionId]; !found {
 		// We've seen this. We'll just have to default to assuming we're in a
 		// 2.2.0.0 format.
-		ifdEnumerateLogger.Warningf(context.Todo(), "No GPS version tag (0x%04x) found.", TagGpsVersionId)
+		ifdEnumerateLogger.Warningf(context.TODO(), "No GPS version tag (0x%04x) found.", TagGpsVersionId)
 	} else {
 		versionBytes, err := tags[0].GetRawBytes()
 		log.PanicIf(err)
 
 		hit := false
 		for _, acceptedGpsVersion := range ValidGpsVersions {
-			if bytes.Compare(versionBytes, acceptedGpsVersion[:]) == 0 {
+			if bytes.Equal(versionBytes, acceptedGpsVersion[:]) {
 				hit = true
 				break
 			}
 		}
 
-		if hit != true {
-			ifdEnumerateLogger.Warningf(context.Todo(), "GPS version not supported: %v", versionBytes)
+		if !hit {
+			ifdEnumerateLogger.Warningf(context.TODO(), "GPS version not supported: %v", versionBytes)
 			log.Panic(ErrNoGpsTags)
 		}
 	}
 
 	tags, found := ifd.entriesByTagId[TagLatitudeId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "latitude not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "latitude not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1146,7 +1146,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	// Look for whether North or South.
 	tags, found = ifd.entriesByTagId[TagLatitudeRefId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "latitude-ref not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "latitude-ref not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1155,7 +1155,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 
 	tags, found = ifd.entriesByTagId[TagLongitudeId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "longitude not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "longitude not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1165,7 +1165,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	// Look for whether West or East.
 	tags, found = ifd.entriesByTagId[TagLongitudeRefId]
 	if !found {
-		ifdEnumerateLogger.Warningf(context.Todo(), "longitude-ref not found")
+		ifdEnumerateLogger.Warningf(context.TODO(), "longitude-ref not found")
 		log.Panic(ErrNoGpsTags)
 	}
 
@@ -1189,7 +1189,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	altitudeTags, foundAltitude := ifd.entriesByTagId[TagAltitudeId]
 	altitudeRefTags, foundAltitudeRef := ifd.entriesByTagId[TagAltitudeRefId]
 
-	if foundAltitude == true && foundAltitudeRef {
+	if foundAltitude && foundAltitudeRef {
 		altitudePhrase, err := altitudeTags[0].Format()
 		log.PanicIf(err)
 
@@ -1223,7 +1223,7 @@ func (ifd *Ifd) GpsInfo() (gi *GpsInfo, err error) {
 	timestampTags, foundTimestamp := ifd.entriesByTagId[TagTimestampId]
 	datestampTags, foundDatestamp := ifd.entriesByTagId[TagDatestampId]
 
-	if foundTimestamp == true && foundDatestamp {
+	if foundTimestamp && foundDatestamp {
 		datestampValue, err := datestampTags[0].Value()
 		log.PanicIf(err)
 

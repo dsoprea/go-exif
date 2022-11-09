@@ -6,14 +6,10 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v3/common"
-	"github.com/dsoprea/go-exif/v3/undefined"
-)
-
-var (
-	iteLogger = log.NewLogger("exif.ifd_tag_entry")
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+	exifundefined "github.com/dsoprea/go-exif/v3/undefined"
 )
 
 // IfdTagEntry refers to a tag in the loaded EXIF block.

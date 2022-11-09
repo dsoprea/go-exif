@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
-	"github.com/dsoprea/go-utility/v2/filesystem"
+	log "github.com/dsoprea/go-logging"
+	rifs "github.com/dsoprea/go-utility/v2/filesystem"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 )
 
 func TestTag8828Oecf_String(t *testing.T) {
@@ -29,7 +29,7 @@ func TestCodec8828Oecf_Encode(t *testing.T) {
 		Columns:     2,
 		Rows:        22,
 		ColumnNames: []string{"aa", "bb"},
-		Values:      []exifcommon.SignedRational{{11, 22}},
+		Values:      []exifcommon.SignedRational{{Numerator: 11, Denominator: 22}},
 	}
 
 	codec := Codec8828Oecf{}
@@ -81,7 +81,7 @@ func TestCodec8828Oecf_Decode(t *testing.T) {
 		Columns:     2,
 		Rows:        22,
 		ColumnNames: []string{"aa", "bb"},
-		Values:      []exifcommon.SignedRational{{11, 22}},
+		Values:      []exifcommon.SignedRational{{Numerator: 11, Denominator: 22}},
 	}
 
 	if reflect.DeepEqual(value, expectedValue) != true {

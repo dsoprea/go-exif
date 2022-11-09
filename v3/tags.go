@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+
 	log "github.com/dsoprea/go-logging"
 	"gopkg.in/yaml.v2"
 )
@@ -143,9 +145,9 @@ func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimi
 
 	// We specifically check for the cases that we know to expect.
 
-	if supportsLong == true && supportsShort {
+	if supportsLong && supportsShort {
 		return exifcommon.TypeLong
-	} else if supportsRational == true && supportsSignedRational {
+	} else if supportsRational && supportsSignedRational {
 		if value == nil {
 			log.Panicf("GetEncodingType: require value to be given")
 		}
@@ -299,7 +301,7 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 
 	skipIfdPath := ii.UnindexedString()
 
-	for currentIfdPath, _ := range ti.tagsByIfd {
+	for currentIfdPath := range ti.tagsByIfd {
 		if currentIfdPath == skipIfdPath {
 			// Skip the primary IFD, which has already been checked.
 			continue
@@ -307,7 +309,7 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 
 		it, err = ti.getOne(currentIfdPath, id)
 		if err == nil {
-			tagsLogger.Warningf(nil,
+			tagsLogger.Warningf(context.TODO(),
 				"Found tag (0x%02x) in the wrong IFD: [%s] != [%s]",
 				id, currentIfdPath, ifdPath)
 
@@ -442,7 +444,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 				// TODO(dustin): Discard unsupported types. This helps us with non-standard types that have actually been found in real data, that we ignore for right now. e.g. SSHORT, FLOAT, DOUBLE
 				tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
 				if !found {
-					tagsLogger.Warningf(context.Todo(), "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
+					tagsLogger.Warningf(context.TODO(), "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
 					continue
 				}
 
@@ -450,7 +452,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 			}
 
 			if len(tagTypes) == 0 {
-				tagsLogger.Warningf(context.Todo(), "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
+				tagsLogger.Warningf(context.TODO(), "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
 				continue
 			}
 

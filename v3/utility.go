@@ -1,9 +1,13 @@
 package exif
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"math"
+
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+	exifundefined "github.com/dsoprea/go-exif/v3/undefined"
 
 	log "github.com/dsoprea/go-logging"
 	rifs "github.com/dsoprea/go-utility/v2/filesystem"
@@ -173,7 +177,7 @@ func getFlatExifDataUniversalSearchWithReadSeeker(rs io.ReadSeeker, so *ScanOpti
 			if err == exifcommon.ErrUnhandledUndefinedTypedTag {
 				value = exifundefined.UnparseableUnknownTagValuePlaceholder
 			} else if log.Is(err, exifcommon.ErrParseFail) {
-				utilityLogger.Warningf(nil,
+				utilityLogger.Warningf(context.TODO(),
 					"Could not parse value for tag [%s] (%04x) [%s].",
 					ite.IfdPath(), ite.TagId(), ite.TagName())
 

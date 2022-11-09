@@ -7,9 +7,9 @@ import (
 
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 )
 
 var (
@@ -149,7 +149,7 @@ func validateExifSimpleTestIb(exifData []byte, t *testing.T) {
 		value, err := ite.Value()
 		log.PanicIf(err)
 
-		if reflect.DeepEqual(value, expected[i].value) != true {
+		if !reflect.DeepEqual(value, expected[i].value) {
 			t.Fatalf("Value for entry (%d) not correct: [%v] != [%v]", i, value, expected[i].value)
 		}
 	}

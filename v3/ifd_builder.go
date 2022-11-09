@@ -12,11 +12,10 @@ import (
 
 	"encoding/binary"
 
-	log "github.com/dsoprea/go-logging"
-)
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
+	exifundefined "github.com/dsoprea/go-exif/v3/undefined"
 
-var (
-	ifdBuilderLogger = log.NewLogger("exif.ifd_builder")
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -495,7 +494,7 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 
 	// TODO(dustin): !! Add a test for this function.
 
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		log.Panic("thumbnail is empty")
 	}
 
@@ -673,7 +672,7 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, tagId uin
 
 			childPrefix := ""
 			if prefix == "" {
-				childPrefix = fmt.Sprintf("%s", thisIb.IfdIdentity().UnindexedString())
+				childPrefix = thisIb.IfdIdentity().UnindexedString()
 			} else {
 				childPrefix = fmt.Sprintf("%s->%s", prefix, thisIb.IfdIdentity().UnindexedString())
 			}
@@ -1008,7 +1007,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 			continue
 		}
 
-		if excludeTagIds != nil && len(excludeTagIds) > 0 {
+		if len(excludeTagIds) > 0 {
 			found := false
 			for _, excludedTagId := range excludeTagIds {
 				if excludedTagId == ite.TagId() {
@@ -1021,7 +1020,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, includeTagIds []uint16, excl
 			}
 		}
 
-		if includeTagIds != nil && len(includeTagIds) > 0 {
+		if len(includeTagIds) > 0 {
 			// Whether or not there was a list of excludes, if there is a list
 			// of includes than the current tag has to be in it.
 
