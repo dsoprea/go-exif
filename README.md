@@ -13,7 +13,8 @@ This package provides native Go functionality to parse an existing EXIF block, u
 To get the project and dependencies:
 
 ```
-$ go get -t github.com/dsoprea/go-exif/v3
+$ git clone https://github.com/dsoprea/go-exif.git
+$ cd v3
 ```
 
 
@@ -98,7 +99,7 @@ store a flat list of tags in an image for simplified, proprietary usage.
 There is a runnable reading/dumping tool included:
 
 ```
-$ go get github.com/dsoprea/go-exif/v3/command/exif-read-tool
+$ go install github.com/dsoprea/go-exif/v3/command/exif-read-tool@latest
 $ exif-read-tool --filepath "<media file-path>"
 ```
 
