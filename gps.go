@@ -48,7 +48,7 @@ func (gi *GpsInfo) S2CellId() s2.CellID {
 	ll := s2.LatLngFromDegrees(latitude, longitude)
 	cellId := s2.CellIDFromLatLng(ll)
 
-	if cellId.IsValid() == false {
+	if !cellId.IsValid() {
 		panic(ErrGpsCoordinatesNotValid)
 	}
 

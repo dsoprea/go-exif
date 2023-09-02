@@ -3,7 +3,7 @@ package exif
 import (
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestGet(t *testing.T) {
@@ -12,7 +12,7 @@ func TestGet(t *testing.T) {
 	it, err := ti.Get(IfdPathStandard, 0x10f)
 	log.PanicIf(err)
 
-	if it.Is(IfdPathStandard, 0x10f) == false || it.IsName(IfdPathStandard, "Make") == false {
+	if !it.Is(IfdPathStandard, 0x10f) || !it.IsName(IfdPathStandard, "Make") {
 		t.Fatalf("tag info not correct")
 	}
 }
@@ -23,7 +23,7 @@ func TestGetWithName(t *testing.T) {
 	it, err := ti.GetWithName(IfdPathStandard, "Make")
 	log.PanicIf(err)
 
-	if it.Is(IfdPathStandard, 0x10f) == false || it.Is(IfdPathStandard, 0x10f) == false {
+	if !it.Is(IfdPathStandard, 0x10f) {
 		t.Fatalf("tag info not correct")
 	}
 }

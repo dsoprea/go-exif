@@ -6,9 +6,9 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type TagA302CfaPattern struct {
@@ -38,7 +38,7 @@ func (CodecA302CfaPattern) Encode(value interface{}, byteOrder binary.ByteOrder)
 	// TODO(dustin): Add test.
 
 	cp, ok := value.(TagA302CfaPattern)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a TagA302CfaPattern")
 	}
 

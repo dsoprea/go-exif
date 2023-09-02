@@ -8,11 +8,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-)
-
-var (
-	typeEncodeLogger = log.NewLogger("exif.type_encode")
+	log "github.com/dsoprea/go-logging"
 )
 
 // EncodedData encapsulates the compound output of an encoding operation.

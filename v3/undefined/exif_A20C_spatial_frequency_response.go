@@ -6,9 +6,9 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type TagA20CSpatialFrequencyResponse struct {
@@ -39,7 +39,7 @@ func (CodecA20CSpatialFrequencyResponse) Encode(value interface{}, byteOrder bin
 	// TODO(dustin): Add test.
 
 	sfr, ok := value.(TagA20CSpatialFrequencyResponse)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a TagA20CSpatialFrequencyResponse")
 	}
 

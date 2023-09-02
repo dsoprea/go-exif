@@ -22,7 +22,7 @@ import (
 	"io/ioutil"
 
 	"github.com/dsoprea/go-exif"
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -64,7 +64,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if printLoggingArg == true {
+	if printLoggingArg {
 		cla := log.NewConsoleLogAdapter()
 		log.AddAdapter("console", cla)
 	}
@@ -147,7 +147,7 @@ func main() {
 	_, err = exif.Visit(exif.IfdStandard, im, ti, rawExif, visitor)
 	log.PanicIf(err)
 
-	if printAsJsonArg == true {
+	if printAsJsonArg {
 		data, err := json.MarshalIndent(entries, "", "    ")
 		log.PanicIf(err)
 

@@ -1,12 +1,13 @@
 package exif
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -109,16 +110,16 @@ func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.Byte
 		value, err := valueContext.Undefined()
 		log.PanicIf(err)
 
-		switch value.(type) {
+		switch v := value.(type) {
 		case []byte:
-			return value.([]byte), nil
+			return v, nil
 		case TagUnknownType_UnknownValue:
-			b := []byte(value.(TagUnknownType_UnknownValue))
+			b := []byte(v)
 			return b, nil
 		case string:
-			return []byte(value.(string)), nil
+			return []byte(v), nil
 		case UnknownTagValue:
-			valueBytes, err := value.(UnknownTagValue).ValueBytes()
+			valueBytes, err := v.ValueBytes()
 			log.PanicIf(err)
 
 			return valueBytes, nil
@@ -133,15 +134,15 @@ func (ite *IfdTagEntry) ValueBytes(addressableData []byte, byteOrder binary.Byte
 
 	tt := NewTagType(TypeByte, byteOrder)
 
-	if tt.valueIsEmbedded(byteCount) == true {
-		iteLogger.Debugf(nil, "Reading BYTE value (ITE; embedded).")
+	if tt.valueIsEmbedded(byteCount) {
+		iteLogger.Debugf(context.TODO(), "Reading BYTE value (ITE; embedded).")
 
 		// In this case, the bytes normally used for the offset are actually
 		// data.
 		value, err = tt.ParseBytes(ite.RawValueOffset, byteCount)
 		log.PanicIf(err)
 	} else {
-		iteLogger.Debugf(nil, "Reading BYTE value (ITE; at offset).")
+		iteLogger.Debugf(context.TODO(), "Reading BYTE value (ITE; at offset).")
 
 		value, err = tt.ParseBytes(addressableData[ite.ValueOffset:], byteCount)
 		log.PanicIf(err)

@@ -10,7 +10,7 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestIfdTagEntry_ValueBytes(t *testing.T) {
@@ -35,7 +35,7 @@ func TestIfdTagEntry_ValueBytes(t *testing.T) {
 	decodedBytes, err := ite.ValueBytes(ed.Encoded, byteOrder)
 	log.PanicIf(err)
 
-	if bytes.Compare(decodedBytes, original) != 0 {
+	if !bytes.Equal(decodedBytes, original) {
 		t.Fatalf("Bytes not decoded correctly.")
 	}
 }
@@ -82,7 +82,7 @@ func TestIfdTagEntry_ValueBytes_RealData(t *testing.T) {
 
 	if len(decodedBytes) != int(ite.UnitCount) {
 		t.Fatalf("Decoded bytes not the right count.")
-	} else if bytes.Compare(decodedBytes, expected) != 0 {
+	} else if !bytes.Equal(decodedBytes, expected) {
 		t.Fatalf("Decoded bytes not correct.")
 	}
 }
@@ -103,6 +103,7 @@ func TestIfd_FindTagWithId_Hit(t *testing.T) {
 
 	ifd := index.RootIfd
 	results, err := ifd.FindTagWithId(0x011b)
+	log.PanicIf(err)
 
 	if len(results) != 1 {
 		t.Fatalf("Exactly one result was not found: (%d)", len(results))
@@ -130,7 +131,7 @@ func TestIfd_FindTagWithId_Miss(t *testing.T) {
 	_, err = ifd.FindTagWithId(0xffff)
 	if err == nil {
 		t.Fatalf("Expected error for not-found tag.")
-	} else if log.Is(err, ErrTagNotFound) == false {
+	} else if !log.Is(err, ErrTagNotFound) {
 		log.Panic(err)
 	}
 }
@@ -151,6 +152,7 @@ func TestIfd_FindTagWithName_Hit(t *testing.T) {
 
 	ifd := index.RootIfd
 	results, err := ifd.FindTagWithName("YResolution")
+	log.PanicIf(err)
 
 	if len(results) != 1 {
 		t.Fatalf("Exactly one result was not found: (%d)", len(results))
@@ -178,7 +180,7 @@ func TestIfd_FindTagWithName_Miss(t *testing.T) {
 	_, err = ifd.FindTagWithName("PlanarConfiguration")
 	if err == nil {
 		t.Fatalf("Expected error for not-found tag.")
-	} else if log.Is(err, ErrTagNotFound) == false {
+	} else if !log.Is(err, ErrTagNotFound) {
 		log.Panic(err)
 	}
 }
@@ -202,7 +204,7 @@ func TestIfd_FindTagWithName_NonStandard(t *testing.T) {
 	_, err = ifd.FindTagWithName("GeorgeNotAtHome")
 	if err == nil {
 		t.Fatalf("Expected error for not-found tag.")
-	} else if log.Is(err, ErrTagNotStandard) == false {
+	} else if !log.Is(err, ErrTagNotStandard) {
 		log.Panic(err)
 	}
 }
@@ -236,7 +238,7 @@ func TestIfd_Thumbnail(t *testing.T) {
 	expected, err := ioutil.ReadFile(expectedFilepath)
 	log.PanicIf(err)
 
-	if bytes.Compare(actual, expected) != 0 {
+	if !bytes.Equal(actual, expected) {
 		t.Fatalf("thumbnail not correct")
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestByteCycle(t *testing.T) {
@@ -30,6 +30,7 @@ func TestByteCycle(t *testing.T) {
 
 	tt := NewTagType(ed.Type, byteOrder)
 	recovered, err := tt.ParseBytes(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")
@@ -63,6 +64,7 @@ func TestAsciiCycle(t *testing.T) {
 
 	tt := NewTagType(TypeAscii, byteOrder)
 	recovered, err := tt.ParseAscii(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")
@@ -95,6 +97,7 @@ func TestAsciiNoNulCycle(t *testing.T) {
 
 	tt := NewTagType(TypeAsciiNoNul, byteOrder)
 	recovered, err := tt.ParseAsciiNoNul(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, string(expected)) != true {
 		t.Fatalf("Value not recovered correctly.")
@@ -130,6 +133,7 @@ func TestShortCycle(t *testing.T) {
 
 	tt := NewTagType(ed.Type, byteOrder)
 	recovered, err := tt.ParseShorts(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")
@@ -165,6 +169,7 @@ func TestLongCycle(t *testing.T) {
 
 	tt := NewTagType(ed.Type, byteOrder)
 	recovered, err := tt.ParseLongs(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")
@@ -226,6 +231,7 @@ func TestRationalCycle(t *testing.T) {
 
 	tt := NewTagType(ed.Type, byteOrder)
 	recovered, err := tt.ParseRationals(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")
@@ -261,6 +267,7 @@ func TestSignedLongCycle(t *testing.T) {
 
 	tt := NewTagType(ed.Type, byteOrder)
 	recovered, err := tt.ParseSignedLongs(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")
@@ -322,6 +329,7 @@ func TestSignedRationalCycle(t *testing.T) {
 
 	tt := NewTagType(ed.Type, byteOrder)
 	recovered, err := tt.ParseSignedRationals(ed.Encoded, ed.UnitCount)
+	log.PanicIf(err)
 
 	if reflect.DeepEqual(recovered, original) != true {
 		t.Fatalf("Value not recovered correctly.")

@@ -48,7 +48,7 @@ func TestVisit(t *testing.T) {
 		if _, err := ParseExifHeader(data[i:]); err == nil {
 			foundAt = i
 			break
-		} else if log.Is(err, ErrNoExif) == false {
+		} else if !log.Is(err, ErrNoExif) {
 			log.Panic(err)
 		}
 	}
@@ -164,7 +164,7 @@ func TestVisit(t *testing.T) {
 		"IFD-PATH=[IFD1] ID=(0x0202) NAME=[JPEGInterchangeFormatLength] COUNT=(1) TYPE=[LONG] VALUE=[21491]",
 	}
 
-	if reflect.DeepEqual(tags, expected) == false {
+	if !reflect.DeepEqual(tags, expected) {
 		fmt.Printf("\n")
 		fmt.Printf("ACTUAL:\n")
 		fmt.Printf("\n")
@@ -197,7 +197,7 @@ func TestSearchFileAndExtractExif(t *testing.T) {
 
 	testExifData := getTestExifData()
 
-	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
+	if !bytes.Equal(rawExif[:len(testExifData)], testExifData) {
 		t.Fatalf("found EXIF data not correct")
 	}
 }
@@ -213,7 +213,7 @@ func TestSearchAndExtractExif(t *testing.T) {
 
 	testExifData := getTestExifData()
 
-	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
+	if !bytes.Equal(rawExif[:len(testExifData)], testExifData) {
 		t.Fatalf("found EXIF data not correct")
 	}
 }
@@ -231,7 +231,7 @@ func TestSearchAndExtractExifWithReader(t *testing.T) {
 
 	testExifData := getTestExifData()
 
-	if bytes.Compare(rawExif[:len(testExifData)], testExifData) != 0 {
+	if !bytes.Equal(rawExif[:len(testExifData)], testExifData) {
 		t.Fatalf("found EXIF data not correct")
 	}
 }

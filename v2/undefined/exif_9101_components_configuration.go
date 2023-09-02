@@ -6,9 +6,9 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
 
-	"github.com/dsoprea/go-exif/v2/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 const (
@@ -74,7 +74,7 @@ func (CodecExif9101ComponentsConfiguration) Encode(value interface{}, byteOrder 
 	}()
 
 	cc, ok := value.(TagExif9101ComponentsConfiguration)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a TagExif9101ComponentsConfiguration")
 	}
 
@@ -94,7 +94,7 @@ func (CodecExif9101ComponentsConfiguration) Decode(valueContext *exifcommon.Valu
 	log.PanicIf(err)
 
 	for configurationId, configurationBytes := range TagUndefinedType_9101_ComponentsConfiguration_Configurations {
-		if bytes.Equal(configurationBytes, valueBytes) == true {
+		if bytes.Equal(configurationBytes, valueBytes) {
 			cc := TagExif9101ComponentsConfiguration{
 				ConfigurationId:    configurationId,
 				ConfigurationBytes: valueBytes,

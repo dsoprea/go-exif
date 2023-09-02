@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestIfdMapping_Add(t *testing.T) {
@@ -229,6 +229,7 @@ func TestIfdMapping_NewIfdMappingWithStandard(t *testing.T) {
 	imWithout := NewIfdMapping()
 
 	err := LoadStandardIfds(imWithout)
+	log.PanicIf(err)
 
 	outputWith, err := imWith.DumpLineages()
 	log.PanicIf(err)

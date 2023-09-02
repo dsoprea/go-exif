@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestValueContext_ReadAscii(t *testing.T) {
@@ -51,7 +51,7 @@ func TestValueContext_ReadAscii(t *testing.T) {
 
 	expected := []byte("Canon EOS 5D Mark III")
 
-	if bytes.Compare(decodedBytes, expected) != 0 {
+	if !bytes.Equal(decodedBytes, expected) {
 		t.Fatalf("Decoded bytes not correct.")
 	}
 }
@@ -106,7 +106,7 @@ func TestValueContext_Undefined(t *testing.T) {
 
 	expected := []byte("0230")
 
-	if bytes.Compare(decodedBytes, expected) != 0 {
+	if !bytes.Equal(decodedBytes, expected) {
 		t.Fatalf("Decoded bytes not correct.")
 	}
 }

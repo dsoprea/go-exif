@@ -2,13 +2,14 @@ package exifundefined
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -74,12 +75,12 @@ func (Codec9286UserComment) Encode(value interface{}, byteOrder binary.ByteOrder
 	}()
 
 	uc, ok := value.(Tag9286UserComment)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a Tag9286UserComment")
 	}
 
 	encodingTypeBytes, found := TagUndefinedType_9286_UserComment_Encodings[uc.EncodingType]
-	if found == false {
+	if !found {
 		log.Panicf("encoding-type not valid for unknown-type tag 9286 (UserComment): (%d)", uc.EncodingType)
 	}
 
@@ -116,7 +117,7 @@ func (Codec9286UserComment) Decode(valueContext *exifcommon.ValueContext) (value
 
 	encoding := valueBytes[:8]
 	for encodingIndex, encodingBytes := range TagUndefinedType_9286_UserComment_Encodings {
-		if bytes.Compare(encoding, encodingBytes) == 0 {
+		if bytes.Equal(encoding, encodingBytes) {
 			uc := Tag9286UserComment{
 				EncodingType:  encodingIndex,
 				EncodingBytes: valueBytes[8:],
@@ -126,7 +127,7 @@ func (Codec9286UserComment) Decode(valueContext *exifcommon.ValueContext) (value
 		}
 	}
 
-	exif9286Logger.Warningf(nil, "User-comment encoding not valid. Returning 'unknown' type (the default).")
+	exif9286Logger.Warningf(context.TODO(), "User-comment encoding not valid. Returning 'unknown' type (the default).")
 	return unknownUc, nil
 }
 

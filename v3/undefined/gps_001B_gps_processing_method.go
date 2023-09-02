@@ -3,9 +3,9 @@ package exifundefined
 import (
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type Tag001BGPSProcessingMethod struct {
@@ -31,7 +31,7 @@ func (Codec001BGPSProcessingMethod) Encode(value interface{}, byteOrder binary.B
 	}()
 
 	s, ok := value.(Tag001BGPSProcessingMethod)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a Tag001BGPSProcessingMethod")
 	}
 

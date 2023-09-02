@@ -28,7 +28,7 @@ func TestIfdTagEntry_RawBytes_Allocated(t *testing.T) {
 	value, err := ite.GetRawBytes()
 	log.PanicIf(err)
 
-	if bytes.Compare(value, data) != 0 {
+	if !bytes.Equal(value, data) {
 		t.Fatalf("Value not expected: [%s] != [%s]", value, data)
 	}
 }
@@ -59,7 +59,7 @@ func TestIfdTagEntry_RawBytes_Embedded(t *testing.T) {
 	value, err := ite.GetRawBytes()
 	log.PanicIf(err)
 
-	if bytes.Compare(value, data) != 0 {
+	if !bytes.Equal(value, data) {
 		t.Fatalf("Value not expected: %v != %v", value, data)
 	}
 }

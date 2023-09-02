@@ -5,15 +5,12 @@ import (
 	"path"
 
 	"encoding/binary"
-	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
 	moduleRootPath = ""
-
-	testExifData []byte = nil
 
 	// EncodeDefaultByteOrder is the default byte-order for encoding operations.
 	EncodeDefaultByteOrder = binary.BigEndian
@@ -40,7 +37,7 @@ func GetModuleRootPath() string {
 			tryStampFilepath := path.Join(currentPath, ".MODULE_ROOT")
 
 			_, err := os.Stat(tryStampFilepath)
-			if err != nil && os.IsNotExist(err) != true {
+			if err != nil && !os.IsNotExist(err) {
 				log.Panic(err)
 			} else if err == nil {
 				break
@@ -65,24 +62,4 @@ func GetTestAssetsPath() string {
 	assetsPath := path.Join(moduleRootPath, "assets")
 
 	return assetsPath
-}
-
-func getTestImageFilepath() string {
-	assetsPath := GetTestAssetsPath()
-	testImageFilepath := path.Join(assetsPath, "NDM_8901.jpg")
-	return testImageFilepath
-}
-
-func getTestExifData() []byte {
-	if testExifData == nil {
-		assetsPath := GetTestAssetsPath()
-		filepath := path.Join(assetsPath, "NDM_8901.jpg.exif")
-
-		var err error
-
-		testExifData, err = ioutil.ReadFile(filepath)
-		log.PanicIf(err)
-	}
-
-	return testExifData
 }

@@ -7,7 +7,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 type TagType struct {
@@ -18,7 +18,7 @@ type TagType struct {
 
 func NewTagType(tagType TagTypePrimitive, byteOrder binary.ByteOrder) TagType {
 	name, found := TypeNames[tagType]
-	if found == false {
+	if !found {
 		log.Panicf("tag-type not valid: 0x%04x", tagType)
 	}
 
@@ -56,23 +56,6 @@ func (tt TagType) Size() int {
 // found directly within the IFD entry or an offset to somewhere else.
 func (tt TagType) valueIsEmbedded(unitCount uint32) bool {
 	return (tt.tagType.Size() * int(unitCount)) <= 4
-}
-
-func (tt TagType) readRawEncoded(valueContext ValueContext) (rawBytes []byte, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
-
-	unitSizeRaw := uint32(tt.tagType.Size())
-
-	if tt.valueIsEmbedded(valueContext.UnitCount()) == true {
-		byteLength := unitSizeRaw * valueContext.UnitCount()
-		return valueContext.RawValueOffset()[:byteLength], nil
-	} else {
-		return valueContext.AddressableData()[valueContext.ValueOffset() : valueContext.ValueOffset()+valueContext.UnitCount()*unitSizeRaw], nil
-	}
 }
 
 func (tt TagType) ParseBytes(data []byte, unitCount uint32) (value []uint8, err error) {
@@ -334,7 +317,7 @@ func (tt TagType) ResolveAsString(valueContext ValueContext, justFirst bool) (va
 		}
 	}()
 
-	if justFirst == true {
+	if justFirst {
 		value, err = valueContext.FormatFirst()
 		log.PanicIf(err)
 	} else {

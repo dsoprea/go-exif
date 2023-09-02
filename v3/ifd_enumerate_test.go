@@ -55,7 +55,7 @@ func TestIfdTagEntry_RawBytes_RealData(t *testing.T) {
 
 	if len(decodedBytes) != int(ite.UnitCount()) {
 		t.Fatalf("Decoded bytes not the right count.")
-	} else if bytes.Compare(decodedBytes, expected) != 0 {
+	} else if !bytes.Equal(decodedBytes, expected) {
 		t.Fatalf("Decoded bytes not correct.")
 	}
 }
@@ -103,7 +103,7 @@ func TestIfd_FindTagWithId_Miss(t *testing.T) {
 	_, err = ifd.FindTagWithId(0xffff)
 	if err == nil {
 		t.Fatalf("Expected error for not-found tag.")
-	} else if log.Is(err, ErrTagNotFound) == false {
+	} else if !log.Is(err, ErrTagNotFound) {
 		log.Panic(err)
 	}
 }
@@ -153,7 +153,7 @@ func TestIfd_FindTagWithName_Miss(t *testing.T) {
 	_, err = ifd.FindTagWithName("PlanarConfiguration")
 	if err == nil {
 		t.Fatalf("Expected error for not-found tag.")
-	} else if log.Is(err, ErrTagNotFound) == false {
+	} else if !log.Is(err, ErrTagNotFound) {
 		log.Panic(err)
 	}
 }
@@ -177,7 +177,7 @@ func TestIfd_FindTagWithName_NonStandard(t *testing.T) {
 	_, err = ifd.FindTagWithName("GeorgeNotAtHome")
 	if err == nil {
 		t.Fatalf("Expected error for not-found tag.")
-	} else if log.Is(err, ErrTagNotKnown) == false {
+	} else if !log.Is(err, ErrTagNotKnown) {
 		log.Panic(err)
 	}
 }
@@ -212,7 +212,7 @@ func TestIfd_Thumbnail(t *testing.T) {
 	expected, err := ioutil.ReadFile(expectedFilepath)
 	log.PanicIf(err)
 
-	if bytes.Compare(actual, expected) != 0 {
+	if !bytes.Equal(actual, expected) {
 		t.Fatalf("thumbnail not correct")
 	}
 }

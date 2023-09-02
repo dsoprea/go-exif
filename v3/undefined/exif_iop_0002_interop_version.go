@@ -3,9 +3,9 @@ package exifundefined
 import (
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type Tag0002InteropVersion struct {
@@ -31,7 +31,7 @@ func (Codec0002InteropVersion) Encode(value interface{}, byteOrder binary.ByteOr
 	}()
 
 	s, ok := value.(Tag0002InteropVersion)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a Tag0002InteropVersion")
 	}
 

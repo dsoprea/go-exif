@@ -5,11 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dsoprea/go-logging"
-)
-
-var (
-	ifdLogger = log.NewLogger("exifcommon.ifd")
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -84,7 +80,7 @@ func (im *IfdMapping) Get(parentPlacement []uint16) (childIfd *MappedIfd, err er
 
 	ptr := im.rootNode
 	for _, tagId := range parentPlacement {
-		if descendantPtr, found := ptr.Children[tagId]; found == false {
+		if descendantPtr, found := ptr.Children[tagId]; !found {
 			log.Panicf("ifd child with tag-ID (%04x) not registered: [%s]", tagId, ptr.PathPhrase())
 		} else {
 			ptr = descendantPtr
@@ -307,7 +303,7 @@ func (im *IfdMapping) Add(parentPlacement []uint16, tagId uint16, name string) (
 		Children:    make(map[uint16]*MappedIfd),
 	}
 
-	if _, found := ptr.Children[tagId]; found == true {
+	if _, found := ptr.Children[tagId]; found {
 		log.Panicf("child IFD with tag-ID (%04x) already registered under IFD [%s] with tag-ID (%04x)", tagId, ptr.Name, ptr.TagId)
 	}
 

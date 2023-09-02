@@ -7,9 +7,9 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type Tag927CMakerNote struct {
@@ -49,7 +49,7 @@ func (Codec927CMakerNote) Encode(value interface{}, byteOrder binary.ByteOrder) 
 	}()
 
 	mn, ok := value.(Tag927CMakerNote)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a Tag927CMakerNote")
 	}
 

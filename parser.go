@@ -2,10 +2,11 @@ package exif
 
 import (
 	"bytes"
+	"context"
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 type Parser struct {
@@ -45,7 +46,7 @@ func (p *Parser) ParseAscii(data []byte, unitCount uint32) (value string, err er
 
 	if len(data) == 0 || data[count-1] != 0 {
 		s := string(data[:count])
-		typeLogger.Warningf(nil, "ascii not terminated with nul as expected: [%v]", s)
+		typeLogger.Warningf(context.TODO(), "ascii not terminated with nul as expected: [%v]", s)
 
 		return s, nil
 	} else {

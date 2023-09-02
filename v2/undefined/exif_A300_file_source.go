@@ -5,9 +5,9 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	exifcommon "github.com/dsoprea/go-exif/v2/common"
 
-	"github.com/dsoprea/go-exif/v2/common"
+	log "github.com/dsoprea/go-logging"
 )
 
 type TagExifA300FileSource uint32
@@ -38,7 +38,7 @@ func (CodecExifA300FileSource) Encode(value interface{}, byteOrder binary.ByteOr
 	}()
 
 	st, ok := value.(TagExifA300FileSource)
-	if ok == false {
+	if !ok {
 		log.Panicf("can only encode a TagExifA300FileSource")
 	}
 

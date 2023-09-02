@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func Test_ByteWriter_writeAsBytes_uint8(t *testing.T) {
@@ -16,7 +16,7 @@ func Test_ByteWriter_writeAsBytes_uint8(t *testing.T) {
 	err := bw.writeAsBytes(uint8(0x12))
 	log.PanicIf(err)
 
-	if bytes.Compare(b.Bytes(), []byte{0x12}) != 0 {
+	if !bytes.Equal(b.Bytes(), []byte{0x12}) {
 		t.Fatalf("uint8 not encoded correctly.")
 	}
 }
@@ -28,7 +28,7 @@ func Test_ByteWriter_writeAsBytes_uint16(t *testing.T) {
 	err := bw.writeAsBytes(uint16(0x1234))
 	log.PanicIf(err)
 
-	if bytes.Compare(b.Bytes(), []byte{0x12, 0x34}) != 0 {
+	if !bytes.Equal(b.Bytes(), []byte{0x12, 0x34}) {
 		t.Fatalf("uint16 not encoded correctly.")
 	}
 }
@@ -40,7 +40,7 @@ func Test_ByteWriter_writeAsBytes_uint32(t *testing.T) {
 	err := bw.writeAsBytes(uint32(0x12345678))
 	log.PanicIf(err)
 
-	if bytes.Compare(b.Bytes(), []byte{0x12, 0x34, 0x56, 0x78}) != 0 {
+	if !bytes.Equal(b.Bytes(), []byte{0x12, 0x34, 0x56, 0x78}) {
 		t.Fatalf("uint32 not encoded correctly.")
 	}
 }
@@ -52,7 +52,7 @@ func Test_ByteWriter_WriteUint16(t *testing.T) {
 	err := bw.WriteUint16(uint16(0x1234))
 	log.PanicIf(err)
 
-	if bytes.Compare(b.Bytes(), []byte{0x12, 0x34}) != 0 {
+	if !bytes.Equal(b.Bytes(), []byte{0x12, 0x34}) {
 		t.Fatalf("uint16 not encoded correctly (as bytes).")
 	}
 }
@@ -64,7 +64,7 @@ func Test_ByteWriter_WriteUint32(t *testing.T) {
 	err := bw.WriteUint32(uint32(0x12345678))
 	log.PanicIf(err)
 
-	if bytes.Compare(b.Bytes(), []byte{0x12, 0x34, 0x56, 0x78}) != 0 {
+	if !bytes.Equal(b.Bytes(), []byte{0x12, 0x34, 0x56, 0x78}) {
 		t.Fatalf("uint32 not encoded correctly (as bytes).")
 	}
 }
@@ -76,7 +76,7 @@ func Test_ByteWriter_WriteFourBytes(t *testing.T) {
 	err := bw.WriteFourBytes([]byte{0x11, 0x22, 0x33, 0x44})
 	log.PanicIf(err)
 
-	if bytes.Compare(b.Bytes(), []byte{0x11, 0x22, 0x33, 0x44}) != 0 {
+	if !bytes.Equal(b.Bytes(), []byte{0x11, 0x22, 0x33, 0x44}) {
 		t.Fatalf("four-bytes not encoded correctly.")
 	}
 }
@@ -112,7 +112,7 @@ func Test_IfdDataAllocator_Allocate_InitialOffset1(t *testing.T) {
 		t.Fatalf("offset not bumped correctly (2): (%d) != (%d)", offset, expected)
 	} else if ida.NextOffset() != offset+uint32(3) {
 		t.Fatalf("position counter not advanced properly")
-	} else if bytes.Compare(ida.Bytes(), []byte{0x1, 0x2, 0x3}) != 0 {
+	} else if !bytes.Equal(ida.Bytes(), []byte{0x1, 0x2, 0x3}) {
 		t.Fatalf("buffer not correct after write (1)")
 	}
 
@@ -125,7 +125,7 @@ func Test_IfdDataAllocator_Allocate_InitialOffset1(t *testing.T) {
 		t.Fatalf("offset not bumped correctly (3): (%d) != (%d)", offset, expected)
 	} else if ida.NextOffset() != offset+uint32(3) {
 		t.Fatalf("position counter not advanced properly")
-	} else if bytes.Compare(ida.Bytes(), []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}) != 0 {
+	} else if !bytes.Equal(ida.Bytes(), []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}) {
 		t.Fatalf("buffer not correct after write (2)")
 	}
 }
@@ -149,7 +149,7 @@ func Test_IfdDataAllocator_Allocate_InitialOffset2(t *testing.T) {
 		t.Fatalf("offset not bumped correctly (2): (%d) != (%d)", offset, expected)
 	} else if ida.NextOffset() != offset+uint32(3) {
 		t.Fatalf("position counter not advanced properly")
-	} else if bytes.Compare(ida.Bytes(), []byte{0x1, 0x2, 0x3}) != 0 {
+	} else if !bytes.Equal(ida.Bytes(), []byte{0x1, 0x2, 0x3}) {
 		t.Fatalf("buffer not correct after write (1)")
 	}
 
@@ -162,7 +162,7 @@ func Test_IfdDataAllocator_Allocate_InitialOffset2(t *testing.T) {
 		t.Fatalf("offset not bumped correctly (3): (%d) != (%d)", offset, expected)
 	} else if ida.NextOffset() != offset+uint32(3) {
 		t.Fatalf("position counter not advanced properly")
-	} else if bytes.Compare(ida.Bytes(), []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}) != 0 {
+	} else if !bytes.Equal(ida.Bytes(), []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}) {
 		t.Fatalf("buffer not correct after write (2)")
 	}
 }
@@ -212,7 +212,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded1(t *testing.T) {
 
 	if childIfdBlock != nil {
 		t.Fatalf("no child-IFDs were expected to be allocated")
-	} else if bytes.Compare(b.Bytes(), []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x12, 0x00, 0x00, 0x00}) != 0 {
+	} else if !bytes.Equal(b.Bytes(), []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x12, 0x00, 0x00, 0x00}) {
 		t.Fatalf("encoded tag-entry bytes not correct")
 	} else if ida.NextOffset() != addressableOffset {
 		t.Fatalf("allocation was done but not expected")
@@ -246,7 +246,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_embedded2(t *testing.T) {
 
 	if childIfdBlock != nil {
 		t.Fatalf("no child-IFDs were expected to be allocated")
-	} else if bytes.Compare(b.Bytes(), []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x12, 0x34, 0x56, 0x78}) != 0 {
+	} else if !bytes.Equal(b.Bytes(), []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x12, 0x34, 0x56, 0x78}) {
 		t.Fatalf("encoded tag-entry bytes not correct")
 	} else if ida.NextOffset() != addressableOffset {
 		t.Fatalf("allocation was done but not expected")
@@ -280,11 +280,11 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
 	if childIfdBlock != nil {
 		t.Fatalf("no child-IFDs were expected to be allocated (1)")
-	} else if bytes.Compare(b.Bytes(), []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x12, 0x34}) != 0 {
+	} else if !bytes.Equal(b.Bytes(), []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x12, 0x34}) {
 		t.Fatalf("encoded tag-entry bytes not correct (1)")
 	} else if ida.NextOffset() != addressableOffset+uint32(5) {
 		t.Fatalf("allocation offset not expected (1)")
-	} else if bytes.Compare(ida.Bytes(), []byte{0x12, 0x34, 0x56, 0x78, 0x9A}) != 0 {
+	} else if !bytes.Equal(ida.Bytes(), []byte{0x12, 0x34, 0x56, 0x78, 0x9A}) {
 		t.Fatalf("allocated data not correct (1)")
 	}
 
@@ -297,17 +297,17 @@ func Test_IfdByteEncoder_encodeTagToBytes_bytes_allocated(t *testing.T) {
 
 	if childIfdBlock != nil {
 		t.Fatalf("no child-IFDs were expected to be allocated (2)")
-	} else if bytes.Compare(b.Bytes(), []byte{
+	} else if !bytes.Equal(b.Bytes(), []byte{
 		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x12, 0x34, // Tag 1
 		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x12, 0x39, // Tag 2
-	}) != 0 {
+	}) {
 		t.Fatalf("encoded tag-entry bytes not correct (2)")
 	} else if ida.NextOffset() != addressableOffset+uint32(10) {
 		t.Fatalf("allocation offset not expected (2)")
-	} else if bytes.Compare(ida.Bytes(), []byte{
+	} else if !bytes.Equal(ida.Bytes(), []byte{
 		0x12, 0x34, 0x56, 0x78, 0x9A,
 		0xbc, 0xde, 0xf0, 0x12, 0x34,
-	}) != 0 {
+	}) {
 		t.Fatalf("allocated data not correct (2)")
 	}
 }
@@ -339,7 +339,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withoutAllocate(t *testing.T
 
 	if childIfdBlock != nil {
 		t.Fatalf("no child-IFDs were expected to be allocated")
-	} else if bytes.Compare(b.Bytes(), []byte{0x87, 0x69, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00}) != 0 {
+	} else if !bytes.Equal(b.Bytes(), []byte{0x87, 0x69, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00}) {
 		t.Fatalf("encoded tag-entry with child-IFD not correct")
 	} else if ida.NextOffset() != addressableOffset {
 		t.Fatalf("allocation offset not expected")
@@ -433,7 +433,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("IFD first tag unit-count not correct: (%d)", iteV.UnitCount)
 	} else if iteV.ValueOffset != nextIfdOffsetToWrite {
 		t.Fatalf("IFD's child-IFD offset (as offset) is not correct: (%d) != (%d)", iteV.ValueOffset, nextIfdOffsetToWrite)
-	} else if bytes.Compare(iteV.RawValueOffset, []byte{0x0, 0x0, 0x07, 0xd0}) != 0 {
+	} else if !bytes.Equal(iteV.RawValueOffset, []byte{0x0, 0x0, 0x07, 0xd0}) {
 		t.Fatalf("IFD's child-IFD offset (as raw bytes) is not correct: [%x]", iteV.RawValueOffset)
 	} else if iteV.ChildIfdPath != IfdPathStandardExif {
 		t.Fatalf("IFD first tag IFD-name name not correct: [%s]", iteV.ChildIfdPath)
@@ -464,7 +464,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_childIfd__withAllocate(t *testing.T) {
 		t.Fatalf("Child IFD first tag unit-count not correct: (%d)", ite.UnitCount)
 	} else if ite.ValueOffset != 0x12340000 {
 		t.Fatalf("Child IFD first tag value value (as offset) not correct: (0x%02x)", ite.ValueOffset)
-	} else if bytes.Compare(ite.RawValueOffset, []byte{0x12, 0x34, 0x0, 0x0}) != 0 {
+	} else if !bytes.Equal(ite.RawValueOffset, []byte{0x12, 0x34, 0x0, 0x0}) {
 		t.Fatalf("Child IFD first tag value value (as raw bytes) not correct: [%v]", ite.RawValueOffset)
 	} else if ite.ChildIfdPath != "" {
 		t.Fatalf("Child IFD first tag IFD-name name not empty: [%s]", ite.ChildIfdPath)
@@ -542,7 +542,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 		t.Fatalf("Tag unit-count not correct: (%d)", ite.UnitCount)
 	} else if ite.ValueOffset != addressableOffset {
 		t.Fatalf("Tag's value (as offset) is not correct: (%d) != (%d)", ite.ValueOffset, addressableOffset)
-	} else if bytes.Compare(ite.RawValueOffset, []byte{0x0, 0x0, 0x12, 0x34}) != 0 {
+	} else if !bytes.Equal(ite.RawValueOffset, []byte{0x0, 0x0, 0x12, 0x34}) {
 		t.Fatalf("Tag's value (as raw bytes) is not correct: [%x]", ite.RawValueOffset)
 	} else if ite.ChildIfdPath != "" {
 		t.Fatalf("Tag's IFD-name should be empty: [%s]", ite.ChildIfdPath)
@@ -556,7 +556,7 @@ func Test_IfdByteEncoder_encodeTagToBytes_simpleTag_allocate(t *testing.T) {
 
 	allocatedBytes := ida.Bytes()
 
-	if bytes.Compare(allocatedBytes, expectedBytes) != 0 {
+	if !bytes.Equal(allocatedBytes, expectedBytes) {
 		t.Fatalf("Allocated bytes not correct: %v != %v", allocatedBytes, expectedBytes)
 	}
 }
@@ -616,7 +616,7 @@ func Test_IfdByteEncoder_encodeIfdToBytes_simple(t *testing.T) {
 		0x11, 0x11, 0x22, 0x22, 0x33, 0x33, 0x44, 0x44,
 	}
 
-	if bytes.Compare(tableAndAllocated, expectedIfdAndDataBytes) != 0 {
+	if !bytes.Equal(tableAndAllocated, expectedIfdAndDataBytes) {
 		t.Fatalf("IFD table and allocated data not correct: %v", DumpBytesClauseToString(tableAndAllocated))
 	}
 }

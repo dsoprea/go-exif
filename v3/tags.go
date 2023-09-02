@@ -1,13 +1,14 @@
 package exif
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
-	"github.com/dsoprea/go-logging"
-	"gopkg.in/yaml.v2"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	log "github.com/dsoprea/go-logging"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -115,7 +116,7 @@ func (it *IndexedTag) Is(ifdPath string, id uint16) bool {
 // GetEncodingType returns the largest type that this tag's value can occupy.
 func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimitive {
 	// For convenience, we handle encoding a `time.Time` directly.
-	if exifcommon.IsTime(value) == true {
+	if exifcommon.IsTime(value) {
 		// Timestamps are encoded as ASCII.
 		value = ""
 	}
@@ -144,14 +145,14 @@ func (it *IndexedTag) GetEncodingType(value interface{}) exifcommon.TagTypePrimi
 
 	// We specifically check for the cases that we know to expect.
 
-	if supportsLong == true && supportsShort == true {
+	if supportsLong && supportsShort {
 		return exifcommon.TypeLong
-	} else if supportsRational == true && supportsSignedRational == true {
+	} else if supportsRational && supportsSignedRational {
 		if value == nil {
 			log.Panicf("GetEncodingType: require value to be given")
 		}
 
-		if _, ok := value.(exifcommon.SignedRational); ok == true {
+		if _, ok := value.(exifcommon.SignedRational); ok {
 			return exifcommon.TypeSignedRational
 		}
 
@@ -218,12 +219,12 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	// Store by ID.
 
 	family, found := ti.tagsByIfd[it.IfdPath]
-	if found == false {
+	if !found {
 		family = make(map[uint16]*IndexedTag)
 		ti.tagsByIfd[it.IfdPath] = family
 	}
 
-	if _, found := family[it.Id]; found == true {
+	if _, found := family[it.Id]; found {
 		log.Panicf("tag-ID defined more than once for IFD [%s]: (%02x)", it.IfdPath, it.Id)
 	}
 
@@ -232,12 +233,12 @@ func (ti *TagIndex) Add(it *IndexedTag) (err error) {
 	// Store by name.
 
 	familyR, found := ti.tagsByIfdR[it.IfdPath]
-	if found == false {
+	if !found {
 		familyR = make(map[string]*IndexedTag)
 		ti.tagsByIfdR[it.IfdPath] = familyR
 	}
 
-	if _, found := familyR[it.Name]; found == true {
+	if _, found := familyR[it.Name]; found {
 		log.Panicf("tag-name defined more than once for IFD [%s]: (%s)", it.IfdPath, it.Name)
 	}
 
@@ -262,12 +263,12 @@ func (ti *TagIndex) getOne(ifdPath string, id uint16) (it *IndexedTag, err error
 	defer ti.mutex.Unlock()
 
 	family, found := ti.tagsByIfd[ifdPath]
-	if found == false {
+	if !found {
 		return nil, ErrTagNotFound
 	}
 
 	it, found = family[id]
-	if found == false {
+	if !found {
 		return nil, ErrTagNotFound
 	}
 
@@ -292,7 +293,7 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 		log.Panic(err)
 	}
 
-	if ti.doUniversalSearch == false {
+	if !ti.doUniversalSearch {
 		return nil, ErrTagNotFound
 	}
 
@@ -300,7 +301,7 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 
 	skipIfdPath := ii.UnindexedString()
 
-	for currentIfdPath, _ := range ti.tagsByIfd {
+	for currentIfdPath := range ti.tagsByIfd {
 		if currentIfdPath == skipIfdPath {
 			// Skip the primary IFD, which has already been checked.
 			continue
@@ -308,7 +309,7 @@ func (ti *TagIndex) Get(ii *exifcommon.IfdIdentity, id uint16) (it *IndexedTag, 
 
 		it, err = ti.getOne(currentIfdPath, id)
 		if err == nil {
-			tagsLogger.Warningf(nil,
+			tagsLogger.Warningf(context.TODO(),
 				"Found tag (0x%02x) in the wrong IFD: [%s] != [%s]",
 				id, currentIfdPath, ifdPath)
 
@@ -392,7 +393,7 @@ func (ti *TagIndex) GetWithName(ii *exifcommon.IfdIdentity, name string) (it *In
 	ifdPath := ii.UnindexedString()
 
 	it, found := ti.tagsByIfdR[ifdPath][name]
-	if found != true {
+	if !found {
 		log.Panic(ErrTagNotFound)
 	}
 
@@ -442,8 +443,8 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 
 				// TODO(dustin): Discard unsupported types. This helps us with non-standard types that have actually been found in real data, that we ignore for right now. e.g. SSHORT, FLOAT, DOUBLE
 				tagTypeId, found := exifcommon.GetTypeByName(tagTypeName)
-				if found == false {
-					tagsLogger.Warningf(nil, "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
+				if !found {
+					tagsLogger.Warningf(context.TODO(), "Type [%s] for tag [%s] being loaded is not valid and is being ignored.", tagTypeName, tagName)
 					continue
 				}
 
@@ -451,7 +452,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 			}
 
 			if len(tagTypes) == 0 {
-				tagsLogger.Warningf(nil, "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
+				tagsLogger.Warningf(context.TODO(), "Tag [%s] (0x%04x) [%s] being loaded does not have any supported types and will not be registered.", ifdPath, tagId, tagName)
 				continue
 			}
 
@@ -469,7 +470,7 @@ func LoadStandardTags(ti *TagIndex) (err error) {
 		}
 	}
 
-	tagsLogger.Debugf(nil, "(%d) tags loaded.", count)
+	tagsLogger.Debugf(context.TODO(), "(%d) tags loaded.", count)
 
 	return nil
 }

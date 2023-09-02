@@ -7,11 +7,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-)
-
-var (
-	typeEncodeLogger = log.NewLogger("exif.type_encode")
+	log "github.com/dsoprea/go-logging"
 )
 
 // EncodedData encapsulates the compound output of an encoding operation.
@@ -190,27 +186,27 @@ func (ve *ValueEncoder) Encode(value interface{}) (ed EncodedData, err error) {
 		}
 	}()
 
-	switch value.(type) {
+	switch v := value.(type) {
 	case []byte:
-		ed, err = ve.encodeBytes(value.([]byte))
+		ed, err = ve.encodeBytes(v)
 		log.PanicIf(err)
 	case string:
-		ed, err = ve.encodeAscii(value.(string))
+		ed, err = ve.encodeAscii(v)
 		log.PanicIf(err)
 	case []uint16:
-		ed, err = ve.encodeShorts(value.([]uint16))
+		ed, err = ve.encodeShorts(v)
 		log.PanicIf(err)
 	case []uint32:
-		ed, err = ve.encodeLongs(value.([]uint32))
+		ed, err = ve.encodeLongs(v)
 		log.PanicIf(err)
 	case []Rational:
-		ed, err = ve.encodeRationals(value.([]Rational))
+		ed, err = ve.encodeRationals(v)
 		log.PanicIf(err)
 	case []int32:
-		ed, err = ve.encodeSignedLongs(value.([]int32))
+		ed, err = ve.encodeSignedLongs(v)
 		log.PanicIf(err)
 	case []SignedRational:
-		ed, err = ve.encodeSignedRationals(value.([]SignedRational))
+		ed, err = ve.encodeSignedRationals(v)
 		log.PanicIf(err)
 	case time.Time:
 		// For convenience, if the user doesn't want to deal with translation

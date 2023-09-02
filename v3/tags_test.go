@@ -261,7 +261,7 @@ func TestTagIndex_Get(t *testing.T) {
 	it, err := ti.Get(exifcommon.IfdStandardIfdIdentity, 0x10f)
 	log.PanicIf(err)
 
-	if it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) == false || it.IsName(exifcommon.IfdStandardIfdIdentity.UnindexedString(), "Make") == false {
+	if !it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) || !it.IsName(exifcommon.IfdStandardIfdIdentity.UnindexedString(), "Make") {
 		t.Fatalf("tag info not correct")
 	}
 }
@@ -272,7 +272,7 @@ func TestTagIndex_GetWithName(t *testing.T) {
 	it, err := ti.GetWithName(exifcommon.IfdStandardIfdIdentity, "Make")
 	log.PanicIf(err)
 
-	if it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) == false {
+	if !it.Is(exifcommon.IfdStandardIfdIdentity.UnindexedString(), 0x10f) {
 		t.Fatalf("tag info not correct")
 	}
 }

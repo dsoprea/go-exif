@@ -12,11 +12,7 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
-)
-
-var (
-	ifdBuilderLogger = log.NewLogger("exif.ifd_builder")
+	log "github.com/dsoprea/go-logging"
 )
 
 var (
@@ -30,7 +26,7 @@ type IfdBuilderTagValue struct {
 }
 
 func (ibtv IfdBuilderTagValue) String() string {
-	if ibtv.IsBytes() == true {
+	if ibtv.IsBytes() {
 		var valuePhrase string
 		if len(ibtv.valueBytes) <= 8 {
 			valuePhrase = fmt.Sprintf("%v", ibtv.valueBytes)
@@ -39,7 +35,7 @@ func (ibtv IfdBuilderTagValue) String() string {
 		}
 
 		return fmt.Sprintf("IfdBuilderTagValue<BYTES=%v LEN=(%d)>", valuePhrase, len(ibtv.valueBytes))
-	} else if ibtv.IsIb() == true {
+	} else if ibtv.IsIb() {
 		return fmt.Sprintf("IfdBuilderTagValue<IB=%s>", ibtv.ib)
 	} else {
 		log.Panicf("IBTV state undefined")
@@ -66,9 +62,9 @@ func (ibtv IfdBuilderTagValue) IsBytes() bool {
 }
 
 func (ibtv IfdBuilderTagValue) Bytes() []byte {
-	if ibtv.IsBytes() == false {
+	if !ibtv.IsBytes() {
 		log.Panicf("this tag is not a byte-slice value")
-	} else if ibtv.IsIb() == true {
+	} else if ibtv.IsIb() {
 		log.Panicf("this tag is an IFD-builder value not a byte-slice")
 	}
 
@@ -80,9 +76,9 @@ func (ibtv IfdBuilderTagValue) IsIb() bool {
 }
 
 func (ibtv IfdBuilderTagValue) Ib() *IfdBuilder {
-	if ibtv.IsIb() == false {
+	if !ibtv.IsIb() {
 		log.Panicf("this tag is not an IFD-builder value")
-	} else if ibtv.IsBytes() == true {
+	} else if ibtv.IsBytes() {
 		log.Panicf("this tag is a byte-slice, not a IFD-builder")
 	}
 
@@ -132,7 +128,7 @@ func (bt *BuilderTag) Value() (value *IfdBuilderTagValue) {
 func (bt *BuilderTag) String() string {
 	var valueString string
 
-	if bt.value.IsBytes() == true {
+	if bt.value.IsBytes() {
 		var err error
 
 		valueString, err = Format(bt.value.Bytes(), bt.typeId, false, bt.byteOrder)
@@ -250,7 +246,7 @@ func NewIfdBuilder(ifdMapping *IfdMapping, tagIndex *TagIndex, fqIfdPath string,
 	mi, err := ifdMapping.GetWithPath(ifdPath)
 	if err == nil {
 		ifdTagId = mi.TagId
-	} else if log.Is(err, ErrChildIfdNotMapped) == false {
+	} else if !log.Is(err, ErrChildIfdNotMapped) {
 		log.Panic(err)
 	}
 
@@ -346,7 +342,7 @@ func (ib *IfdBuilder) ChildWithTagId(childIfdTagId uint16) (childIb *IfdBuilder,
 	}()
 
 	for _, bt := range ib.tags {
-		if bt.value.IsIb() == false {
+		if !bt.value.IsIb() {
 			continue
 		}
 
@@ -434,7 +430,7 @@ func getOrCreateIbFromRootIbInner(rootIb *IfdBuilder, parentIb *IfdBuilder, curr
 
 	var foundChild *IfdBuilder
 	for _, bt := range thisIb.tags {
-		if bt.value.IsIb() == false {
+		if !bt.value.IsIb() {
 			continue
 		}
 
@@ -529,7 +525,7 @@ func (ib *IfdBuilder) SetThumbnail(data []byte) (err error) {
 
 	// TODO(dustin): !! Add a test for this function.
 
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		log.Panic("thumbnail is empty")
 	}
 
@@ -586,18 +582,18 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 				_, err := ib.ifdMapping.GetChild(currentIb.ifdPath, tag.tagId)
 				if err == nil {
 					isChildIb = true
-				} else if log.Is(err, ErrChildIfdNotMapped) == false {
+				} else if !log.Is(err, ErrChildIfdNotMapped) {
 					log.Panic(err)
 				}
 
 				tagName := ""
 
 				// If a normal tag (not a child IFD) get the name.
-				if isChildIb == true {
+				if isChildIb {
 					tagName = "<Child IFD>"
 				} else {
 					it, err := ib.tagIndex.Get(tag.ifdPath, tag.tagId)
-					if log.Is(err, ErrTagNotFound) == true {
+					if log.Is(err, ErrTagNotFound) {
 						tagName = "<UNKNOWN>"
 					} else if err != nil {
 						log.Panic(err)
@@ -608,14 +604,14 @@ func (ib *IfdBuilder) printTagTree(levels int) {
 
 				value := tag.Value()
 
-				if value.IsIb() == true {
+				if value.IsIb() {
 					fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, value.Ib())
 				} else {
 					fmt.Printf("%s  (%d): [%s] %s\n", indent, i, tagName, tag)
 				}
 
-				if isChildIb == true {
-					if tag.value.IsIb() == false {
+				if isChildIb {
+					if !tag.value.IsIb() {
 						log.Panicf("tag-ID (0x%04x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
 					}
 
@@ -655,12 +651,12 @@ func (ib *IfdBuilder) printIfdTree(levels int) {
 				_, err := ib.ifdMapping.GetChild(currentIb.ifdPath, tag.tagId)
 				if err == nil {
 					isChildIb = true
-				} else if log.Is(err, ErrChildIfdNotMapped) == false {
+				} else if !log.Is(err, ErrChildIfdNotMapped) {
 					log.Panic(err)
 				}
 
-				if isChildIb == true {
-					if tag.value.IsIb() == false {
+				if isChildIb {
+					if !tag.value.IsIb() {
 						log.Panicf("tag-ID (0x%04x) is an IFD but the tag value is not an IB instance: %v", tag.tagId, tag)
 					}
 
@@ -693,7 +689,7 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, tagId uin
 		for i, tag := range thisIb.tags {
 			var childIb *IfdBuilder
 			childIfdName := ""
-			if tag.value.IsIb() == true {
+			if tag.value.IsIb() {
 				childIb = tag.value.Ib()
 				childIfdName = childIb.ifdPath
 			}
@@ -707,7 +703,7 @@ func (ib *IfdBuilder) dumpToStrings(thisIb *IfdBuilder, prefix string, tagId uin
 
 			childPrefix := ""
 			if prefix == "" {
-				childPrefix = fmt.Sprintf("%s", thisIb.ifdPath)
+				childPrefix = thisIb.ifdPath
 			} else {
 				childPrefix = fmt.Sprintf("%s->%s", prefix, thisIb.ifdPath)
 			}
@@ -790,7 +786,7 @@ func (ib *IfdBuilder) DeleteAll(tagId uint16) (n int, err error) {
 
 	for {
 		err = ib.DeleteN(tagId, 1)
-		if log.Is(err, ErrTagEntryNotFound) == true {
+		if log.Is(err, ErrTagEntryNotFound) {
 			break
 		} else if err != nil {
 			log.Panic(err)
@@ -846,7 +842,7 @@ func (ib *IfdBuilder) Set(bt *BuilderTag) (err error) {
 	position, err := ib.Find(bt.tagId)
 	if err == nil {
 		ib.tags[position] = bt
-	} else if log.Is(err, ErrTagEntryNotFound) == true {
+	} else if log.Is(err, ErrTagEntryNotFound) {
 		err = ib.add(bt)
 		log.PanicIf(err)
 	} else {
@@ -961,7 +957,7 @@ func (ib *IfdBuilder) Add(bt *BuilderTag) (err error) {
 		}
 	}()
 
-	if bt.value.IsIb() == true {
+	if bt.value.IsIb() {
 		log.Panicf("child IfdBuilders must be added via AddChildIb() or AddTagsFromExisting(), not Add()")
 	}
 
@@ -1034,7 +1030,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 	if err == nil {
 		err = ib.SetThumbnail(thumbnailData)
 		log.PanicIf(err)
-	} else if log.Is(err, ErrNoThumbnail) == false {
+	} else if !log.Is(err, ErrNoThumbnail) {
 		log.Panic(err)
 	}
 
@@ -1044,7 +1040,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 			continue
 		}
 
-		if excludeTagIds != nil && len(excludeTagIds) > 0 {
+		if len(excludeTagIds) > 0 {
 			found := false
 			for _, excludedTagId := range excludeTagIds {
 				if excludedTagId == ite.TagId {
@@ -1052,12 +1048,12 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				}
 			}
 
-			if found == true {
+			if found {
 				continue
 			}
 		}
 
-		if includeTagIds != nil && len(includeTagIds) > 0 {
+		if len(includeTagIds) > 0 {
 			// Whether or not there was a list of excludes, if there is a list
 			// of includes than the current tag has to be in it.
 
@@ -1069,7 +1065,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				}
 			}
 
-			if found == false {
+			if !found {
 				continue
 			}
 		}
@@ -1130,7 +1126,7 @@ func (ib *IfdBuilder) AddTagsFromExisting(ifd *Ifd, itevr *IfdTagEntryValueResol
 				}
 
 				undefined, ok := undefinedInterface.(UnknownTagValue)
-				if ok != true {
+				if !ok {
 					log.Panicf("unexpected value returned from undefined-value processor")
 				}
 
@@ -1221,7 +1217,7 @@ func (ib *IfdBuilder) SetStandard(tagId uint16, value interface{}) (err error) {
 
 	i, err := ib.Find(tagId)
 	if err != nil {
-		if log.Is(err, ErrTagEntryNotFound) == false {
+		if !log.Is(err, ErrTagEntryNotFound) {
 			log.Panic(err)
 		}
 
@@ -1252,7 +1248,7 @@ func (ib *IfdBuilder) SetStandardWithName(tagName string, value interface{}) (er
 
 	i, err := ib.Find(bt.tagId)
 	if err != nil {
-		if log.Is(err, ErrTagEntryNotFound) == false {
+		if !log.Is(err, ErrTagEntryNotFound) {
 			log.Panic(err)
 		}
 
