@@ -6,11 +6,12 @@ import (
 	"path"
 	"reflect"
 	"testing"
+	"time"
 
 	"encoding/binary"
 	"io/ioutil"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 )
 
 func TestIfdTagEntry_ValueBytes(t *testing.T) {
@@ -489,6 +490,36 @@ func ExampleIfd_GpsInfo() {
 	log.PanicIf(err)
 
 	fmt.Printf("%s\n", gi)
+
+	// Output:
+	// GpsInfo<LAT=(26.58667) LON=(-80.05361) ALT=(0) TIME=[2018-04-29 01:22:57 +0000 UTC]>
+}
+
+func ExampleIfd_ExifInfo() {
+	filepath := path.Join(assetsPath, "My_Display_P3.heic")
+
+	rawExif, err := SearchFileAndExtractExif(filepath)
+	log.PanicIf(err)
+
+	im := NewIfdMapping()
+
+	err = LoadStandardIfds(im)
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+
+	_, index, err := Collect(im, ti, rawExif)
+	log.PanicIf(err)
+
+	ifd, err := index.RootIfd.ChildWithIfdPath(IfdPathStandardExif)
+	log.PanicIf(err)
+
+	ei, err := ifd.ExifInfo()
+	log.PanicIf(err)
+
+	loc, _ := time.LoadLocation("America/New_York")
+	utc := ei.DateTimeOriginalInUTC()
+	fmt.Printf("%v\n", utc.In(loc).Format(time.Kitchen))
 
 	// Output:
 	// GpsInfo<LAT=(26.58667) LON=(-80.05361) ALT=(0) TIME=[2018-04-29 01:22:57 +0000 UTC]>

@@ -3,17 +3,34 @@ package exif
 import (
 	"fmt"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	// IFD1
+
+	// Exif Tags ///////////////////////////////
+	// https://exiftool.org/TagNames/EXIF.html //
+	////////////////////////////////////////////
+
+	// The date and time when the original image data was generated.
+	ExifDateTimeOriginal = 0x9003
+	// A tag used to record fractions of seconds for the DateTimeOriginal tag.
+	ExifSubSecTimeOriginal = 0x9291
+	// Time difference from Universal Time Coordinated including daylight saving time of DateTimeOriginal tag.
+	// May be omitted even if DateTimeOriginal is included if the camera doesn't have the capability to determine this.
+	ExifOffsetTimeOriginal = 0x9011
+
+	// Backwards-Compatible Exif Tags ///////////
+	// https://exiftool.org/TagNames/EXIF.html //
+	/////////////////////////////////////////////
 
 	ThumbnailOffsetTagId = 0x0201
 	ThumbnailSizeTagId   = 0x0202
 
-	// Exif
+	// GPS Tags ////////////////////////////////
+	// https://exiftool.org/TagNames/GPS.html //
+	////////////////////////////////////////////
 
 	TagVersionId = 0x0000
 
