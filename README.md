@@ -17,6 +17,10 @@ $ git clone https://github.com/dsoprea/go-exif.git
 $ cd v3
 ```
 
+new version go
+```
+$ go install github.com/dsoprea/go-exif/v3@latest
+```
 
 # Requirements
 
