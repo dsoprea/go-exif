@@ -702,6 +702,54 @@ func Test_IfdByteEncoder_EncodeToExif(t *testing.T) {
 	validateExifSimpleTestIb(exifData, t)
 }
 
+func Test_IfdByteEncoder_encodeTagToBytes_bytes_thumbnailOffset(t *testing.T) {
+	defer func() {
+		if state := recover(); state != nil {
+			err := log.Wrap(state.(error))
+			log.PrintError(err)
+			t.Fatalf("Test failed.")
+		}
+	}()
+
+	ibe := NewIfdByteEncoder()
+
+	im, err := exifcommon.NewIfdMappingWithStandard()
+	log.PanicIf(err)
+
+	ti := NewTagIndex()
+	ib := NewIfdBuilder(im, ti, exifcommon.IfdStandardIfdIdentity, exifcommon.TestDefaultByteOrder)
+
+	log.PanicIf(err)
+
+	bt := &BuilderTag{
+		ifdPath: exifcommon.IfdStandardIfdIdentity.UnindexedString(),
+		tagId:   ThumbnailOffsetTagId,
+		typeId:  exifcommon.TypeLong,
+		value:   NewIfdBuilderTagValueFromBytes([]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09}),
+	}
+
+	b := new(bytes.Buffer)
+	bw := NewByteWriter(b, exifcommon.TestDefaultByteOrder)
+
+	addressableOffset := uint32(0x1234)
+	ida := newIfdDataAllocator(addressableOffset)
+
+	_, err = ibe.encodeTagToBytes(ib, bt, bw, ida, uint32(0))
+	log.PanicIf(err)
+
+	tagBytes := b.Bytes()
+	if len(tagBytes) != 12 {
+		t.Fatalf("Tag not encoded to the right number of bytes: (%d)", len(tagBytes))
+	} else if bytes.Compare(tagBytes, []byte{
+		0x02, 0x01,
+		0x00, 0x04,
+		0x00, 0x00, 0x00, 0x01, // unitCount = 1
+		0x00, 0x00, 0x12, 0x34,
+	}) != 0 {
+		t.Fatalf("encoded tag-entry not correct")
+	}
+}
+
 func Test_IfdByteEncoder_EncodeToExif_WithChildAndSibling(t *testing.T) {
 	defer func() {
 		if state := recover(); state != nil {
