@@ -241,6 +241,11 @@ func (ibe *IfdByteEncoder) encodeTagToBytes(ib *IfdBuilder, bt *BuilderTag, bw *
 			if remainder > 0 {
 				log.Panicf("tag (0x%04x) value of (%d) bytes not evenly divisible by type-size (%d)", bt.tagId, len_, typeSize)
 			}
+
+		}
+		if bt.tagId == ThumbnailOffsetTagId {
+			// The thumbnail offset is store as a long and its unit count must be 1
+			unitCount = 1
 		}
 
 		err = bw.WriteUint32(unitCount)
