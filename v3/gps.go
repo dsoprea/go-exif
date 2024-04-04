@@ -77,14 +77,15 @@ func (d GpsDegrees) Decimal() float64 {
 	return decimal
 }
 
-// Raw returns a Rational struct that can be used to *write* coordinates. In
-// practice, the denominator are typically (1) in the original EXIF data, and,
-// that being the case, this will best preserve precision.
+// Raw returns a slice of Rationals that can be used to *write* coordinates. The
+// conversion uses a denominator of 1 for degrees and minutes and 1000 for
+// seconds. These denominators are not necessarily the same as the original
+// data, but they will provide a precision of about an inch at the equator.
 func (d GpsDegrees) Raw() []exifcommon.Rational {
 	return []exifcommon.Rational{
 		{Numerator: uint32(d.Degrees), Denominator: 1},
 		{Numerator: uint32(d.Minutes), Denominator: 1},
-		{Numerator: uint32(d.Seconds), Denominator: 1},
+		{Numerator: uint32(d.Seconds * 1000.0), Denominator: 1000},
 	}
 }
 
