@@ -39,9 +39,9 @@ func TestCodecExifA301SceneType_Encode(t *testing.T) {
 }
 
 func TestCodecExifA301SceneType_Decode(t *testing.T) {
-	expectedUt := TagExifA301SceneType(0x1234)
+	expectedUt := TagExifA301SceneType(0x01)
 
-	encoded := []byte{0, 0, 0x12, 0x34}
+	encoded := []byte{0x01}
 
 	rawValueOffset := encoded
 

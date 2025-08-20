@@ -56,12 +56,12 @@ func (CodecExifA301SceneType) Decode(valueContext *exifcommon.ValueContext) (val
 		}
 	}()
 
-	valueContext.SetUndefinedValueType(exifcommon.TypeLong)
+	valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
-	valueLongs, err := valueContext.ReadLongs()
+	valueBytes, err := valueContext.ReadBytes()
 	log.PanicIf(err)
 
-	return TagExifA301SceneType(valueLongs[0]), nil
+	return TagExifA301SceneType(valueBytes[0]), nil
 }
 
 func init() {
